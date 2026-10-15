@@ -1,0 +1,17 @@
+Nayancode Workbench
+Copyright 2026 Vivofold (https://vivofold.in)
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It includes or loads the following third-party software, each under its own licence:
+  - minimap2 2.22 (WebAssembly build), MIT, Heng Li
+  - samtools 1.17 (WebAssembly build), MIT/Expat, Genome Research Ltd
+  - biowasm packaging, MIT, Robert Aboukhalil
+  - RDKit (MinimalLib), BSD-3-Clause, the RDKit contributors
+  - Mol* (molstar), MIT, the Mol* contributors
+  - igv.js, MIT, the Regents of the University of California and the Broad Institute
+  - React, React Router, Zustand, Motion: MIT
+
+Bundled data (see /licenses in the app and src/core/data-sources.ts):
+  - Reactome (CC BY 4.0), WikiPathways (CC0 1.0), Gene Ontology and GOA (CC BY 4.0),
+    JASPAR 2024 CORE vertebrates (CC BY 4.0), NCBI Gene identifiers (public domain).

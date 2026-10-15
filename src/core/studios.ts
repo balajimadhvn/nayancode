@@ -1,0 +1,112 @@
+export type StudioStatus = 'live' | 'building' | 'planned';
+
+export interface StudioDef {
+  id: string;
+  path: string;
+  name: string;
+  short: string;
+  blurb: string;
+  status: StudioStatus;
+  milestone: 'M1' | 'M2' | 'M3';
+  accent: number; // hue 0-360
+  inputs: string[];
+  analyses: string[];
+  engines: string;
+  limits: string;
+  cloudLater: string;
+}
+
+export const STUDIOS: StudioDef[] = [
+  {
+    id: 'sequence', path: '/sequence', name: 'Sequence Studio', short: 'Sequence',
+    blurb: 'Analyse, digest, design and align DNA, RNA and protein sequences.',
+    status: 'live', milestone: 'M1', accent: 190,
+    inputs: ['FASTA', 'Pasted text', 'Sanger .ab1 traces'],
+    analyses: ['ORF finder & translation', 'Restriction digest + virtual gel', 'Primer design + in-silico PCR', 'Cloning simulator (Golden Gate, Gibson)', 'CRISPR guides + off-target scan', 'Sanger viewer, trimming & comparison', 'Protein analysis & JASPAR motif scan', 'Pairwise alignment & dotplot'],
+    engines: 'TypeScript kernels in a Web Worker',
+    limits: 'Browser-scale sequences; genome-wide searches belong on the future cloud tier',
+    cloudLater: 'Genome-wide CRISPR off-targets, large-database homology search',
+  },
+  {
+    id: 'expression', path: '/expression', name: 'Expression Studio', short: 'Expression',
+    blurb: 'Bulk RNA-seq: counts to QC, differential expression and figures.',
+    status: 'live', milestone: 'M1', accent: 265,
+    inputs: ['Count matrix CSV/TSV', 'Sample sheet'],
+    analyses: ['Moderated-t differential expression', 'ComBat batch correction', 'PCA & sample QC', 'Volcano, MA & clustered heatmap', 'Enrichment: ORA + preranked GSEA'],
+    engines: 'TypeScript kernels in a Web Worker',
+    limits: 'Two-group designs; confirm key findings with DESeq2 or limma',
+    cloudLater: 'FASTQ → counts via nf-core/rnaseq',
+  },
+  {
+    id: 'chemistry', path: '/chemistry', name: 'Chemistry Studio', short: 'Chemistry',
+    blurb: 'Curate, filter, search and profile compound libraries with RDKit.',
+    status: 'live', milestone: 'M1', accent: 150,
+    inputs: ['SMILES', 'CSV with SMILES column', 'PubChem / ChEMBL import'],
+    analyses: ['Descriptors, curation & alerts', 'Similarity search (Morgan/Tanimoto)', 'Substructure (SMARTS)', 'Chemical space + Butina clusters', 'QSAR Lab (RF, kNN, ridge, applicability domain)'],
+    engines: 'RDKit (WebAssembly) in a worker',
+    limits: 'Interactive library sizes; models are validated by cluster CV and Y-randomisation',
+    cloudLater: 'GNN QSAR, large-scale docking, generative design',
+  },
+  {
+    id: 'structure', path: '/structure', name: 'Structure Studio', short: 'Structure',
+    blurb: 'Explore protein structures from the PDB and AlphaFold with Mol*.',
+    status: 'live', milestone: 'M1', accent: 20,
+    inputs: ['PDB ID', 'UniProt ID (AlphaFold)', 'PDB / mmCIF files'],
+    analyses: ['3D viewing & selection (Mol*)', 'Interaction profiler', 'Pocket detection', 'SASA & Kabsch superposition (TM-score)'],
+    engines: 'Mol* (WebGL) + TypeScript kernels',
+    limits: 'Heavy-atom geometry only; pocket score is heuristic, not a druggability model',
+    cloudLater: 'Structure prediction, MD, virtual screening',
+  },
+  {
+    id: 'phylo', path: '/phylogenetics', name: 'Alignment & Phylogenetics', short: 'Phylogenetics',
+    blurb: 'MSA, curation, tree inference and publication-grade tree figures.',
+    status: 'live', milestone: 'M1', accent: 120,
+    inputs: ['FASTA', 'Newick'],
+    analyses: ['Progressive multiple alignment', 'Conservation scoring', 'NJ / UPGMA with bootstrap', 'Maximum-likelihood trees (±Γ, AIC/BIC)', 'Newick import & export'],
+    engines: 'TypeScript kernels in a Web Worker',
+    limits: 'Maximum-likelihood trees up to about 60 taxa',
+    cloudLater: 'Large ML trees, dating, dN/dS',
+  },
+  {
+    id: 'genome', path: '/genome', name: 'Genome Studio', short: 'Genome',
+    blurb: 'Read QC, small-genome alignment, assembly QC, comparison and tracks.',
+    status: 'live', milestone: 'M1', accent: 55,
+    inputs: ['FASTQ', 'FASTA', 'BED / GFF'],
+    analyses: ['Streaming FASTQ read QC', 'Mapping & SNV calling (minimap2 + samtools)', 'igv.js genome browser', 'Assembly metrics', 'BED algebra', 'MinHash ANI'],
+    engines: 'WebAssembly (minimap2, samtools) + igv.js',
+    limits: 'Mapping up to about a 100 Mb reference and 300 MB of reads; SNV calling covers substitutions only',
+    cloudLater: 'Assembly, human alignment & variant calling',
+  },
+  {
+    id: 'variant', path: '/variants', name: 'Variant Studio', short: 'Variants',
+    blurb: 'VCF exploration with germline, cancer and GWAS modes.',
+    status: 'live', milestone: 'M1', accent: 330,
+    inputs: ['VCF', 'GWAS summary statistics'],
+    analyses: ['VCF QC & filtering', 'Somatic TMB / VAF', 'Mutational signatures (NMF, no COSMIC)', 'Evidence: ClinVar, CIViC, Open Targets, gnomAD', 'Ensembl VEP annotation', 'GWAS Manhattan & QQ plots'],
+    engines: 'TypeScript kernels; public APIs only when you ask for a lookup',
+    limits: 'Evidence lookups call public databases only when you ask; research use only',
+    cloudLater: 'Joint calling, LD, PRS, somatic calling',
+  },
+  {
+    id: 'singlecell', path: '/single-cell', name: 'Single-Cell & Spatial', short: 'Single-cell',
+    blurb: 'scRNA-seq from matrix to annotated clusters, then spatial context.',
+    status: 'live', milestone: 'M1', accent: 300,
+    inputs: ['Count matrix', 'Spatial coordinates (optional)', '10x triplet (via Import)'],
+    analyses: ['QC, HVG & PCA', 'SNN-Louvain clustering', 'UMAP or t-SNE', 'Markers & annotation', "Spatial statistics (Moran's I)"],
+    engines: 'TypeScript kernels in a Web Worker',
+    limits: 'UMAP and t-SNE embed up to 3,000 cells by default; clustering uses all cells',
+    cloudLater: 'Atlas-scale integration on GPU',
+  },
+  {
+    id: 'microbiome', path: '/microbiome', name: 'Microbiome Studio', short: 'Microbiome',
+    blurb: 'Diversity, ordination and differential abundance for amplicon data.',
+    status: 'live', milestone: 'M1', accent: 90,
+    inputs: ['Feature table', 'Sample metadata', 'Newick tree (optional)'],
+    analyses: ['Alpha / beta diversity', 'Weighted & unweighted UniFrac', 'PCoA & PERMANOVA', 'CLR differential abundance', 'Rarefaction'],
+    engines: 'TypeScript kernels in a Web Worker',
+    limits: 'Amplicon-scale feature tables',
+    cloudLater: 'DADA2, shotgun profiling, MAGs',
+  },
+];
+
+export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);

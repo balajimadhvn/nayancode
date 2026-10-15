@@ -1,0 +1,49 @@
+{
+  "name": "nayancode",
+  "version": "1.0.0",
+  "description": "Nayancode Workbench: open-source bioinformatics and cheminformatics that runs entirely in the web browser",
+  "license": "Apache-2.0",
+  "author": "Vivofold <support@vivofold.in>",
+  "homepage": "https://balajimadhvn.github.io/nayancode/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/balajimadhvn/nayancode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/balajimadhvn/nayancode/issues"
+  },
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/license-check.mjs && tsc --noEmit && vite build && node scripts/routes.mjs",
+    "preview": "vite preview --port 4190",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "licenses": "node scripts/license-check.mjs",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@rdkit/rdkit": "^2026.3.6",
+    "igv": "^3.8.9",
+    "molstar": "^5.12.0",
+    "motion": "^13.5.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "sass": "^1.105.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}

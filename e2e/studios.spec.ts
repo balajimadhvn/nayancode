@@ -1,0 +1,120 @@
+import { expect, test, type Page } from '@playwright/test';
+
+/** Collect page errors and console errors; ignore known third-party noise. */
+function watch(page: Page) {
+  const errs: string[] = [];
+  page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
+  page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
+  return errs;
+}
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/]];
+
+test('every route loads in one session without errors or the error boundary', async ({ page }) => {
+  const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
+  for (const [route, h1] of ROUTES) { await page.goto(`/${route}`); await expect(page.locator('h1').first()).toHaveText(h1, { timeout: 15_000 }); await expect(page.getByText('went wrong')).toHaveCount(0); await expect(page.getByText('could not be loaded')).toHaveCount(0); }
+  expect(errs).toEqual([]);
+});
+
+test('direct deep-link loads of lazy studios work (cold navigation)', async ({ page }) => {
+  const errs = watch(page);
+  for (const r of ['phylogenetics', 'variants', 'single-cell', 'genome']) { await page.goto(`/${r}?cold=1`); await expect(page.locator('h1').first()).not.toHaveText(/^$/, { timeout: 15_000 }); await expect(page.getByText('went wrong')).toHaveCount(0); }
+  expect(errs).toEqual([]);
+});
+
+test('expression: demo → DE → enrichment validates the planted pathway', async ({ page }) => {
+  const errs = watch(page); await page.goto('/expression');
+  await page.getByRole('button', { name: /Load real-gene demo/ }).click(); await page.getByRole('button', { name: 'Run analysis' }).click();
+  await expect(page.getByText('Genes tested')).toBeVisible({ timeout: 40_000 });
+  await page.getByRole('tab', { name: 'Enrichment' }).click(); await page.getByRole('button', { name: 'Run enrichment' }).click();
+  await expect(page.locator('.callout', { hasText: 'planted pathway' })).toContainText(/Interferon Signaling.{0,3} ranks #1 of/, { timeout: 40_000 });
+  expect(errs).toEqual([]);
+});
+
+test('sequence: primer design and Golden Gate demo work', async ({ page }) => {
+  const errs = watch(page); await page.goto('/sequence');
+  await page.getByRole('button', { name: 'Demo DNA' }).click(); await page.getByRole('tab', { name: 'Primer design' }).click(); await page.getByRole('button', { name: 'Design primers' }).click();
+  await expect(page.getByText('Primer pairs')).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('button', { name: 'Demo Golden Gate' }).click(); await page.getByRole('tab', { name: 'Golden Gate' }).click(); await page.getByRole('button', { name: 'Assemble' }).click();
+  await expect(page.getByText(/Assembled product/)).toBeVisible({ timeout: 20_000 });
+  expect(errs).toEqual([]);
+});
+
+test('genome: real minimap2 + samtools recover planted variants', async ({ page }) => {
+  const errs = watch(page); await page.goto('/genome');
+  await page.getByRole('tab', { name: 'Mapping & variants' }).click(); await page.getByRole('button', { name: /Demo: simulated/ }).click(); await page.getByRole('button', { name: 'Map & call' }).click();
+  await expect(page.getByText(/5\/5 planted variants recovered, 0 false positive/)).toBeVisible({ timeout: 60_000 });
+  expect(errs).toEqual([]);
+});
+
+test('structure: 1HSG interaction profile reproduces Asp25 hydrogen bonds', async ({ page }) => {
+  await page.goto('/structure'); await expect(page.getByRole('button', { name: 'Load structure' })).toBeEnabled({ timeout: 40_000 });
+  await page.getByRole('button', { name: 'Load structure' }).click(); await expect(page.getByText(/Structure analysis/)).toBeVisible({ timeout: 40_000 });
+  await page.getByRole('button', { name: 'Profile interactions' }).click();
+  await expect(page.locator('table.t tbody tr', { hasText: 'ASP 25' }).first()).toBeVisible({ timeout: 20_000 }); await expect(page.getByText(/hydrogen bond · \d+/)).toBeVisible();
+});
+
+test('chemistry: worker processes the example library; QSAR tab renders', async ({ page }) => {
+  const errs = watch(page); await page.goto('/chemistry'); await expect(page.getByRole('button', { name: /Load example/ })).toBeEnabled({ timeout: 40_000 });
+  await page.getByRole('button', { name: /Load example/ }).click(); await expect(page.locator('.mol-card').first()).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('tab', { name: 'QSAR Lab' }).click(); await expect(page.getByText('1 · Dataset')).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
+test('microbiome: UniFrac with the demo tree finds the treatment effect', async ({ page }) => {
+  const errs = watch(page); await page.goto('/microbiome'); await page.getByRole('button', { name: /Load synthetic demo/ }).click();
+  await page.locator('label.field', { hasText: 'Beta metric' }).locator('select').selectOption('unifrac-weighted'); await page.getByRole('button', { name: 'Run analysis' }).click();
+  await expect(page.getByText(/p = 0\.00\d/)).toBeVisible({ timeout: 40_000 });
+  expect(errs).toEqual([]);
+});
+
+test('single-cell: demo recovers four clusters', async ({ page }) => {
+  const errs = watch(page); await page.goto('/single-cell'); await page.getByRole('button', { name: /Run synthetic PBMC-like demo/ }).click();
+  await expect(page.getByText('Cells kept')).toBeVisible({ timeout: 60_000 }); await expect(page.locator('.stat', { hasText: 'Clusters' }).first()).toContainText('4');
+  expect(errs).toEqual([]);
+});
+
+test('report: a captured figure appears in the report with Methods', async ({ page }) => {
+  await page.goto('/expression'); await page.getByRole('button', { name: /Load synthetic demo/ }).click(); await page.getByRole('button', { name: 'Run analysis' }).click();
+  await expect(page.getByText('Genes tested')).toBeVisible({ timeout: 40_000 }); await page.getByLabel('Add figure to report').first().click();
+  await expect(page.locator('.toast')).toContainText(/Added 1 figure/);
+  // Navigate the way a user does (sidebar link), then reload to prove the figure was persisted to IndexedDB.
+  await page.getByRole('link', { name: 'Report' }).click(); await expect(page.locator('.card.card-pad img').first()).toBeVisible(); await expect(page.getByText(/median-of-ratios/)).toBeVisible();
+  await page.reload(); await expect(page.locator('.card.card-pad img').first()).toBeVisible();
+});
+
+test('expression: batch-effect demo runs ComBat and offers corrected PCA', async ({ page }) => {
+  const errs = watch(page); await page.goto('/expression');
+  await page.getByRole('button', { name: /Load batch-effect demo/ }).click(); await page.getByRole('button', { name: 'Run analysis' }).click();
+  await expect(page.getByText('Genes tested')).toBeVisible({ timeout: 40_000 });
+  await page.getByRole('tab', { name: 'PCA' }).click();
+  await expect(page.getByText(/after ComBat/)).toBeVisible(); await expect(page.getByText(/2 batches detected/)).toBeVisible();
+  await page.locator('select').filter({ hasText: 'Uncorrected' }).selectOption('raw'); await expect(page.getByText(/before ComBat/)).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
+test('import wizard: nf-core/rnaseq merged counts flow into Expression Studio', async ({ page }) => {
+  const errs = watch(page); await page.goto('/import');
+  let s = 5; const r = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
+  const rows = ['gene_id\tgene_name\tWT_REP1\tWT_REP2\tWT_REP3\tKO_REP1\tKO_REP2\tKO_REP3'];
+  for (let g = 0; g < 400; g++) rows.push(`ENSG${g}\tGENE${g}\t` + Array.from({ length: 6 }, (_, j) => Math.round((50 + r() * 200) * (g < 40 && j >= 3 ? 3 : 1))).join('\t'));
+  await page.locator('input[type=file]').setInputFiles({ name: 'salmon.merged.gene_counts.tsv', mimeType: 'text/tab-separated-values', buffer: Buffer.from(rows.join('\n')) });
+  await expect(page.getByText('RNA-seq counts').first()).toBeVisible(); await expect(page.getByPlaceholder('group, e.g. control').first()).toHaveValue('WT');
+  await page.getByRole('button', { name: 'Open in Expression Studio' }).click();
+  await expect(page.locator('h1').first()).toHaveText(/Expression Studio/); await expect(page.getByText(/Counts loaded \(400 genes\)/)).toBeVisible();
+  await page.getByRole('button', { name: 'Run analysis' }).click(); await expect(page.getByText('Genes tested')).toBeVisible({ timeout: 40_000 });
+  expect(errs).toEqual([]);
+});
+
+test('import wizard: gzipped 10x triplet flows into Single-Cell Studio', async ({ page }) => {
+  const errs = watch(page); await page.goto('/import');
+  const { gzipSync } = await import('node:zlib');
+  const mtx = '%%MatrixMarket matrix coordinate integer general\n3 4 6\n1 1 5\n2 1 2\n2 2 4\n3 3 1\n1 4 2\n3 4 6\n';
+  await page.locator('input[type=file]').setInputFiles([
+    { name: 'matrix.mtx.gz', mimeType: 'application/gzip', buffer: gzipSync(mtx) },
+    { name: 'features.tsv.gz', mimeType: 'application/gzip', buffer: gzipSync('g1\tA\ng2\tB\ng3\tC\n') },
+    { name: 'barcodes.tsv.gz', mimeType: 'application/gzip', buffer: gzipSync('b1\nb2\nb3\nb4\n') },
+  ]);
+  await page.getByRole('button', { name: 'Open in Single-Cell Studio' }).click();
+  await expect(page.locator('h1').first()).toHaveText(/Single-Cell/); await expect(page.getByText(/Loaded: matrix\.mtx/)).toBeVisible();
+  expect(errs).toEqual([]);
+});

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: data: blob:; worker-src 'self' blob:; frame-src 'self' https:; object-src 'none'; base-uri 'self'" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Nayancode Workbench: free, private bioinformatics in your browser</title>
+    <meta name="description" content="Open-source bioinformatics and cheminformatics studios that run entirely in the web browser: sequence, genome mapping, variants, RNA-seq, single-cell, microbiome, chemistry, structure and phylogenetics. By Vivofold." />
+    <script>
+      (function () { var t; try { t = localStorage.getItem('wb.theme'); } catch (e) {} if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; document.documentElement.dataset.theme = t; })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
