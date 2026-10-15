@@ -1,3 +1,4 @@
+import { newId } from './id';
 import { create } from 'zustand';
 
 /** Report store, persisted in IndexedDB (figures are PNGs and exceed localStorage quotas). Nothing leaves the browser. */
@@ -16,7 +17,7 @@ export const useReport = create<S>((set, get) => {
     ...empty, ready: false,
     hydrate: async () => { if (get().ready) return; const d = await load(); set({ ...(d ?? empty), ready: true }); },
     set: (p) => commit(p),
-    add: (f) => commit({ figures: [...get().figures, { ...f, id: crypto.randomUUID(), caption: '', created: new Date().toISOString() }] }),
+    add: (f) => commit({ figures: [...get().figures, { ...f, id: newId(), caption: '', created: new Date().toISOString() }] }),
     remove: (id) => commit({ figures: get().figures.filter((x) => x.id !== id) }),
     move: (id, d) => { const a = [...get().figures], i = a.findIndex((x) => x.id === id), j = i + d; if (i < 0 || j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; commit({ figures: a }); },
     caption: (id, c) => commit({ figures: get().figures.map((x) => (x.id === id ? { ...x, caption: c } : x)) }),

@@ -1,3 +1,4 @@
+import { copyText } from '@/core/clipboard';
 import { AnimatePresence, motion } from 'motion/react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -121,7 +122,7 @@ function MethodsDrawer() {
       {text ? (
         <>
           <div className="seqbox" style={{ fontFamily: 'var(--font)', fontSize: 13, whiteSpace: 'pre-wrap', maxHeight: 'none' }}>{text}{'\n\n'}{refs.join('\n')}</div>
-          <div className="row"><button className="btn primary" onClick={() => { void navigator.clipboard.writeText(full); toast('Methods copied'); }}>Copy</button>
+          <div className="row"><button className="btn primary" onClick={() => { void copyText(full); toast('Methods copied'); }}>Copy</button>
             <button className="btn" onClick={() => downloadText('methods.txt', full)}>Download .txt</button>
             <button className="btn" onClick={() => downloadText('provenance.json', JSON.stringify(records, null, 2), 'application/json')}>Provenance JSON</button>
             <button className="btn ghost" onClick={clear}>Clear log</button></div>

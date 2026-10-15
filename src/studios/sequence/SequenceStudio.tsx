@@ -1,3 +1,4 @@
+import { copyText } from '@/core/clipboard';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ToolInfo } from '@/core/provenance';
 import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadText, fmt, toast } from '@/ui/kit';
@@ -145,7 +146,7 @@ function Overview({ rec, alpha, dna }: { rec: FastaRecord; alpha: string; dna: s
         {error && <Callout kind="err">{error}</Callout>}
         {comp && comp.windows.length > 1 ? <LineChart xs={comp.windows.map((w) => w.pos)} ys={comp.windows.map((w) => w.gc)} xLabel="Position (nt)" yLabel="GC fraction" yMin={0} yMax={1} /> : <div className="faint">{busy ? 'Computing…' : 'Sequence shorter than one window.'}</div>}
       </Card>
-      <Card title="Sequence" actions={<><button className="btn sm" onClick={() => { void navigator.clipboard.writeText(revComp(dna)); toast('Reverse complement copied'); }}>Copy reverse complement</button><button className="btn sm" onClick={() => downloadText(`${rec.id}.fasta`, `>${rec.id}\n${dna.replace(/(.{70})/g, '$1\n')}\n`)}>Export FASTA</button></>}>
+      <Card title="Sequence" actions={<><button className="btn sm" onClick={() => { void copyText(revComp(dna)); toast('Reverse complement copied'); }}>Copy reverse complement</button><button className="btn sm" onClick={() => downloadText(`${rec.id}.fasta`, `>${rec.id}\n${dna.replace(/(.{70})/g, '$1\n')}\n`)}>Export FASTA</button></>}>
         <Colorize seq={dna} />
       </Card>
       <Card title="Frame 1 translation" sub={`to first stop · ${pp.length} aa · ${fmt(pp.mw / 1000, 2)} kDa · pI ${fmt(pp.pI, 2)}`}><div className="seqbox">{prot || '—'}</div></Card>
