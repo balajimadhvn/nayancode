@@ -1,3 +1,4 @@
+import { newId } from './id';
 import { create } from 'zustand';
 import { sha256Hex } from './hash';
 import { CITATIONS, useProvenance, type ToolInfo } from './provenance';
@@ -28,7 +29,7 @@ export const cancelJob = (id: string) => active.get(id)?.abort();
 
 /** Runs a computation as a tracked job and writes a provenance record on success. */
 export async function runJob<T>(spec: RunSpec<T>): Promise<T> {
-  const id = crypto.randomUUID();
+  const id = newId();
   const ac = new AbortController();
   active.set(id, ac);
   spec.signal?.addEventListener('abort', () => ac.abort());

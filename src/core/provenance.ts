@@ -1,3 +1,4 @@
+import { newId } from './id';
 import { create } from 'zustand';
 import { BRAND } from './brand';
 
@@ -93,7 +94,7 @@ const load = (): ProvRecord[] => { try { return JSON.parse(localStorage.getItem(
 export const useProvenance = create<ProvState>((set, get) => ({
   records: load(),
   add: (r) => {
-    const rec: ProvRecord = { ...r, id: crypto.randomUUID(), app: `${BRAND.name} ${BRAND.version}` };
+    const rec: ProvRecord = { ...r, id: newId(), app: `${BRAND.name} ${BRAND.version}` };
     const records = [...get().records, rec].slice(-200);
     try { localStorage.setItem(KEY, JSON.stringify(records)); } catch { /* storage unavailable */ }
     set({ records });
