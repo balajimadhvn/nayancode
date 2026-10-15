@@ -92,6 +92,19 @@ test('expression: batch-effect demo runs ComBat and offers corrected PCA', async
   expect(errs).toEqual([]);
 });
 
+test('expression: paired design, F-test and design errors', async ({ page }) => {
+  const errs = watch(page); await page.goto('/expression');
+  await page.getByRole('button', { name: /Load paired demo/ }).click();
+  await expect(page.getByText(/~ treatment \+ donor · 6 coefficients · 6 residual df/)).toBeVisible();
+  await page.getByRole('button', { name: 'Run analysis' }).click();
+  await expect(page.locator('.callout', { hasText: 'Validation against planted truth' })).toContainText(/sensitivity (8\d|9\d)%/, { timeout: 40_000 });
+  await page.locator('label.field', { hasText: 'Question' }).locator('select').selectOption('anova'); await page.getByRole('button', { name: 'Run analysis' }).click();
+  await expect(page.getByText(/any difference between treatment levels/)).toBeVisible({ timeout: 40_000 }); await expect(page.getByRole('columnheader', { name: 'F', exact: true })).toBeVisible();
+  await page.getByLabel('Use treatment in the model').uncheck(); await expect(page.locator('.callout', { hasText: 'must be in the design' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Run analysis' })).toBeDisabled();
+  expect(errs).toEqual([]);
+});
+
 test('import wizard: nf-core/rnaseq merged counts flow into Expression Studio', async ({ page }) => {
   const errs = watch(page); await page.goto('/import');
   let s = 5; const r = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);

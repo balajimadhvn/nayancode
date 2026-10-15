@@ -202,7 +202,7 @@ export function squeezeVar(s2: number[], df: number): { d0: number; s02: number;
 }
 
 export interface DeParams { groupA: string; groupB: string; minCpm: number; minSamples: number; lfcThreshold: number; fdr: number }
-export interface DeRow { gene: string; log2FC: number; avgExpr: number; t: number; p: number; fdr: number; sig: 'up' | 'down' | 'ns' }
+export interface DeRow { gene: string; log2FC: number; avgExpr: number; t: number; p: number; fdr: number; sig: 'up' | 'down' | 'ns'; lfcs?: number[] /* F-test: one per non-reference level */ }
 export interface DeResult { rows: DeRow[]; tested: number; filteredOut: number; priorDf: number; priorVar: number; nUp: number; nDown: number; params: DeParams }
 
 /**
