@@ -97,6 +97,11 @@ export function downloadText(name: string, text: string, mime = 'text/plain') {
   const url = URL.createObjectURL(new Blob([text], { type: mime }));
   const a = document.createElement('a'); a.href = url; a.download = brandedName(name); a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+/** Saves a binary Blob (PNG etc.) with the same branded name as downloadText. */
+export function downloadBlob(name: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = brandedName(name); a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 export const toCsv = (rows: object[]) => {
   if (!rows.length) return '';
   const k = Object.keys(rows[0]);

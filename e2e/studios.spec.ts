@@ -150,3 +150,20 @@ test('import wizard: gzipped 10x triplet flows into Single-Cell Studio', async (
   await expect(page.locator('h1').first()).toHaveText(/Single-Cell/); await expect(page.getByText(/Loaded: matrix\.mtx/)).toBeVisible();
   expect(errs).toEqual([]);
 });
+
+test('figures: a volcano plot exports to SVG, PDF and 600 dpi PNG with labelled top genes', async ({ page }) => {
+  const errs = watch(page); await page.goto('/expression');
+  await page.getByRole('button', { name: /Load real-gene demo/ }).click(); await page.getByRole('button', { name: 'Run analysis' }).click();
+  await expect(page.getByText('Genes tested')).toBeVisible({ timeout: 40_000 });
+  await page.getByRole('button', { name: 'Export figure volcano' }).click();
+  const panel = page.getByRole('group', { name: 'Figure export options' });
+  await panel.getByLabel('Title').fill('Demo volcano'); await panel.getByLabel('Label top N genes').fill('8');
+  const save = async (name: string) => { const [dl] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name, exact: true }).click()]); return dl; };
+  const svgDl = await save('SVG'); expect(svgDl.suggestedFilename()).toMatch(/^vivofold-nayancode_demo-volcano_\d{4}-\d{2}-\d{2}\.svg$/);
+  const svg = (await import('node:fs')).readFileSync((await svgDl.path())!, 'utf8');
+  expect(svg).toContain('<svg'); expect(svg).toContain('Demo volcano'); expect(svg).not.toMatch(/var\(--/); expect((svg.match(/<circle/g) ?? []).length).toBeGreaterThan(100); expect((svg.match(/id="gene-label"/g) ?? []).length).toBe(8);
+  const pdfDl = await save('PDF'); const pdf = (await import('node:fs')).readFileSync((await pdfDl.path())!, 'latin1'); expect(pdf.startsWith('%PDF-1.4')).toBe(true); expect(pdf).toContain('%%EOF');
+  const pngDl = await save('PNG 600 dpi'); const png = (await import('node:fs')).readFileSync((await pngDl.path())!);
+  expect(png.subarray(1, 4).toString()).toBe('PNG'); expect(png.readUInt32BE(16)).toBe(Math.round(114 / 25.4 * 600)); expect(png.readUInt32BE(20)).toBe(Math.round(80 / 25.4 * 600));
+  expect(errs).toEqual([]);
+});
