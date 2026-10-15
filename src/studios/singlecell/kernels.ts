@@ -70,33 +70,36 @@ export function runSingleCell(m: Sparse, p: ScParams, progress: (f: number, note
   if (kept.length < 30) throw new Error(`Only ${kept.length} cells pass QC (min genes ${p.minGenes}, max mito ${p.maxPctMito}%). Relax the thresholds.`);
   const n = kept.length;
   const cellsPer = new Uint32Array(nG); for (const c of kept) for (let k = m.indptr[c]; k < m.indptr[c + 1]; k++) cellsPer[m.indices[k]]++;
-  // --- normalise (log1p CP10k), gene mean / var ---
+  // --- normalise (log1p CP10k over genes detected in ≥ minCellsPerGene cells, as Scanpy after filter_genes) ---
   progress(0.08, 'Normalising');
-  const sum = new Float64Array(nG), sum2 = new Float64Array(nG), norm = new Float32Array(m.data.length);
-  for (const c of kept) { const f = 1e4 / nCounts[c]; for (let k = m.indptr[c]; k < m.indptr[c + 1]; k++) { const v = Math.log1p(m.data[k] * f); norm[k] = v; const g = m.indices[k]; sum[g] += v; sum2[g] += v * v; } }
-  // --- HVG (Seurat-style: dispersion z-scored within mean bins) ---
+  const libSize = new Float64Array(nC); for (const c of kept) for (let k = m.indptr[c]; k < m.indptr[c + 1]; k++) if (cellsPer[m.indices[k]] >= p.minCellsPerGene) libSize[c] += m.data[k];
+  const sum = new Float64Array(nG), sum2 = new Float64Array(nG), lin = new Float64Array(nG), lin2 = new Float64Array(nG), norm = new Float32Array(m.data.length);
+  for (const c of kept) { const f = 1e4 / (libSize[c] || 1); for (let k = m.indptr[c]; k < m.indptr[c + 1]; k++) { const x = m.data[k] * f, v = Math.log1p(x); norm[k] = v; const g = m.indices[k]; sum[g] += v; sum2[g] += v * v; const e = Math.expm1(v); lin[g] += e; lin2[g] += e * e; } }
+  // --- HVG: Seurat flavour exactly as Scanpy (flavor='seurat'): dispersion var/mean of expm1(log data), log; mean log1p;
+  //     20 equal-width bins of mean; z-score of log-dispersion within each bin; top nHvg by normalised dispersion ---
   progress(0.12, 'Highly variable genes');
   const cand: { g: number; mean: number; disp: number }[] = [];
-  for (let g = 0; g < nG; g++) { if (cellsPer[g] < p.minCellsPerGene) continue; const mean = sum[g] / n, v = Math.max(0, (sum2[g] - n * mean * mean) / (n - 1)); if (mean > 0 && v > 0) cand.push({ g, mean, disp: Math.log(v / mean) }); }
-  const nBins = 20, sortedMeans = cand.map((c) => c.mean).sort((a, b) => a - b), edges = Array.from({ length: nBins - 1 }, (_, i) => sortedMeans[Math.floor(((i + 1) * sortedMeans.length) / nBins)]);
-  const bin = (x: number) => { let b = 0; while (b < edges.length && x > edges[b]) b++; return b; };
+  for (let g = 0; g < nG; g++) { if (cellsPer[g] < p.minCellsPerGene) continue; const mu = lin[g] / n, v = Math.max(0, (lin2[g] - n * mu * mu) / (n - 1)), d = v / (mu || 1e-12); if (d > 0) cand.push({ g, mean: Math.log1p(mu), disp: Math.log(d) }); }
+  const nBins = 20, lo = Math.min(...cand.map((c) => c.mean)), hi = Math.max(...cand.map((c) => c.mean)), w = (hi - lo) / nBins || 1;
+  const bin = (x: number) => Math.min(nBins - 1, Math.max(0, Math.ceil((x - lo) / w) - 1)); // pandas.cut: right-closed bins, lowest included
   const bs = Array.from({ length: nBins }, () => ({ s: 0, s2: 0, n: 0 })); for (const c of cand) { const b = bs[bin(c.mean)]; b.s += c.disp; b.s2 += c.disp ** 2; b.n++; }
-  const z = cand.map((c) => { const b = bs[bin(c.mean)], mu = b.s / b.n, sd = Math.sqrt(Math.max(1e-12, b.s2 / b.n - mu * mu)); return { g: c.g, z: b.n > 1 ? (c.disp - mu) / sd : 0 }; }).sort((a, b) => b.z - a.z);
-  const nH = Math.min(p.nHvg, Math.max(50, Math.floor(cand.length * 0.5)), cand.length), hvg = z.slice(0, nH).map((x) => x.g);
+  const z = cand.map((c) => { const b = bs[bin(c.mean)], mu = b.s / b.n; if (b.n === 1) return { g: c.g, z: (c.disp - 0) / mu }; const sd = Math.sqrt(Math.max(1e-300, (b.s2 - b.n * mu * mu) / (b.n - 1))); return { g: c.g, z: (c.disp - mu) / sd }; }).filter((x) => Number.isFinite(x.z)).sort((a, b) => b.z - a.z);
+  // At most half the candidate genes, so that small panels keep a real selection (no effect once there are ≥ 2·nHvg genes).
+  const nH = Math.min(p.nHvg, Math.max(50, Math.floor(z.length * 0.5)), z.length), hvg = z.slice(0, nH).map((x) => x.g);
   // --- scale (dense cells × hvg) ---
   progress(0.18, 'Scaling');
   const gi = new Int32Array(nG).fill(-1); hvg.forEach((g, i) => (gi[g] = i));
   const X = new Float32Array(n * nH);
   kept.forEach((c, r) => { for (let k = m.indptr[c]; k < m.indptr[c + 1]; k++) { const j = gi[m.indices[k]]; if (j >= 0) X[r * nH + j] = norm[k]; } });
-  for (let j = 0; j < nH; j++) { const g = hvg[j], mean = sum[g] / n, sd = Math.sqrt(Math.max(1e-12, (sum2[g] - n * mean * mean) / (n - 1))); for (let r = 0; r < n; r++) { const v = (X[r * nH + j] - mean) / sd; X[r * nH + j] = Math.max(-10, Math.min(10, v)); } }
+  for (let j = 0; j < nH; j++) { const g = hvg[j], mean = sum[g] / n, sd = Math.sqrt(Math.max(1e-12, (sum2[g] - n * mean * mean) / (n - 1))); for (let r = 0; r < n; r++) { const v = (X[r * nH + j] - mean) / sd; X[r * nH + j] = Math.min(10, v); /* upper side only, as Scanpy */ } }
   // --- randomized PCA ---
   progress(0.25, 'PCA');
-  const kPc = Math.min(p.nPcs, nH - 1, n - 1), l = Math.min(kPc + 10, nH, n), rnd = rngf(p.seed);
+  const kPc = Math.min(p.nPcs, nH - 1, n - 1), l = Math.min(kPc + 20, nH, n), rnd = rngf(p.seed);
   const mulXA = (A: Float64Array[], ncol: number): Float64Array[] => Array.from({ length: ncol }, (_, c) => { const out = new Float64Array(n); const a = A[c]; for (let r = 0; r < n; r++) { let s = 0; const off = r * nH; for (let j = 0; j < nH; j++) s += X[off + j] * a[j]; out[r] = s; } return out; }); // columns of X·A
   const mulXtY = (Y: Float64Array[]): Float64Array[] => Y.map((y) => { const out = new Float64Array(nH); for (let r = 0; r < n; r++) { const yr = y[r], off = r * nH; if (yr) for (let j = 0; j < nH; j++) out[j] += X[off + j] * yr; } return out; });
   const orth = (cols: Float64Array[]) => { for (let a = 0; a < cols.length; a++) { for (let b = 0; b < a; b++) { let d = 0; for (let i = 0; i < cols[a].length; i++) d += cols[a][i] * cols[b][i]; for (let i = 0; i < cols[a].length; i++) cols[a][i] -= d * cols[b][i]; } let nr = 0; for (let i = 0; i < cols[a].length; i++) nr += cols[a][i] ** 2; nr = Math.sqrt(nr) || 1; for (let i = 0; i < cols[a].length; i++) cols[a][i] /= nr; } return cols; };
   let Q = orth(mulXA(Array.from({ length: l }, () => Float64Array.from({ length: nH }, () => gaussf(rnd))), l));
-  for (let it = 0; it < 3; it++) Q = orth(mulXA(orth(mulXtY(Q)), l));
+  for (let it = 0; it < 7; it++) Q = orth(mulXA(orth(mulXtY(Q)), l)); // 20 extra columns + 7 power iterations: lower PCs match exact SVD
   const Bt = mulXtY(Q); // columns: Xᵀ q_i (length nH) -> B = Qᵀ X has rows = Bt[i]
   const M = Array.from({ length: l }, () => new Float64Array(l)); for (let a = 0; a < l; a++) for (let b = a; b < l; b++) { let s = 0; for (let j = 0; j < nH; j++) s += Bt[a][j] * Bt[b][j]; M[a][b] = M[b][a] = s; }
   const { values, vectors } = jacobiEigen(M); const ord = values.map((v, i) => [v, i] as const).sort((a, b) => b[0] - a[0]).slice(0, kPc);
@@ -212,7 +215,7 @@ export function morans(coords: [number, number][], genes: { name: string; v: Flo
 export function syntheticPbmcLike(seed = 12, nCells = 900, nGenes = 1500): { counts: string; coords: string; truth: string[] } {
   const r = rngf(seed), types = ['T cells', 'B cells', 'NK cells', 'CD14+ monocytes'], mk = [['CD3D', 'CD3E', 'IL7R', 'LTB'], ['MS4A1', 'CD79A', 'CD79B', 'CD74'], ['NKG7', 'GNLY', 'NCAM1', 'KLRD1'], ['CD14', 'LYZ', 'S100A9', 'S100A8']];
   const genes: string[] = [...mk.flat(), 'MT-CO1', 'MT-ND1', 'MT-CYB']; for (let i = genes.length; i < nGenes; i++) genes.push(`GENE${String(i).padStart(4, '0')}`);
-  const base = genes.map(() => Math.exp(-2.2 + 2.2 * r())), cells: string[] = [], truth: string[] = [], rows = genes.map(() => [] as number[]), xy: string[] = ['barcode,x,y'];
+  const base = genes.map(() => Math.exp(-2.5 + 4.5 * r())), /* background spans the marker expression range, as in real data */ cells: string[] = [], truth: string[] = [], rows = genes.map(() => [] as number[]), xy: string[] = ['barcode,x,y'];
   const centers = [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]];
   const pois = (l: number) => { if (l > 40) return Math.max(0, Math.round(l + Math.sqrt(l) * gaussf(r))); const L = Math.exp(-l); let k = 0, p = 1; do { k++; p *= r(); } while (p > L); return k - 1; };
   for (let c = 0; c < nCells; c++) {

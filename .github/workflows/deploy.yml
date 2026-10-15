@@ -17,6 +17,8 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm test
+      - name: Benchmark vs DESeq2, limma-voom and edgeR (committed public data)
+        run: npm run bench -- benchmarks/deseq2
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
@@ -27,6 +29,21 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with: { path: dist }
+  # Single-cell vs Scanpy needs the 10x PBMC3k download; it reports but does not block a deploy if the download fails.
+  singlecell-benchmark:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/cache@v4
+        with: { path: benchmarks/.cache, key: "bench-data-${{ hashFiles('benchmarks/fetch.sh') }}" }
+      - run: npm ci
+      - run: bash benchmarks/fetch.sh
+      - run: npm run bench -- benchmarks/scanpy
+      - uses: actions/upload-artifact@v4
+        with: { name: benchmark-results, path: benchmarks/results/ }
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: build

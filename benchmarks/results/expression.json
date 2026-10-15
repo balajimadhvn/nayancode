@@ -13,7 +13,7 @@
     "samples": 8,
     "genesIn": 33469,
     "genesTested": 15041,
-    "runtimeMs": 994,
+    "runtimeMs": 955,
     "vsLimmaVoom": {
       "genesCompared": 15041,
       "maxAbsTDiff": 0,
@@ -74,7 +74,7 @@
     "samples": 7,
     "genesIn": 12359,
     "genesTested": 8047,
-    "runtimeMs": 364,
+    "runtimeMs": 357,
     "vsLimmaVoom": {
       "genesCompared": 8047,
       "maxAbsTDiff": 1e-8,
