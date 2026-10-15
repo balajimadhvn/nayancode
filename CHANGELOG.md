@@ -1,6 +1,13 @@
 # Changelog
 
 ## Unreleased
+- Publication-ready figures: every chart exports to SVG (editable text, light or dark), PDF (vector) and PNG at 300 or
+  600 dpi, with width and height in mm, font size, a colour-blind-safe palette (Okabe–Ito) and editable title and axis
+  labels. Volcano and MA plots can label the top N genes with collision avoidance.
+- Lab Studio (`/lab`): qPCR ΔΔCt (Livak) and efficiency-corrected Pfaffl with multiple reference genes, geNorm,
+  technical-replicate outlier flags, t-test / ANOVA on ΔCt and standard-curve efficiency; 4PL / 5PL dose–response with
+  IC50 confidence intervals; power and sample size for t tests, ANOVA, proportions, log-rank and RNA-seq. Validated
+  against the original papers and R (drc, pwr, RNASeqPower, gsDesign, NormqPCR), see benchmarks/RESULTS.md.
 - Downloaded files are named `vivofold-nayancode_<name>_<date>.<ext>`.
 - Expression Studio defaults to testing the treatment rather than a paired donor or batch column.
 - Usability-study kit in `docs/usability/` (protocol, consent form, tasks, SUS questionnaire, analysis script).
