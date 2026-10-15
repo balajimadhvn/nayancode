@@ -1,0 +1,127 @@
+{
+  "versions": {
+    "scanpy": "1.12.4",
+    "anndata": "0.13.4",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "leidenalg": "0.12.0",
+    "igraph": "1.0.0"
+  },
+  "settings": {
+    "minGenes": 200,
+    "maxPctMito": 20,
+    "minCells": 3,
+    "nHvg": 2000,
+    "nPcs": 20,
+    "k": 15,
+    "resolution": 0.8
+  },
+  "runtimeMs": 5728,
+  "cells": {
+    "workbench": 2699,
+    "scanpy": 2699,
+    "common": 2699
+  },
+  "hvg": {
+    "workbench": 2000,
+    "scanpy": 2000,
+    "shared": 1996,
+    "jaccard": 0.996
+  },
+  "pcAbsCorrelation": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.999,
+    0.229,
+    0.22,
+    0.94
+  ],
+  "pcBestMatchAbsCorrelation": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0.999,
+    0.95,
+    0.892,
+    0.94
+  ],
+  "clusters": {
+    "workbench": 10,
+    "scanpy": 10,
+    "ariWorkbenchVsScanpy": 0.7523,
+    "nmiWorkbenchVsScanpy": 0.8356,
+    "annotatedCells": 2638,
+    "cellTypes": 8,
+    "ariVsAnnotation": {
+      "workbench": 0.6078,
+      "scanpy": 0.6359
+    },
+    "nmiVsAnnotation": {
+      "workbench": 0.7745,
+      "scanpy": 0.7942
+    }
+  },
+  "markers": {
+    "meanSharedTop10": 8.6,
+    "perCluster": [
+      {
+        "scanpyCluster": "0",
+        "workbenchCluster": 0,
+        "shared": 8
+      },
+      {
+        "scanpyCluster": "1",
+        "workbenchCluster": 1,
+        "shared": 7
+      },
+      {
+        "scanpyCluster": "2",
+        "workbenchCluster": 9,
+        "shared": 5
+      },
+      {
+        "scanpyCluster": "3",
+        "workbenchCluster": 4,
+        "shared": 9
+      },
+      {
+        "scanpyCluster": "4",
+        "workbenchCluster": 3,
+        "shared": 10
+      },
+      {
+        "scanpyCluster": "5",
+        "workbenchCluster": 5,
+        "shared": 9
+      },
+      {
+        "scanpyCluster": "6",
+        "workbenchCluster": 6,
+        "shared": 10
+      },
+      {
+        "scanpyCluster": "7",
+        "workbenchCluster": 2,
+        "shared": 10
+      },
+      {
+        "scanpyCluster": "8",
+        "workbenchCluster": 7,
+        "shared": 8
+      },
+      {
+        "scanpyCluster": "9",
+        "workbenchCluster": 8,
+        "shared": 10
+      }
+    ]
+  }
+}
