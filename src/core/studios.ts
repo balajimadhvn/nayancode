@@ -64,7 +64,7 @@ export const STUDIOS: StudioDef[] = [
     inputs: ['FASTA', 'Newick'],
     analyses: ['Progressive multiple alignment', 'Conservation scoring', 'NJ / UPGMA with bootstrap', 'Maximum-likelihood trees (±Γ, AIC/BIC)', 'Newick import & export'],
     engines: 'TypeScript kernels in a Web Worker',
-    limits: 'Maximum-likelihood trees up to about 60 taxa',
+    limits: 'Maximum-likelihood trees up to 150 taxa (local NNI search); bootstrap runs in parallel on your CPU cores',
     cloudLater: 'Large ML trees, dating, dN/dS',
   },
   {
@@ -72,9 +72,9 @@ export const STUDIOS: StudioDef[] = [
     blurb: 'Read QC, small-genome alignment, assembly QC, comparison and tracks.',
     status: 'live', milestone: 'M1', accent: 55,
     inputs: ['FASTQ', 'FASTA', 'BED / GFF'],
-    analyses: ['Streaming FASTQ read QC', 'Mapping & SNV calling (minimap2 + samtools)', 'igv.js genome browser', 'Assembly metrics', 'BED algebra', 'MinHash ANI'],
+    analyses: ['Streaming FASTQ read QC', 'Mapping, SNV & indel calling (minimap2, samtools, bcftools)', 'igv.js genome browser', 'Assembly metrics', 'BED algebra', 'MinHash ANI'],
     engines: 'WebAssembly (minimap2, samtools) + igv.js',
-    limits: 'Mapping up to about a 100 Mb reference and 300 MB of reads; SNV calling covers substitutions only',
+    limits: 'Mapping up to about a 100 Mb reference and 300 MB of reads; SNVs and short indels, no structural variants',
     cloudLater: 'Assembly, human alignment & variant calling',
   },
   {

@@ -29,7 +29,7 @@ export default function GenomeStudio() {
   const [tab, setTab] = useState<Tab>('reads'), [mapped, setMapped] = useState<Mapped | null>(null);
   return (
     <div className="stack" style={{ gap: 18 }}>
-      <div className="page-head"><div><h1>Genome Studio</h1><p>Streaming read QC, mapping with real minimap2 and samtools (WebAssembly), SNV calling, an igv.js genome browser, assembly metrics, interval algebra and MinHash genome comparison. Everything runs in your browser.</p></div></div>
+      <div className="page-head"><div><h1>Genome Studio</h1><p>Streaming read QC, mapping with real minimap2, samtools and bcftools (WebAssembly), SNV and indel calling, an igv.js genome browser, assembly metrics, interval algebra and MinHash genome comparison. Everything runs in your browser.</p></div></div>
       <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'reads', label: 'Read QC' }, { id: 'mapping', label: 'Mapping & variants' }, { id: 'browser', label: 'Genome browser' }, { id: 'assembly', label: 'Assembly' }, { id: 'intervals', label: 'Intervals & annotation' }, { id: 'compare', label: 'Genome comparison' }]} />
       {tab === 'reads' && <ReadQc />}<div hidden={tab !== 'mapping'}><MappingPanel onMapped={setMapped} onBrowse={() => setTab('browser')} /></div>{tab === 'browser' && <GenomeBrowser mapped={mapped} />}{tab === 'assembly' && <Assembly />}{tab === 'intervals' && <Intervals />}{tab === 'compare' && <Compare />}
     </div>

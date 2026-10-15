@@ -1,4 +1,4 @@
-/* Runs the vendored Emscripten builds (minimap2, samtools) inside a classic Web Worker.
+/* Runs the vendored Emscripten builds (minimap2, samtools, bcftools) inside a classic Web Worker.
  * Each module is evaluated in its own Function scope, because both define a global `Module`.
  * Protocol:  {id, tool, args, files:{name: Uint8Array|string}, outputs:[names]}  →  {id, result:{code, stdout, stderr, out:{name:Uint8Array}}} | {id, error} | {id, log}
  * A fresh module instance is created per call (these CLIs are not re-entrant). */

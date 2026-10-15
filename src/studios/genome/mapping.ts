@@ -3,13 +3,21 @@
 import { revComp } from '../sequence/kernels';
 
 const rng = (seed: number) => { let s = seed >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); };
+/** A planted variant: `pos` is 0-based; `ref`/`alt` may differ in length (VCF-style indel with a shared first base). */
 export interface PlantedSnv { pos: number; ref: string; alt: string; af: number }
-/** Simulate single-end reads with substitution errors and planted variants (clearly synthetic; for demos and tests). */
+export type PlantedVariant = PlantedSnv;
+const applyVariants = (ref: string, vs: PlantedSnv[]) => [...vs].sort((x, y) => y.pos - x.pos).reduce((s, v) => s.slice(0, v.pos) + v.alt + s.slice(v.pos + v.ref.length), ref);
+/**
+ * Simulate single-end reads with substitution errors and planted SNVs or indels (clearly synthetic; for demos and tests).
+ * Variants with af = 1 are on every read; variants with af < 1 share one alternate haplotype sampled at their mean af.
+ */
 export function simulateReads(ref: string, o: { n: number; len: number; err: number; snvs: PlantedSnv[]; seed?: number }): { fastq: string; truth: PlantedSnv[] } {
   const r = rng(o.seed ?? 1), out: string[] = [], B = 'ACGT';
+  const fixed = o.snvs.filter((v) => v.af >= 1), partial = o.snvs.filter((v) => v.af < 1);
+  const hapFixed = applyVariants(ref, fixed), hapAll = applyVariants(ref, o.snvs), pAll = partial.length ? partial.reduce((a, v) => a + v.af, 0) / partial.length : 1;
   for (let i = 0; i < o.n; i++) {
-    const start = Math.floor(r() * (ref.length - o.len + 1)); let seq = ref.slice(start, start + o.len).split('');
-    for (const v of o.snvs) if (v.pos >= start && v.pos < start + o.len && r() < v.af) seq[v.pos - start] = v.alt;
+    const hap = r() < pAll ? hapAll : hapFixed;
+    const start = Math.floor(r() * (hap.length - o.len + 1)); let seq = hap.slice(start, start + o.len).split('');
     const q = seq.map(() => { const e = r() < o.err; return e ? 12 : 36; });
     seq = seq.map((b, k) => (q[k] === 12 && r() < 0.85 ? B[(B.indexOf(b) + 1 + Math.floor(r() * 3)) % 4] : b));
     let s = seq.join(''), qs = q.map((x) => String.fromCharCode(33 + x)).join(''); if (r() < 0.5) { s = revComp(s); qs = [...qs].reverse().join(''); }
@@ -34,7 +42,7 @@ export function summariseDepth(text: string, bins = 400): Coverage[] {
   return [...per.entries()].map(([contig, d]) => { const n = d.length, step = Math.max(1, Math.ceil(n / bins)), b: number[] = []; for (let i = 0; i < n; i += step) { const sl = d.slice(i, i + step); b.push(sl.reduce((x, y) => x + y, 0) / sl.length); } return { contig, length: n, mean: d.reduce((x, y) => x + y, 0) / n, pct1x: (d.filter((x) => x >= 1).length / n) * 100, pct10x: (d.filter((x) => x >= 10).length / n) * 100, pct30x: (d.filter((x) => x >= 30).length / n) * 100, bins: b }; });
 }
 
-export interface SnvCall { chrom: string; pos: number; ref: string; alt: string; depth: number; altCount: number; af: number; fwd: number; rev: number; qual: number; flags: string[] }
+export interface SnvCall { chrom: string; pos: number; ref: string; alt: string; depth: number; altCount: number; af: number; fwd: number; rev: number; qual: number; flags: string[]; gt?: string; indel?: boolean }
 export interface CallerOpts { minDepth: number; minAlt: number; minAf: number; minBaseQ: number }
 export const DEFAULT_CALLER: CallerOpts = { minDepth: 10, minAlt: 4, minAf: 0.05, minBaseQ: 20 };
 const lgamma = (x: number): number => { const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5]; let y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t); let s = 1.000000000190015; for (const cj of c) s += cj / ++y; return -t + Math.log((2.5066282746310005 * s) / x); };
@@ -69,4 +77,25 @@ export function callSnvs(pileup: string, opt: Partial<CallerOpts> = {}): SnvCall
 export function snvsToVcf(calls: SnvCall[], contigs: { id: string; length: number }[], sample = 'sample'): string {
   const head = ['##fileformat=VCFv4.2', '##source=Workbench-mpileup-SNV-caller', ...contigs.map((c) => `##contig=<ID=${c.id},length=${c.length}>`), '##INFO=<ID=DP,Number=1,Type=Integer,Description="Filtered depth">', '##INFO=<ID=AF,Number=A,Type=Float,Description="Allele fraction">', '##INFO=<ID=SB,Number=2,Type=Integer,Description="Alt reads fwd,rev">', '##FILTER=<ID=strand-bias,Description="Alt reads on one strand only">', '##FILTER=<ID=low-AF,Description="Allele fraction below 20%">', '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">', '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Depth">', '##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths">', `#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t${sample}`];
   return head.concat(calls.map((c) => `${c.chrom}\t${c.pos}\t.\t${c.ref}\t${c.alt}\t${c.qual.toFixed(1)}\t${c.flags.length ? c.flags.join(';') : 'PASS'}\tDP=${c.depth};AF=${c.af.toFixed(4)};SB=${c.fwd},${c.rev}\tGT:DP:AD\t${c.af > 0.8 ? '1/1' : '0/1'}:${c.depth}:${c.depth - c.altCount},${c.altCount}`)).join('\n') + '\n';
+}
+
+/**
+ * Reads `bcftools call -mv` output into the same rows as the built-in caller. Depth, alternate reads and strands come
+ * from DP4 (ref-fwd, ref-rev, alt-fwd, alt-rev); records below QUAL 20 are flagged low-qual.
+ */
+export function parseBcftoolsVcf(vcf: string): SnvCall[] {
+  const calls: SnvCall[] = [];
+  for (const line of vcf.split('\n')) {
+    if (!line || line[0] === '#') continue;
+    const f = line.split('\t'); if (f.length < 8) continue;
+    const info = new Map(f[7].split(';').map((kv) => { const i = kv.indexOf('='); return i < 0 ? [kv, ''] : [kv.slice(0, i), kv.slice(i + 1)]; }));
+    const dp4 = (info.get('DP4') ?? '').split(',').map(Number), gt = f[9]?.split(':')[0];
+    const [rf, rr, af_, ar] = dp4.length === 4 ? dp4 : [0, 0, 0, 0], depth = dp4.length === 4 ? rf + rr + af_ + ar : +(info.get('DP') ?? 0);
+    const qual = +f[5], flags: string[] = [];
+    if (qual < 20) flags.push('low-qual');
+    const alt = f[4].split(',')[0], altCount = af_ + ar;
+    if (altCount >= 8 && Math.min(af_, ar) / altCount < 0.1) flags.push('strand-bias');
+    calls.push({ chrom: f[0], pos: +f[1], ref: f[3], alt, depth, altCount, af: depth ? altCount / depth : 0, fwd: af_, rev: ar, qual, flags, gt, indel: info.has('INDEL') });
+  }
+  return calls;
 }

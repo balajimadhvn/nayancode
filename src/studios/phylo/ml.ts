@@ -1,11 +1,11 @@
 /** Maximum-likelihood tree inference. Clean-room implementation (no PhyML / IQ-TREE / RAxML / FastTree code):
  *  Felsenstein's pruning algorithm (1981), JC69 / K80 / HKY85 / F81-type models for DNA and an equal-rates "Poisson" model for protein,
  *  optional discrete-Γ rate heterogeneity (Yang 1994, 4 categories), per-edge Brent optimisation and NNI hill-climbing.
- *  Intended for ≲ 60 taxa and ≲ 3,000 sites in the browser; use IQ-TREE on a server for large analyses. */
-import type { TreeNode } from './kernels';
+ *  Intended for ≲ 150 taxa and ≲ 5,000 sites in the browser; bootstrap replicates run in parallel workers. */
+import { distanceMatrix, lcg, nj, resampleColumns, supportFromTrees, type TreeNode } from './kernels';
 
 export type MlModel = 'JC69' | 'K80' | 'HKY85' | 'Poisson';
-export interface MlOptions { model: MlModel; gamma: boolean; alpha?: number; maxRounds?: number }
+export interface MlOptions { model: MlModel; gamma: boolean; alpha?: number; maxRounds?: number; fixedAlpha?: boolean }
 const DNA = 'ACGT';
 interface Prep { n: number; L: number; S: number; codes: Uint8Array[]; freqs: number[]; kappa: number; alpha: number; cats: number; rates: number[]; model: MlModel }
 
@@ -90,7 +90,26 @@ function optimiseEdge(p: Prep, t: MTree, i: number): number { // golden-section 
   for (let it = 0; it < 22; it++) { if (fc > fd) { b = dd; dd = c; fd = fc; c = b - g * (b - a); fc = f(c); } else { a = c; c = dd; fc = fd; dd = a + g * (b - a); fd = f(dd); } }
   const x = (a + b) / 2; t.nodes[i].len = x; return f(x);
 }
-function optimiseAll(p: Prep, t: MTree, passes = 2): number { for (let k = 0; k < passes; k++) for (const nd of t.nodes) if (nd.id !== t.root) optimiseEdge(p, t, nd.id); return logLik(p, t); }
+function optimiseAllExact(p: Prep, t: MTree, passes = 2): number { for (let k = 0; k < passes; k++) for (const nd of t.nodes) if (nd.id !== t.root) optimiseEdge(p, t, nd.id); return logLik(p, t); }
+/**
+ * Branch-length passes that optimise every edge against one shared set of partial likelihoods (O(n) per pass instead of
+ * O(n²)). A pass whose joint update would lower the likelihood is undone and replaced by the exact sequential pass, so
+ * the likelihood never decreases.
+ */
+function optimiseAll(p: Prep, t: MTree, passes = 2): number {
+  let ll = logLik(p, t); const g = 0.618033988749895, tmp = new Float64Array(p.S * p.S);
+  for (let k = 0; k < passes; k++) {
+    const d = computeDown(p, t), up = computeUp(p, t, d), old = t.nodes.map((n) => n.len);
+    const next = t.nodes.map((nd) => { if (nd.id === t.root) return nd.len; const f = (x: number) => edgeLogLik(p, d, up, nd.id, x, tmp);
+      let a = 1e-6, b = 5, c = b - g * (b - a), e = a + g * (b - a), fc = f(c), fe = f(e);
+      for (let it = 0; it < 22; it++) { if (fc > fe) { b = e; e = c; fe = fc; c = b - g * (b - a); fc = f(c); } else { a = c; c = e; fc = fe; e = a + g * (b - a); fe = f(e); } }
+      return (a + b) / 2; });
+    next.forEach((x, i) => (t.nodes[i].len = x));
+    const nl = logLik(p, t);
+    if (nl + 1e-9 < ll) { old.forEach((x, i) => (t.nodes[i].len = x)); ll = optimiseAllExact(p, t, 1); } else ll = nl;
+  }
+  return ll;
+}
 function clone(t: MTree): MTree { return { root: t.root, nodes: t.nodes.map((n) => ({ ...n })) }; }
 function nniNeighbours(t: MTree): MTree[] { // for each internal non-root edge (u with parent v): swap one child of u with u's sibling
   const out: MTree[] = [];
@@ -100,7 +119,7 @@ function nniNeighbours(t: MTree): MTree[] { // for each internal non-root edge (
 export interface MlResult { tree: TreeNode; logL: number; k: number; aic: number; bic: number; rounds: number; alpha: number | null; model: string }
 /** Optimise branch lengths (and α) on a starting topology, then hill-climb with NNI. */
 export function inferMl(aln: string[], names: string[], start: TreeNode, o: MlOptions, progress?: (f: number, note: string) => void): MlResult {
-  if (aln.length < 4) throw new Error('Maximum likelihood needs at least 4 sequences.'); if (aln.length > 60) throw new Error('The browser ML engine is limited to 60 taxa; use IQ-TREE on a server for larger sets.');
+  if (aln.length < 4) throw new Error('Maximum likelihood needs at least 4 sequences.'); if (aln.length > 150) throw new Error('The browser ML engine is limited to 150 taxa; for larger sets use neighbour-joining here, or IQ-TREE / RAxML-NG on a workstation.');
   if (new Set(aln.map((r) => r.length)).size !== 1) throw new Error('Sequences must be aligned (equal length).');
   let p = prepare(aln, o), tree = fromNewickTree(start, names); let ll = optimiseAll(p, tree, 2), rounds = 0; progress?.(0.1, `start lnL ${ll.toFixed(1)}`);
   const maxRounds = o.maxRounds ?? 6;
@@ -110,7 +129,8 @@ export function inferMl(aln: string[], names: string[], start: TreeNode, o: MlOp
     if (!improved) break;
   }
   let alphaOut: number | null = null;
-  if (o.gamma) { let best = p.alpha, bl = ll; for (const a of [0.2, 0.35, 0.5, 0.75, 1, 1.5, 2.5, 5, 10]) { const q = { ...p, alpha: a, rates: gammaRates(a) }; const l = logLik(q, tree); if (l > bl) { bl = l; best = a; } } p = { ...p, alpha: best, rates: gammaRates(best) }; ll = optimiseAll(p, tree, 2); alphaOut = best; }
+  if (o.gamma && !o.fixedAlpha) { let best = p.alpha, bl = ll; for (const a of [0.2, 0.35, 0.5, 0.75, 1, 1.5, 2.5, 5, 10]) { const q = { ...p, alpha: a, rates: gammaRates(a) }; const l = logLik(q, tree); if (l > bl) { bl = l; best = a; } } p = { ...p, alpha: best, rates: gammaRates(best) }; ll = optimiseAll(p, tree, 2); alphaOut = best; }
+  if (!o.fixedAlpha) ll = optimiseAllExact(p, tree, 2); // final exact polish of the reported tree (replicates skip it)
   const kParams = 2 * aln.length - 3 + (o.model === 'HKY85' ? 4 : o.model === 'K80' ? 1 : 0) + (o.gamma ? 1 : 0), n = aln[0].length;
   progress?.(1, 'done');
   return { tree: toTree(tree, names), logL: ll, k: kParams, aic: 2 * kParams - 2 * ll, bic: kParams * Math.log(n) - 2 * ll, rounds: rounds + 1, alpha: alphaOut, model: `${o.model}${o.gamma ? '+Γ4' : ''}` };
@@ -118,3 +138,21 @@ export function inferMl(aln: string[], names: string[], start: TreeNode, o: MlOp
 /** Transition-probability matrix P(t) for a model (exposed for validation). */
 export function transitionMatrix(model: MlModel, t: number, freqs: number[], kappa: number): number[][] { const S = model === 'Poisson' ? 20 : 4, p: Prep = { n: 0, L: 0, S, codes: [], freqs, kappa, alpha: 1, cats: 1, rates: [1], model }, out = new Float64Array(S * S); pmatrix(p, t, 1, out); return Array.from({ length: S }, (_, i) => Array.from(out.slice(i * S, i * S + S))); }
 export const logLikelihood = (aln: string[], names: string[], tree: TreeNode, o: MlOptions) => { const p = prepare(aln, o), t = fromNewickTree(tree, names); return logLik(p, t); };
+
+/**
+ * Non-parametric bootstrap replicates for ML (Felsenstein 1985): each replicate resamples alignment columns, starts
+ * from its own neighbour-joining tree and is re-optimised (branch lengths + NNI, Γ shape fixed at the full-data value).
+ */
+export function mlReplicateTrees(aln: string[], names: string[], o: MlOptions, reps: number, progress?: (done: number) => void, seed = 1): TreeNode[] {
+  const rnd = lcg(seed), trees: TreeNode[] = [], dist = o.model === 'Poisson' ? 'poisson' : 'jc';
+  for (let r = 0; r < reps; r++) {
+    const rs = resampleColumns(aln, rnd);
+    trees.push(inferMl(rs, names, nj(distanceMatrix(rs, dist), names), { ...o, fixedAlpha: true, maxRounds: o.maxRounds ?? 3 }).tree);
+    progress?.(r + 1);
+  }
+  return trees;
+}
+/** The ML tree annotated with the % of bootstrap replicates that contain each split (single thread). */
+export function mlBootstrap(aln: string[], names: string[], mlTree: TreeNode, o: MlOptions, reps: number, progress?: (f: number) => void, seed = 1): TreeNode {
+  return supportFromTrees(mlTree, names, mlReplicateTrees(aln, names, o, reps, (d) => progress?.(d / reps), seed));
+}

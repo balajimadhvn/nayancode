@@ -1,6 +1,6 @@
 import { exposeKernels, type Kernel } from '@/compute/rpc';
 import * as k from './kernels';
-import { inferMl, type MlModel } from './ml';
+import { inferMl, mlReplicateTrees, type MlModel } from './ml';
 
 export interface TreeJob { names: string[]; aligned: string[]; model: k.DistModel; method: 'nj' | 'upgma' | 'ml'; reps: number; root: 'midpoint' | 'none'; ml?: { model: MlModel; gamma: boolean } }
 export interface MlStats { logL: number; aic: number; bic: number; k: number; alpha: number | null; model: string; rounds: number }
@@ -20,5 +20,8 @@ const tree: Kernel<TreeJob, { newick: string; supported: boolean; distMax: numbe
   if (a.reps > 0) t = k.bootstrapSupport(a.aligned, a.names, t, a.model, a.method, a.reps, (p) => ctx.progress(0.2 + 0.78 * p, `Bootstrap ${Math.round(p * a.reps)}/${a.reps}`));
   return { newick: k.toNewick(t), supported: a.reps > 0, distMax: Math.max(...D.flat()), D };
 };
-export type PhyloKernels = { msa: typeof msa; tree: typeof tree };
-exposeKernels({ msa, tree } as Record<string, Kernel>);
+/** A share of the ML bootstrap; the studio runs several of these in parallel workers and pools the trees. */
+const mlReplicates: Kernel<{ names: string[]; aligned: string[]; model: MlModel; gamma: boolean; alpha: number | null; reps: number; seed: number }, string[]> = (a, ctx) =>
+  mlReplicateTrees(a.aligned, a.names, { model: a.model, gamma: a.gamma, alpha: a.alpha ?? 1 }, a.reps, (d) => ctx.progress(d / a.reps, `${d}/${a.reps}`), a.seed).map((t) => k.toNewick(t));
+export type PhyloKernels = { msa: typeof msa; tree: typeof tree; mlReplicates: typeof mlReplicates };
+exposeKernels({ msa, tree, mlReplicates } as Record<string, Kernel>);

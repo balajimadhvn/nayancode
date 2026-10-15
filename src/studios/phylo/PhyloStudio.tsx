@@ -6,15 +6,30 @@ import { useRunner } from '@/ui/useRunner';
 import { Histogram, cssVar } from '@/viz/charts';
 import { MatrixHeat, MsaView, TreeView } from '@/viz/more';
 import { detectAlphabet, parseFasta, toDNA } from '../sequence/kernels';
-import { parseNewick, syntheticFamily, toNewick, type DistModel, type TreeNode } from './kernels';
+import { parseNewick, supportFromTrees, syntheticFamily, toNewick, type DistModel, type TreeNode } from './kernels';
 import type { MlStats, PhyloKernels } from './phylo.worker';
 import type { MlModel } from './ml';
 
-const remote = createRemote<PhyloKernels>(() => new Worker(new URL('./phylo.worker.ts', import.meta.url), { type: 'module' }));
+const spawn = () => new Worker(new URL('./phylo.worker.ts', import.meta.url), { type: 'module' });
+const remote = createRemote<PhyloKernels>(spawn);
+const cores = () => Math.max(1, Math.min(8, (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2) - 1);
+
+/** ML bootstrap spread over parallel workers (one per spare CPU core); the replicate trees are pooled for support. */
+async function parallelMlBootstrap(job: { names: string[]; aligned: string[]; model: MlModel; gamma: boolean; alpha: number | null }, reps: number, onProgress: (done: number) => void, signal?: AbortSignal): Promise<TreeNode[]> {
+  const n = Math.min(cores(), reps), workers = Array.from({ length: n }, spawn), done = new Array(n).fill(0);
+  const stop = () => workers.forEach((w) => w.terminate()); signal?.addEventListener('abort', stop);
+  try {
+    const shares = workers.map((w, i) => {
+      const r = createRemote<PhyloKernels>(() => w), share = Math.floor(reps / n) + (i < reps % n ? 1 : 0);
+      return r.mlReplicates({ ...job, reps: share, seed: 1000 + i * 7919 }, { signal, onProgress: (f) => { done[i] = Math.round(f * share); onProgress(done.reduce((a, b) => a + b, 0)); } });
+    });
+    return (await Promise.all(shares)).flat().map((nw) => parseNewick(nw));
+  } finally { stop(); signal?.removeEventListener('abort', stop); }
+}
 const V = '0.1.0', ENGINE = 'TypeScript worker kernels (clean-room)';
 const TOOLS: Record<string, ToolInfo> = {
   msa: { id: 'phylo.msa', name: 'Progressive multiple sequence alignment', version: V, engine: ENGINE, citations: ['gotoh1982', 'henikoff1992'], describe: (p) => `Multiple sequence alignment of ${p.n} ${p.kind} sequences was built progressively along a k-mer-distance UPGMA guide tree using affine-gap profile alignment${p.kind === 'protein' ? ' with the BLOSUM62 matrix' : ''}` },
-  tree: { id: 'phylo.tree', name: 'Phylogenetic tree inference', version: V, engine: ENGINE, citations: ['saitou1987', 'felsenstein1985', 'felsenstein1981', 'hasegawa1985', 'yang1994'], describe: (p) => p.method === 'ml' ? `A maximum-likelihood tree was inferred under ${p.mlModel}${p.gamma ? '+Γ4' : ''} by Felsenstein pruning with branch-length optimisation and nearest-neighbour-interchange search from a neighbour-joining start${p.root === 'midpoint' ? '; the tree was midpoint-rooted' : ''}` : `A ${p.method === 'nj' ? 'neighbour-joining' : 'UPGMA'} tree was inferred from ${p.model} distances${p.reps ? ` with ${p.reps} bootstrap replicates` : ''}${p.root === 'midpoint' ? ' and midpoint-rooted' : ''}` },
+  tree: { id: 'phylo.tree', name: 'Phylogenetic tree inference', version: V, engine: ENGINE, citations: ['saitou1987', 'felsenstein1985', 'felsenstein1981', 'hasegawa1985', 'yang1994'], describe: (p) => p.method === 'ml' ? `A maximum-likelihood tree was inferred under ${p.mlModel}${p.gamma ? '+Γ4' : ''} by Felsenstein pruning with branch-length optimisation and nearest-neighbour-interchange search from a neighbour-joining start${p.reps ? `; branch support was estimated from ${p.reps} non-parametric bootstrap replicates, each searched from its own neighbour-joining tree` : ''}${p.root === 'midpoint' ? '; the tree was midpoint-rooted' : ''}` : `A ${p.method === 'nj' ? 'neighbour-joining' : 'UPGMA'} tree was inferred from ${p.model} distances${p.reps ? ` with ${p.reps} bootstrap replicates` : ''}${p.root === 'midpoint' ? ' and midpoint-rooted' : ''}` },
 };
 
 type Tab = 'input' | 'msa' | 'tree' | 'matrix';
@@ -30,7 +45,13 @@ export default function PhyloStudio() {
   const load = (t: string) => { setText(t); setMsa(null); setNewick(''); setTab('input'); };
   const runMsa = () => void a.run({ label: `MSA · ${recs.length} sequences`, tool: TOOLS.msa, params: { n: recs.length, kind }, inputs: [{ name: 'sequences', data: text }], run: (h) => remote.msa({ names: recs.map((r) => r.id), seqs: recs.map((r) => (kind === 'dna' ? toDNA(r.seq) : r.seq)), kind }, h) }).then((r) => { if (r) { setMsa(r); setNewick(''); setTab('msa'); } });
   const names = msa?.names ?? recs.map((r) => r.id), alns = msa?.aligned ?? (alnLike ? recs.map((r) => r.seq) : null);
-  const runTree = () => alns && void b.run({ label: `Tree · ${method.toUpperCase()}`, tool: TOOLS.tree, params: { model, method, reps, root: 'midpoint', mlModel: kind === 'protein' ? 'Poisson' : mlModel, gamma }, inputs: [{ name: 'alignment', data: alns.join('\n') }], run: (h) => remote.tree({ names, aligned: alns, model, method, reps, root: 'midpoint', ml: { model: kind === 'protein' ? 'Poisson' : mlModel, gamma } }, h) }).then((r) => { if (r) { setNewick(r.newick); setMl(r.ml ?? null); setTab('tree'); } });
+  const runTree = () => alns && void b.run({ label: `Tree · ${method.toUpperCase()}`, tool: TOOLS.tree, params: { model, method, reps, root: 'midpoint', mlModel: kind === 'protein' ? 'Poisson' : mlModel, gamma }, inputs: [{ name: 'alignment', data: alns.join('\n') }], run: async (h) => {
+    const mlm: MlModel = kind === 'protein' ? 'Poisson' : mlModel;
+    if (method !== 'ml' || !reps) return remote.tree({ names, aligned: alns, model, method, reps, root: 'midpoint', ml: { model: mlm, gamma } }, h);
+    const main = await remote.tree({ names, aligned: alns, model, method, reps: 0, root: 'midpoint', ml: { model: mlm, gamma } }, { signal: h.signal, onProgress: (f, n) => h.onProgress(0.4 * f, n) });
+    const trees = await parallelMlBootstrap({ names, aligned: alns, model: mlm, gamma, alpha: main.ml?.alpha ?? null }, reps, (d) => h.onProgress(0.4 + 0.6 * (d / reps), `Bootstrap ${d}/${reps} on ${Math.min(cores(), reps)} cores`), h.signal);
+    return { ...main, newick: toNewick(supportFromTrees(parseNewick(main.newick), names, trees)), supported: true };
+  } }).then((r) => { if (r) { setNewick(r.newick); setMl(r.ml ?? null); setTab('tree'); } });
   const idMat = msa?.identity;
   return (
     <div className="stack" style={{ gap: 18 }}>
@@ -50,7 +71,7 @@ export default function PhyloStudio() {
               <button className="btn primary" disabled={recs.length < 2 || a.busy} onClick={runMsa}>Run progressive alignment</button>
               {a.busy && <><Busy progress={a.progress} note={a.note} /><button className="btn sm" onClick={a.cancel}>Cancel</button></>}
               {a.error && <Callout kind="err">{a.error}</Callout>}
-              <div className="faint" style={{ fontSize: 11.5 }}>Limits: 300 sequences, ~3,000 columns. For larger sets use MAFFT or MUSCLE on a server.</div>
+              <div className="faint" style={{ fontSize: 11.5 }}>Limits: 300 sequences, ~3,000 columns. For larger sets, align with MAFFT or MUSCLE on your computer and load the aligned FASTA here.</div>
             </div>
           </Card>
           <Card title="3 · Tree">
@@ -59,14 +80,15 @@ export default function PhyloStudio() {
                 <Field label="Method"><select className="select" value={method} onChange={(e) => setMethod(e.target.value as 'nj' | 'upgma' | 'ml')}><option value="nj">Neighbour-joining</option><option value="upgma">UPGMA</option><option value="ml">Maximum likelihood (NJ start + NNI)</option></select></Field>
                 <Field label="Distance"><select className="select" value={model} onChange={(e) => setModel(e.target.value as DistModel)}>{kind === 'protein' ? <><option value="poisson">Poisson</option><option value="p">p-distance</option></> : <><option value="jc">Jukes–Cantor</option><option value="k2p">Kimura 2P</option><option value="p">p-distance</option></>}</select></Field>
               </div>
-              {method === 'ml' ? <div className="cols-2" style={{ gap: 8 }}><Field label="Substitution model"><select className="select" value={kind === 'protein' ? 'Poisson' : mlModel} disabled={kind === 'protein'} onChange={(e) => setMlModel(e.target.value as MlModel)}>{kind === 'protein' ? <option value="Poisson">Poisson (equal rates)</option> : <><option value="JC69">JC69</option><option value="K80">K80 (κ)</option><option value="HKY85">HKY85 (κ + base freqs)</option></>}</select></Field><label className="row dim" style={{ fontSize: 12.5, alignSelf: 'end' }}><input type="checkbox" checked={gamma} onChange={(e) => setGamma(e.target.checked)} /> +Γ (4 rate classes)</label></div> : <Field label={`Bootstrap replicates: ${reps}`}><input type="range" min={0} max={200} step={10} value={reps} onChange={(e) => setReps(+e.target.value)} /></Field>}
+              {method === 'ml' && <div className="cols-2" style={{ gap: 8 }}><Field label="Substitution model"><select className="select" value={kind === 'protein' ? 'Poisson' : mlModel} disabled={kind === 'protein'} onChange={(e) => setMlModel(e.target.value as MlModel)}>{kind === 'protein' ? <option value="Poisson">Poisson (equal rates)</option> : <><option value="JC69">JC69</option><option value="K80">K80 (κ)</option><option value="HKY85">HKY85 (κ + base freqs)</option></>}</select></Field><label className="row dim" style={{ fontSize: 12.5, alignSelf: 'end' }}><input type="checkbox" checked={gamma} onChange={(e) => setGamma(e.target.checked)} /> +Γ (4 rate classes)</label></div>}
+              <Field label={`Bootstrap replicates: ${reps}${method === 'ml' && reps ? ` (ML, in parallel on ${Math.min(cores(), reps)} cores)` : ''}`}><input type="range" min={0} max={method === 'ml' ? 100 : 200} step={10} value={reps} onChange={(e) => setReps(+e.target.value)} /></Field>
               <button className="btn primary" disabled={!alns || b.busy} onClick={runTree}>Build tree</button>
               {b.busy && <><Busy progress={b.progress} note={b.note} /><button className="btn sm" onClick={b.cancel}>Cancel</button></>}
               {b.error && <Callout kind="err">{b.error}</Callout>}
               {!alns && <div className="faint" style={{ fontSize: 12 }}>Align first, or load an already-aligned FASTA.</div>}
             </div>
           </Card>
-          <Callout>The browser ML engine (≤ 60 taxa) uses NNI hill-climbing from the NJ tree and gives no support values. For publication, run IQ-TREE with ultrafast bootstrap on a server and paste the Newick below; the viewer renders it.</Callout>
+          <Callout>Maximum likelihood handles up to 150 sequences: NNI hill-climbing from the neighbour-joining tree, with bootstrap replicates spread over your CPU cores. Rough cost per replicate: ~0.3 s for 12 sequences, ~3 s for 30. The search is local (NNI only), so for large or difficult data sets confirm the topology with IQ-TREE or RAxML-NG; their Newick output can be pasted below.</Callout>
         </div>
         <div className="stack">
           {recs.length === 0 && !newick ? <Card><div className="faint" style={{ padding: '36px 6px', textAlign: 'center' }}>Load sequences or the demo family to start.</div></Card> : <>

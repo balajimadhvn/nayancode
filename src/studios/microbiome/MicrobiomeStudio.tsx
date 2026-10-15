@@ -47,7 +47,7 @@ export default function MicrobiomeStudio() {
             <Field label="Permutations"><select className="select" value={perms} onChange={(e) => setPerms(+e.target.value)}>{[199, 499, 999, 4999].map((v) => <option key={v}>{v}</option>)}</select></Field><Field label="DA min prevalence"><input className="input" type="number" step={0.05} min={0} max={1} value={minPrev} onChange={(e) => setMinPrev(+e.target.value)} /></Field></div>
           <button className="btn primary" disabled={busy} onClick={go}>Run analysis</button>{busy && <Busy progress={progress} note={note} />}{error && <Callout kind="err">{error}</Callout>}
         </div></Card>}
-        <Callout>UniFrac needs a tree whose tip names equal your feature IDs (build one in the Phylogenetics Studio, or export from QIIME 2 / ampliseq). Shotgun read classification needs multi-GB databases and belongs on a server.</Callout>
+        <Callout>UniFrac needs a tree whose tip names equal your feature IDs (build one in the Phylogenetics Studio, or export from QIIME 2 / ampliseq). Shotgun read classification needs reference databases of tens of gigabytes, too large for a browser; classify with nf-core/taxprofiler on your computer and import the abundance table here.</Callout>
       </div>
       <div className="stack">{!res ? <Card><div className="faint" style={{ padding: '36px 6px', textAlign: 'center' }}>Load a feature table and metadata (or the demo), then run.</div></Card> : <Results res={res} tab={tab} setTab={setTab} rank={rank} truth={truth} ga={ga} gb={gb} />}</div></div>
     </div>
