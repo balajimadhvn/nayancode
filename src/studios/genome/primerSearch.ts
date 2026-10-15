@@ -122,7 +122,8 @@ export function predictProducts(sites: PrimerSite[], pairs: [number, number][], 
   return { products: products.sort((a, b) => a.contig - b.contig || a.start - b.start || a.size - b.size), truncated };
 }
 export interface SpecificitySummary { perfectProducts: number; intendedPerfect: number; offTargetProducts: number; verdict: 'specific' | 'off-target products' | 'no product' }
-export function summariseProducts(ps: Product[]): SpecificitySummary {
+/** `pairs` = number of user-defined primer pairs; the verdict is 'specific' when each gives exactly one perfect product and nothing else is predicted. */
+export function summariseProducts(ps: Product[], pairs = 1): SpecificitySummary {
   const perfectProducts = ps.filter((p) => p.perfect).length, intendedPerfect = ps.filter((p) => p.perfect && p.intended).length, offTargetProducts = ps.length - intendedPerfect;
-  return { perfectProducts, intendedPerfect, offTargetProducts, verdict: ps.length === 0 ? 'no product' : intendedPerfect === 1 && offTargetProducts === 0 ? 'specific' : 'off-target products' };
+  return { perfectProducts, intendedPerfect, offTargetProducts, verdict: ps.length === 0 ? 'no product' : intendedPerfect === pairs && offTargetProducts === 0 ? 'specific' : 'off-target products' };
 }

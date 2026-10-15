@@ -1,5 +1,5 @@
 import { brandedName } from '@/core/filename';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHandoff } from '@/core/handoff';
 import type { ToolInfo } from '@/core/provenance';
@@ -11,6 +11,8 @@ import { DEFAULT_CALLER, simulateReads, simulateReference, type CallerOpts, type
 import { runTool } from './wasmTools';
 import { mapAndCall } from './pipeline';
 import { parseFasta } from '../sequence/kernels';
+import { loadBundledText } from './genomeData';
+import { useManifest } from './GenomePicker';
 
 const TOOL: ToolInfo = {
   id: 'genome.mapping', name: 'Read mapping and variant calling', version: '0.3.0', engine: 'minimap2 2.22, samtools 1.17 and bcftools 1.10 (WebAssembly, MIT) + TypeScript SNV caller',
@@ -26,7 +28,8 @@ export function MappingPanel({ onMapped, onBrowse }: { onMapped(m: Mapped): void
   const [refText, setRefText] = useState(''), [reads, setReads] = useState<{ data: Uint8Array | string; name: string; size: number } | null>(null), [preset, setPreset] = useState<string>('sr'), [opt, setOpt] = useState<CallerOpts>(DEFAULT_CALLER), [caller, setCaller] = useState<'bcftools' | 'builtin'>('bcftools'), [ploidy, setPloidy] = useState<1 | 2>(2), [truth, setTruth] = useState<PlantedSnv[] | null>(null);
   const [res, setRes] = useState<{ flag: Flagstat; cov: Coverage[]; calls: SnvCall[]; mapped: Mapped; log: string } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const contigs = refText ? parseFasta(refText) : [];
+  const contigs = useMemo(() => (refText ? parseFasta(refText) : []), [refText]), { manifest } = useManifest(), [loadingRef, setLoadingRef] = useState(false), [refErr, setRefErr] = useState('');
+  const pickBundled = async (id: string) => { if (!id) return; setLoadingRef(true); setRefErr(''); try { setRefText(await loadBundledText(id, 'fasta')); setTruth(null); } catch (e) { setRefErr((e as Error).message); } finally { setLoadingRef(false); } };
   const demo = () => {
     const ref = simulateReference(20000, 3), snvs: PlantedSnv[] = [1500, 4200, 8800, 12100, 17000].map((p, i) => ({ pos: p, ref: ref[p], alt: ({ A: 'G', G: 'A', C: 'T', T: 'C' } as Record<string, string>)[ref[p]], af: i === 4 ? 0.4 : 1 }));
     // Indels: a 3 bp and a 1 bp deletion, and a 2 bp insertion (VCF style, sharing the first base).
@@ -44,6 +47,7 @@ export function MappingPanel({ onMapped, onBrowse }: { onMapped(m: Mapped): void
     <div className="split"><div className="stack">
       <Card title="Reference & reads" sub="minimap2 + samtools, WebAssembly">
         <div className="stack" style={{ gap: 10 }}>
+          <Field label="Bundled reference genome (RefSeq)"><select className="select" defaultValue="" disabled={loadingRef} onChange={(e) => void pickBundled(e.target.value)} aria-label="Bundled reference genome"><option value="">Choose, or upload a FASTA below…</option>{manifest?.genomes.map((g) => <option key={g.id} value={g.id}>{g.name} · {(g.totalLength / 1e6).toFixed(1)} Mb</option>)}</select></Field>{refErr && <Callout kind="err">{refErr}</Callout>}
           <FileDrop accept=".fa,.fasta,.fna,.txt" onText={(t) => { setRefText(t); setTruth(null); }} label={refText ? `Reference: ${contigs.length} contig(s), ${contigs.reduce((a, c) => a + c.seq.length, 0).toLocaleString()} bp` : 'Reference FASTA (≤ 100 Mb)'} />
           <label className="dropzone" onClick={() => fileInput.current?.click()}><input ref={fileInput} type="file" hidden accept=".fastq,.fq" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; if (f.size > 300 * 1024 * 1024) { alert('Reads file is larger than 300 MB, the browser memory limit. Map it with minimap2 or nf-core on your computer, then open the BAM here.'); return; } setReads({ data: new Uint8Array(await f.arrayBuffer()), name: f.name, size: f.size }); setTruth(null); }} />{reads ? `Reads: ${reads.name} (${(reads.size / 1048576).toFixed(1)} MB)` : 'Reads FASTQ (uncompressed, ≤ 300 MB)'}<div className="faint" style={{ fontSize: 11.5, marginTop: 3 }}>Processed in your browser. Never uploaded.</div></label>
           <button className="btn" onClick={demo} disabled={busy}>Demo: simulated 150 bp reads on a 20 kb genome</button>

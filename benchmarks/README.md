@@ -15,12 +15,16 @@ npm run bench              # all benchmarks; the expression ones need no downloa
 | Single-cell clustering | 10x PBMC3k (2,700 cells) | Scanpy 1.12.4 (Leiden, igraph 1.0) | `scanpy/` |
 | Variant calling | E. coli REL606 + 800k real reads of SRR2584863, 230 planted SNVs/indels | minimap2 2.28, samtools 1.21, bcftools 1.21 (bioconda) | `bcftools/` |
 | Maximum-likelihood phylogenetics | woodmouse (15 taxa), Laurasiatherian (47), chloroplast protein (19), yeast (8 taxa × 127k sites) | IQ-TREE 3.1.4 (bioconda; CI-only, never shipped) | `iqtree/` |
+| CRISPR off-targets | 8 bundled RefSeq genomes (phage, bacteria, yeast), 4 to 24 guides each | Cas-OFFinder 2.4.1 | `genome-tools/crispr.bench.test.ts` |
+| Primer specificity | E. coli, B. subtilis, yeast, lambda | exhaustive window scan (two independent implementations) | `genome-tools/primers.bench.test.ts` |
 | limma internals | simulated 3-group + batch and paired designs | limma 3.66.0, edgeR 4.8.2 | `limma/` → `src/studios/expression/linear.test.ts` |
 
 ## Regenerating the reference results
 - Expression: `Rscript benchmarks/deseq2/make-reference.R benchmarks/.cache` (needs DESeq2, limma, edgeR, jsonlite).
 - Single-cell: `python -m venv .venv && .venv/bin/pip install -r benchmarks/scanpy/requirements.txt`, then
   `.venv/bin/python benchmarks/scanpy/make-reference.py`.
+- CRISPR off-targets: `conda create -p ./cas-env -c conda-forge -c bioconda cas-offinder pocl`, then
+  `CAS_OFFINDER=./cas-env/bin/cas-offinder node benchmarks/genome-tools/make-reference.mjs` (the results are committed in `genome-tools/reference/`).
 - limma internals: `Rscript benchmarks/limma/make-fixture.R`.
 - Variant calling: `bash benchmarks/bcftools/make-reference.sh <bin-dir>` (minimap2, samtools, bcftools on PATH or in
   `<bin-dir>`); run it again after the bench to score native bcftools on the Workbench's BAM.

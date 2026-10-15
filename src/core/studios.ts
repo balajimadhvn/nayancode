@@ -71,10 +71,10 @@ export const STUDIOS: StudioDef[] = [
     id: 'genome', path: '/genome', name: 'Genome Studio', short: 'Genome',
     blurb: 'Read QC, small-genome alignment, assembly QC, comparison and tracks.',
     status: 'live', milestone: 'M1', accent: 55,
-    inputs: ['FASTQ', 'FASTA', 'BED / GFF'],
-    analyses: ['Streaming FASTQ read QC', 'Mapping, SNV & indel calling (minimap2, samtools, bcftools)', 'igv.js genome browser', 'Assembly metrics', 'BED algebra', 'MinHash ANI'],
+    inputs: ['FASTQ', 'FASTA', 'BAM / CRAM + index', 'VCF', 'BED / GFF / GTF', 'bigWig'],
+    analyses: ['Streaming FASTQ read QC', 'Mapping, SNV & indel calling (minimap2, samtools, bcftools)', 'igv.js genome viewer (local BAM, CRAM, VCF, BED, GFF, bigWig)', '8 bundled RefSeq reference genomes', 'Primer specificity and off-target amplicons', 'CRISPR off-targets with CFD and MIT scores', 'Assembly metrics', 'BED algebra', 'MinHash ANI'],
     engines: 'WebAssembly (minimap2, samtools) + igv.js',
-    limits: 'Mapping up to about a 100 Mb reference and 300 MB of reads; SNVs and short indels, no structural variants',
+    limits: 'Mapping up to about a 100 Mb reference and 300 MB of reads; SNVs and short indels, no structural variants. Primer and CRISPR searches suit genomes up to a few tens of Mb (bundled: phage, bacteria, yeast)',
     cloudLater: 'Assembly, human alignment & variant calling',
   },
   {

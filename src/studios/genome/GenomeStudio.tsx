@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useHandoff } from '@/core/handoff';
 import { createRemote } from '@/compute/rpc';
 import type { ToolInfo } from '@/core/provenance';
 import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadText, fmt, toCsv } from '@/ui/kit';
@@ -9,7 +10,9 @@ import { parseNewick } from '../phylo/kernels';
 import { rebin } from './helpers';
 import { syntheticAssembly, syntheticBed, syntheticFastq, syntheticGenomes } from './kernels';
 import type { GenomeKernels } from './genome.worker';
-import { GenomeBrowser, MappingPanel, type Mapped } from './MappingPanel';
+import { GenomeViewer } from './GenomeViewer';
+import { MappingPanel, type Mapped } from './MappingPanel';
+import { CrisprOffTargetPanel, PrimerSpecificityPanel } from './SpecificityPanels';
 
 const remote = createRemote<GenomeKernels>(() => new Worker(new URL('./genome.worker.ts', import.meta.url), { type: 'module' }));
 const V = '0.1.0', E = 'TypeScript worker kernels';
@@ -21,17 +24,20 @@ const TOOLS = {
   cmp: T('genome.mash', 'MinHash genome comparison', (p) => `Whole-genome similarity was estimated with MinHash bottom-${p.size} sketches of canonical ${p.k}-mers and the Mash distance transform (Ondov et al. 2016); ANI ≈ 1 − Mash distance; trees by UPGMA`, ['ondov2016']),
   gff: T('genome.gff', 'GFF/GTF summary', () => 'Annotation features were tallied from GFF/GTF'),
 };
-type Tab = 'reads' | 'mapping' | 'browser' | 'assembly' | 'intervals' | 'compare';
+type Tab = 'reads' | 'mapping' | 'browser' | 'primers' | 'crispr' | 'assembly' | 'intervals' | 'compare';
 const N_FILTER = new Set(['A', 'C', 'G', 'T']);
 void N_FILTER;
 
 export default function GenomeStudio() {
-  const [tab, setTab] = useState<Tab>('reads'), [mapped, setMapped] = useState<Mapped | null>(null);
+  const [tab, setTab] = useState<Tab>('reads'), [mapped, setMapped] = useState<Mapped | null>(null), oligos = useHandoff((s) => s.oligos), view = useHandoff((s) => s.view);
+  // Oligos from Sequence Studio and files from Variant Studio open the tool that consumes them.
+  useEffect(() => { if (oligos) setTab(oligos.guides.length ? 'crispr' : 'primers'); }, [oligos]);
+  useEffect(() => { if (view?.length) setTab('browser'); }, [view]);
   return (
     <div className="stack" style={{ gap: 18 }}>
-      <div className="page-head"><div><h1>Genome Studio</h1><p>Streaming read QC, mapping with real minimap2, samtools and bcftools (WebAssembly), SNV and indel calling, an igv.js genome browser, assembly metrics, interval algebra and MinHash genome comparison. Everything runs in your browser.</p></div></div>
-      <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'reads', label: 'Read QC' }, { id: 'mapping', label: 'Mapping & variants' }, { id: 'browser', label: 'Genome browser' }, { id: 'assembly', label: 'Assembly' }, { id: 'intervals', label: 'Intervals & annotation' }, { id: 'compare', label: 'Genome comparison' }]} />
-      {tab === 'reads' && <ReadQc />}<div hidden={tab !== 'mapping'}><MappingPanel onMapped={setMapped} onBrowse={() => setTab('browser')} /></div>{tab === 'browser' && <GenomeBrowser mapped={mapped} />}{tab === 'assembly' && <Assembly />}{tab === 'intervals' && <Intervals />}{tab === 'compare' && <Compare />}
+      <div className="page-head"><div><h1>Genome Studio</h1><p>Streaming read QC, mapping with real minimap2, samtools and bcftools (WebAssembly), SNV and indel calling, an igv.js genome viewer with bundled RefSeq genomes, primer specificity and CRISPR off-target search, assembly metrics, interval algebra and MinHash genome comparison. Everything runs in your browser.</p></div></div>
+      <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'reads', label: 'Read QC' }, { id: 'mapping', label: 'Mapping & variants' }, { id: 'browser', label: 'Genome viewer' }, { id: 'primers', label: 'Primer specificity' }, { id: 'crispr', label: 'CRISPR off-targets' }, { id: 'assembly', label: 'Assembly' }, { id: 'intervals', label: 'Intervals & annotation' }, { id: 'compare', label: 'Genome comparison' }]} />
+      {tab === 'reads' && <ReadQc />}<div hidden={tab !== 'mapping'}><MappingPanel onMapped={setMapped} onBrowse={() => setTab('browser')} /></div>{tab === 'browser' && <GenomeViewer mapped={mapped} />}{tab === 'primers' && <PrimerSpecificityPanel />}{tab === 'crispr' && <CrisprOffTargetPanel />}{tab === 'assembly' && <Assembly />}{tab === 'intervals' && <Intervals />}{tab === 'compare' && <Compare />}
     </div>
   );
 }

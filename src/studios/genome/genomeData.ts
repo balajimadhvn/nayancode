@@ -53,7 +53,8 @@ export interface ManifestFile { file: string; url: string; bytes: number; sha256
 export interface ManifestGenome { id: string; name: string; taxid: number; accession: string; assemblyName: string; source: string; totalLength: number; genes: number; sequences: { id: string; description: string; length: number; circular: boolean }[]; fasta: ManifestFile; gff: ManifestFile }
 export interface Manifest { generated: string; licence: string; citation: string; genomes: ManifestGenome[] }
 
-const gunzipText = async (buf: ArrayBuffer): Promise<string> => new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+/** Gunzips with DecompressionStream; bytes without the gzip magic (a host that already decoded the file) are read as text. */
+const gunzipText = async (buf: ArrayBuffer): Promise<string> => { const h = new Uint8Array(buf, 0, 2); return h[0] === 0x1f && h[1] === 0x8b ? new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text() : new TextDecoder().decode(buf); };
 let manifestP: Promise<Manifest> | null = null;
 const base = () => new URL(import.meta.env.BASE_URL + 'genomes/', (self as unknown as { location: Location }).location.origin).href;
 export const loadManifest = () => (manifestP ??= fetch(base() + 'manifest.json').then((r) => { if (!r.ok) throw new Error(`Genome manifest not found (HTTP ${r.status})`); return r.json() as Promise<Manifest>; }));

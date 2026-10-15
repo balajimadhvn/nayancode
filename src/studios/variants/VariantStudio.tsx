@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createRemote } from '@/compute/rpc';
+import { useNavigate } from 'react-router-dom';
 import { clearHandoffSoon, useHandoff } from '@/core/handoff';
 import { trackedFetch } from '@/core/net';
 import type { ToolInfo } from '@/core/provenance';
@@ -28,7 +29,7 @@ export default function VariantStudio() {
   const [rules, setRules] = useState<Rule[]>([]);
   const { run, busy, progress, note, error } = useRunner();
   const [vcfSrc, setVcfSrc] = useState<{ file?: File; text?: string } | null>(null);
-  const handoff = useHandoff((s) => s.vcf);
+  const handoff = useHandoff((s) => s.vcf), setView = useHandoff((s) => s.setView), nav = useNavigate();
   const load = (src: { file?: File; text?: string }, label: string) => void run({ label: `VCF · ${label}`, tool: TOOLS.vcf, params: { n: '…', rules: '' }, inputs: [{ name: label, data: src.text ?? `${label}:${src.file?.size}` }], run: (h) => remote.vcf(src, h), summary: (r) => `${r.total.toLocaleString()} variants (${r.samples.length} samples) were parsed from VCF and summarised (transition/transversion ratio, genotype counts, substitution spectrum)` }).then((r) => { if (r) { setData(r); setVcfSrc(src); setRules([]); setTab('table'); } });
   useEffect(() => { if (handoff) { load({ text: handoff.text }, handoff.label); clearHandoffSoon('vcf'); } /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [handoff]);
   const vcf = useMemo(() => (data ? { samples: data.samples, variants: data.variants, contigs: [], skipped: data.skipped } : null), [data]);
@@ -41,6 +42,7 @@ export default function VariantStudio() {
           <div className="stack" style={{ gap: 10 }}>
             <label className="dropzone"><input type="file" hidden accept=".vcf,.gz" onChange={(e) => { const f = e.target.files?.[0]; if (f) load({ file: f }, f.name); }} />Choose a VCF or VCF.gz<div className="faint" style={{ fontSize: 11.5, marginTop: 3 }}>Parsed in a worker. Never uploaded.</div></label>
             <button className="btn" disabled={busy} onClick={() => load({ text: syntheticVcf(4, 3000) }, 'synthetic_tumor_normal.vcf')}>Demo: synthetic tumor/normal VCF</button>
+            {data && vcfSrc && <button className="btn" onClick={() => { setView([{ name: 'variants.vcf', ...vcfSrc }]); nav('/genome'); }}>Open in genome viewer</button>}
             {busy && <Busy progress={progress} note={note} />}{error && <Callout kind="err">{error}</Callout>}
             {data && <div className="faint" style={{ fontSize: 12 }}>{data.total.toLocaleString()} variants · {data.samples.length} samples ({data.samples.join(', ')}){data.truncated ? ' · table capped at 150,000 rows' : ''}{data.skipped ? ` · ${data.skipped} malformed lines skipped` : ''}</div>}
           </div>
