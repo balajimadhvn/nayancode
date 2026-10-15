@@ -189,14 +189,16 @@ export function bh(p: number[]): number[] {
 
 /** limma squeezeVar (Smyth 2004): estimate prior (d0, s0²) from gene-wise residual variances. */
 export function squeezeVar(s2: number[], df: number): { d0: number; s02: number; post: number[] } {
-  const ok = s2.filter((v) => v > 0 && Number.isFinite(v));
-  const z = ok.map((v) => Math.log(v));
-  const e = z.map((v) => v - digamma(df / 2) + Math.log(df / 2));
+  // limma fitFDist: zero variances are offset to 1e-5 × median; with an infinite prior df the scale is the mean.
+  const raw = s2.filter((v) => Number.isFinite(v) && v > -1e-15).map((v) => Math.max(v, 0));
+  const med = (() => { const a = [...raw].sort((x, y) => x - y), h = a.length >> 1; return a.length % 2 ? a[h] : (a[h - 1] + a[h]) / 2; })() || 1;
+  const ok = raw.map((v) => Math.max(v, 1e-5 * med));
+  const e = ok.map((v) => Math.log(v) - digamma(df / 2) + Math.log(df / 2));
   const mean = e.reduce((a, b) => a + b, 0) / e.length;
   const variance = e.reduce((a, b) => a + (b - mean) ** 2, 0) / (e.length - 1) - trigamma(df / 2);
   let d0: number, s02: number;
   if (variance > 0) { d0 = 2 * trigammaInverse(variance); s02 = Math.exp(mean + digamma(d0 / 2) - Math.log(d0 / 2)); }
-  else { d0 = Infinity; s02 = Math.exp(mean); }
+  else { d0 = Infinity; s02 = ok.reduce((a, b) => a + b, 0) / ok.length; }
   const post = s2.map((v) => (Number.isFinite(d0) ? (d0 * s02 + df * v) / (d0 + df) : s02));
   return { d0, s02, post };
 }

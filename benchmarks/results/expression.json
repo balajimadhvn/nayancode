@@ -1,0 +1,131 @@
+{
+  "versions": {
+    "R": "R version 4.5.3 (2026-03-11)",
+    "DESeq2": "1.50.2",
+    "limma": "3.66.0",
+    "edgeR": "4.8.2"
+  },
+  "fdr": 0.05,
+  "airway": {
+    "dataset": "airway",
+    "formula": "~ cell + dex",
+    "contrast": "trt vs untrt",
+    "samples": 8,
+    "genesIn": 33469,
+    "genesTested": 15041,
+    "runtimeMs": 994,
+    "vsLimmaVoom": {
+      "genesCompared": 15041,
+      "maxAbsTDiff": 0,
+      "lfcPearson": 1,
+      "lfcSpearman": 1,
+      "maxAbsLfcDiff": 0,
+      "pSpearman": 1,
+      "significant": {
+        "nayancode": 5003,
+        "reference": 5003,
+        "both": 5003,
+        "jaccard": 1,
+        "referenceRecovered": 1,
+        "nayancodeConfirmed": 1
+      },
+      "top100Jaccard": 1,
+      "top500Jaccard": 1
+    },
+    "vsEdgeRQL": {
+      "genesCompared": 15041,
+      "lfcPearson": 0.9991,
+      "lfcSpearman": 0.9995,
+      "maxAbsLfcDiff": 2.00438546,
+      "pSpearman": 0.9984,
+      "significant": {
+        "nayancode": 5003,
+        "reference": 4940,
+        "both": 4877,
+        "jaccard": 0.9627,
+        "referenceRecovered": 0.9872,
+        "nayancodeConfirmed": 0.9748
+      },
+      "top100Jaccard": 0.7544,
+      "top500Jaccard": 0.8832
+    },
+    "vsDESeq2": {
+      "genesCompared": 15041,
+      "lfcPearson": 0.9966,
+      "lfcSpearman": 0.9964,
+      "maxAbsLfcDiff": 1.44811228,
+      "pSpearman": 0.984,
+      "significant": {
+        "nayancode": 5003,
+        "reference": 3909,
+        "both": 3881,
+        "jaccard": 0.7714,
+        "referenceRecovered": 0.9928,
+        "nayancodeConfirmed": 0.7757
+      },
+      "top100Jaccard": 0.7391,
+      "top500Jaccard": 0.7483
+    }
+  },
+  "pasilla": {
+    "dataset": "pasilla",
+    "formula": "~ type + condition",
+    "contrast": "treated vs untreated",
+    "samples": 7,
+    "genesIn": 12359,
+    "genesTested": 8047,
+    "runtimeMs": 364,
+    "vsLimmaVoom": {
+      "genesCompared": 8047,
+      "maxAbsTDiff": 1e-8,
+      "lfcPearson": 1,
+      "lfcSpearman": 1,
+      "maxAbsLfcDiff": 0,
+      "pSpearman": 1,
+      "significant": {
+        "nayancode": 1139,
+        "reference": 1139,
+        "both": 1139,
+        "jaccard": 1,
+        "referenceRecovered": 1,
+        "nayancodeConfirmed": 1
+      },
+      "top100Jaccard": 1,
+      "top500Jaccard": 1
+    },
+    "vsEdgeRQL": {
+      "genesCompared": 8047,
+      "lfcPearson": 0.9962,
+      "lfcSpearman": 0.996,
+      "maxAbsLfcDiff": 0.90780013,
+      "pSpearman": 0.9924,
+      "significant": {
+        "nayancode": 1139,
+        "reference": 1153,
+        "both": 1117,
+        "jaccard": 0.9506,
+        "referenceRecovered": 0.9688,
+        "nayancodeConfirmed": 0.9807
+      },
+      "top100Jaccard": 0.9048,
+      "top500Jaccard": 0.9569
+    },
+    "vsDESeq2": {
+      "genesCompared": 8047,
+      "lfcPearson": 0.9909,
+      "lfcSpearman": 0.9904,
+      "maxAbsLfcDiff": 1.60682552,
+      "pSpearman": 0.969,
+      "significant": {
+        "nayancode": 1139,
+        "reference": 1065,
+        "both": 972,
+        "jaccard": 0.789,
+        "referenceRecovered": 0.9127,
+        "nayancodeConfirmed": 0.8534
+      },
+      "top100Jaccard": 0.6949,
+      "top500Jaccard": 0.773
+    }
+  }
+}
