@@ -1,0 +1,359 @@
+{
+ "generated": "2026-10-15",
+ "licence": "NCBI RefSeq data: public domain in the United States (works of the US Government, 17 U.S.C. § 105); NCBI places no restrictions on use or distribution. Cite the original submitters and RefSeq (O'Leary et al. 2016).",
+ "citation": "O'Leary NA, et al. (2016) Reference sequence (RefSeq) database at NCBI. Nucleic Acids Res 44:D733–D745.",
+ "genomes": [
+  {
+   "id": "lambda",
+   "name": "Escherichia phage lambda",
+   "taxid": 10710,
+   "accession": "GCF_000840245.1",
+   "assemblyName": "ViralProj14204",
+   "source": "NCBI RefSeq",
+   "totalLength": 48502,
+   "genes": 92,
+   "sequences": [
+    {
+     "id": "NC_001416.1",
+     "description": "Enterobacteria phage lambda, complete genome",
+     "length": 48502,
+     "circular": false
+    }
+   ],
+   "fasta": {
+    "file": "lambda.fna.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/840/245/GCF_000840245.1_ViralProj14204/GCF_000840245.1_ViralProj14204_genomic.fna.gz",
+    "bytes": 15299,
+    "sha256": "da2b4c4a97678538ea8afb90c9129ad232aa1cd1d30b72d8f32c440433f99e2a",
+    "md5": "7e74fba2c9e1107f228dbb12bada5c1c"
+   },
+   "gff": {
+    "file": "lambda.gff3.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/840/245/GCF_000840245.1_ViralProj14204/GCF_000840245.1_ViralProj14204_genomic.gff.gz",
+    "bytes": 8721,
+    "sha256": "768c4c1f4d31f188e884ea6f00ce816bf7a012f80cb1ef08851233910761e97d",
+    "md5": "71d9321330ed0ec85680e5a15fcf2b4d"
+   }
+  },
+  {
+   "id": "t7",
+   "name": "Escherichia phage T7",
+   "taxid": 10760,
+   "accession": "GCF_000844825.1",
+   "assemblyName": "ViralProj14460",
+   "source": "NCBI RefSeq",
+   "totalLength": 39937,
+   "genes": 60,
+   "sequences": [
+    {
+     "id": "NC_001604.1",
+     "description": "Enterobacteria phage T7, complete genome",
+     "length": 39937,
+     "circular": false
+    }
+   ],
+   "fasta": {
+    "file": "t7.fna.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/844/825/GCF_000844825.1_ViralProj14460/GCF_000844825.1_ViralProj14460_genomic.fna.gz",
+    "bytes": 12645,
+    "sha256": "14183f67cde620f3362c57ec9f4418478c31410988de3e5f1f430c89d7222067",
+    "md5": "6f54e4413e552808866cf1f90ce3f3bf"
+   },
+   "gff": {
+    "file": "t7.gff3.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/844/825/GCF_000844825.1_ViralProj14460/GCF_000844825.1_ViralProj14460_genomic.gff.gz",
+    "bytes": 7944,
+    "sha256": "f57c6523f252bbba67715f36ae4411d81931ddee1c220526df557848744c0057",
+    "md5": "32e03afa83bf1a77f097b1afc0c147b5"
+   }
+  },
+  {
+   "id": "sars-cov-2",
+   "name": "SARS-CoV-2 Wuhan-Hu-1",
+   "taxid": 2697049,
+   "accession": "GCF_009858895.2",
+   "assemblyName": "ASM985889v3",
+   "source": "NCBI RefSeq",
+   "totalLength": 29903,
+   "genes": 11,
+   "sequences": [
+    {
+     "id": "NC_045512.2",
+     "description": "Severe acute respiratory syndrome coronavirus 2 isolate Wuhan-Hu-1, complete genome",
+     "length": 29903,
+     "circular": false
+    }
+   ],
+   "fasta": {
+    "file": "sars-cov-2.fna.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/858/895/GCF_009858895.2_ASM985889v3/GCF_009858895.2_ASM985889v3_genomic.fna.gz",
+    "bytes": 9591,
+    "sha256": "d359795c5b11e9fc9309d5b3edee2dde1040781cd6a13b09aa7f4aaad8f07816",
+    "md5": "14ff5c407f3212526c08ff5a93d68e9c"
+   },
+   "gff": {
+    "file": "sars-cov-2.gff3.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/009/858/895/GCF_009858895.2_ASM985889v3/GCF_009858895.2_ASM985889v3_genomic.gff.gz",
+    "bytes": 2914,
+    "sha256": "12301fd16cd0311b15ebc4038580edf22f7dc40a123050ef1a8707c9f9d9968e",
+    "md5": "833349c5ec7d3c02a8de004bbfe9efab"
+   }
+  },
+  {
+   "id": "ecoli-k12",
+   "name": "Escherichia coli K-12 MG1655",
+   "taxid": 511145,
+   "accession": "GCF_000005845.2",
+   "assemblyName": "ASM584v2",
+   "source": "NCBI RefSeq",
+   "totalLength": 4641652,
+   "genes": 4506,
+   "sequences": [
+    {
+     "id": "NC_000913.3",
+     "description": "Escherichia coli str. K-12 substr. MG1655, complete genome",
+     "length": 4641652,
+     "circular": true
+    }
+   ],
+   "fasta": {
+    "file": "ecoli-k12.fna.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz",
+    "bytes": 1379902,
+    "sha256": "a96d3cfa58c88d477013c768f90a11d2386d42a70d566abfb6d9013dcbd24255",
+    "md5": "c13d459b5caa702ff7e1f26fe44b8ad7"
+   },
+   "gff": {
+    "file": "ecoli-k12.gff3.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.gff.gz",
+    "bytes": 387627,
+    "sha256": "afdf03dc1d06e423d874ee29d9e0df14f5d32baf893f4da9f93aa721eb5f495e",
+    "md5": "0f52ffc94af5ddf544ff89cc6f546b0c"
+   }
+  },
+  {
+   "id": "saureus-8325",
+   "name": "Staphylococcus aureus NCTC 8325",
+   "taxid": 93061,
+   "accession": "GCF_000013425.1",
+   "assemblyName": "ASM1342v1",
+   "source": "NCBI RefSeq",
+   "totalLength": 2821361,
+   "genes": 2842,
+   "sequences": [
+    {
+     "id": "NC_007795.1",
+     "description": "Staphylococcus aureus subsp. aureus NCTC 8325 chromosome, complete genome",
+     "length": 2821361,
+     "circular": true
+    }
+   ],
+   "fasta": {
+    "file": "saureus-8325.fna.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/013/425/GCF_000013425.1_ASM1342v1/GCF_000013425.1_ASM1342v1_genomic.fna.gz",
+    "bytes": 820675,
+    "sha256": "f30fbb37ecacc1c6baca951ada10065a39a29e019c81f664a5d1fca3d8818adb",
+    "md5": "b086eb1020e7df022afa545dc6d93297"
+   },
+   "gff": {
+    "file": "saureus-8325.gff3.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/013/425/GCF_000013425.1_ASM1342v1/GCF_000013425.1_ASM1342v1_genomic.gff.gz",
+    "bytes": 197738,
+    "sha256": "b39f4aaab06bcdfecd9080e8605039fc76e18f8f0ecb3043cba02c38b69f1571",
+    "md5": "cc205d32d857d2d9148b839f317649e2"
+   }
+  },
+  {
+   "id": "bsubtilis-168",
+   "name": "Bacillus subtilis 168",
+   "taxid": 224308,
+   "accession": "GCF_000009045.1",
+   "assemblyName": "ASM904v1",
+   "source": "NCBI RefSeq",
+   "totalLength": 4215606,
+   "genes": 4448,
+   "sequences": [
+    {
+     "id": "NC_000964.3",
+     "description": "Bacillus subtilis subsp. subtilis str. 168 complete genome",
+     "length": 4215606,
+     "circular": true
+    }
+   ],
+   "fasta": {
+    "file": "bsubtilis-168.fna.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/045/GCF_000009045.1_ASM904v1/GCF_000009045.1_ASM904v1_genomic.fna.gz",
+    "bytes": 1248396,
+    "sha256": "1a9e4f66533db783e9ecb6727355993a16a00ef36fa512dcac2de39eff1ae8c5",
+    "md5": "87378255941a61ec4b4384af8ba28ff5"
+   },
+   "gff": {
+    "file": "bsubtilis-168.gff3.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/045/GCF_000009045.1_ASM904v1/GCF_000009045.1_ASM904v1_genomic.gff.gz",
+    "bytes": 550736,
+    "sha256": "a3e6d29c34ac0d4b7581e17902f9efc1d7737726ec3d5c1896d8ed40eaa0a881",
+    "md5": "fac0e3479a5522113eaaa55ec7740ae8"
+   }
+  },
+  {
+   "id": "mtb-h37rv",
+   "name": "Mycobacterium tuberculosis H37Rv",
+   "taxid": 83332,
+   "accession": "GCF_000195955.2",
+   "assemblyName": "ASM19595v2",
+   "source": "NCBI RefSeq",
+   "totalLength": 4411532,
+   "genes": 3978,
+   "sequences": [
+    {
+     "id": "NC_000962.3",
+     "description": "Mycobacterium tuberculosis H37Rv, complete genome",
+     "length": 4411532,
+     "circular": false
+    }
+   ],
+   "fasta": {
+    "file": "mtb-h37rv.fna.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/195/955/GCF_000195955.2_ASM19595v2/GCF_000195955.2_ASM19595v2_genomic.fna.gz",
+    "bytes": 1277508,
+    "sha256": "35911742cea55cd556d54948f56e3efa757e40d44e18ebc8742cacc59b2a976e",
+    "md5": "f93726a0a6e57af2bf1173998fbeb546"
+   },
+   "gff": {
+    "file": "mtb-h37rv.gff3.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/195/955/GCF_000195955.2_ASM19595v2/GCF_000195955.2_ASM19595v2_genomic.gff.gz",
+    "bytes": 317642,
+    "sha256": "fbd1a13d212e1d042059de7e44dfe5d7dbd96bcc71a53f2e5040ea0e50a4a2ed",
+    "md5": "4d53755c7968f2509d772b12ba2c4136"
+   }
+  },
+  {
+   "id": "scer-s288c",
+   "name": "Saccharomyces cerevisiae S288C (R64)",
+   "taxid": 559292,
+   "accession": "GCF_000146045.2",
+   "assemblyName": "R64",
+   "source": "NCBI RefSeq",
+   "totalLength": 12157105,
+   "genes": 6459,
+   "sequences": [
+    {
+     "id": "NC_001133.9",
+     "description": "Saccharomyces cerevisiae S288C chromosome I, complete sequence",
+     "length": 230218,
+     "circular": false
+    },
+    {
+     "id": "NC_001134.8",
+     "description": "Saccharomyces cerevisiae S288C chromosome II, complete sequence",
+     "length": 813184,
+     "circular": false
+    },
+    {
+     "id": "NC_001135.5",
+     "description": "Saccharomyces cerevisiae S288C chromosome III, complete sequence",
+     "length": 316620,
+     "circular": false
+    },
+    {
+     "id": "NC_001136.10",
+     "description": "Saccharomyces cerevisiae S288C chromosome IV, complete sequence",
+     "length": 1531933,
+     "circular": false
+    },
+    {
+     "id": "NC_001137.3",
+     "description": "Saccharomyces cerevisiae S288C chromosome V, complete sequence",
+     "length": 576874,
+     "circular": false
+    },
+    {
+     "id": "NC_001138.5",
+     "description": "Saccharomyces cerevisiae S288C chromosome VI, complete sequence",
+     "length": 270161,
+     "circular": false
+    },
+    {
+     "id": "NC_001139.9",
+     "description": "Saccharomyces cerevisiae S288C chromosome VII, complete sequence",
+     "length": 1090940,
+     "circular": false
+    },
+    {
+     "id": "NC_001140.6",
+     "description": "Saccharomyces cerevisiae S288C chromosome VIII, complete sequence",
+     "length": 562643,
+     "circular": false
+    },
+    {
+     "id": "NC_001141.2",
+     "description": "Saccharomyces cerevisiae S288C chromosome IX, complete sequence",
+     "length": 439888,
+     "circular": false
+    },
+    {
+     "id": "NC_001142.9",
+     "description": "Saccharomyces cerevisiae S288C chromosome X, complete sequence",
+     "length": 745751,
+     "circular": false
+    },
+    {
+     "id": "NC_001143.9",
+     "description": "Saccharomyces cerevisiae S288C chromosome XI, complete sequence",
+     "length": 666816,
+     "circular": false
+    },
+    {
+     "id": "NC_001144.5",
+     "description": "Saccharomyces cerevisiae S288C chromosome XII, complete sequence",
+     "length": 1078177,
+     "circular": false
+    },
+    {
+     "id": "NC_001145.3",
+     "description": "Saccharomyces cerevisiae S288C chromosome XIII, complete sequence",
+     "length": 924431,
+     "circular": false
+    },
+    {
+     "id": "NC_001146.8",
+     "description": "Saccharomyces cerevisiae S288C chromosome XIV, complete sequence",
+     "length": 784333,
+     "circular": false
+    },
+    {
+     "id": "NC_001147.6",
+     "description": "Saccharomyces cerevisiae S288C chromosome XV, complete sequence",
+     "length": 1091291,
+     "circular": false
+    },
+    {
+     "id": "NC_001148.4",
+     "description": "Saccharomyces cerevisiae S288C chromosome XVI, complete sequence",
+     "length": 948066,
+     "circular": false
+    },
+    {
+     "id": "NC_001224.1",
+     "description": "Saccharomyces cerevisiae S288c mitochondrion, complete genome",
+     "length": 85779,
+     "circular": true
+    }
+   ],
+   "fasta": {
+    "file": "scer-s288c.fna.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/146/045/GCF_000146045.2_R64/GCF_000146045.2_R64_genomic.fna.gz",
+    "bytes": 3843460,
+    "sha256": "1ec41f951b35f2752d5065edeafe6972455609d4383fb36dae12519a60b27a73",
+    "md5": "88c38b957b721dfc50e6c4df03b6242e"
+   },
+   "gff": {
+    "file": "scer-s288c.gff3.gz",
+    "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/146/045/GCF_000146045.2_R64/GCF_000146045.2_R64_genomic.gff.gz",
+    "bytes": 2203839,
+    "sha256": "bbcb56dec2d2a00101fb85be4752fbda9895e27023e0c5e08340fc30d0ad5510",
+    "md5": "1fddbd976c4ce61e8a36a3908d46c25d"
+   }
+  }
+ ]
+}
