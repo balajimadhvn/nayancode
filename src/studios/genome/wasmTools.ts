@@ -1,9 +1,9 @@
 import { assetUrl } from '@/core/asset';
-/** Promise client for public/wasm/tool-runner.js (vendored minimap2 + samtools, both MIT). Cancel = terminate + respawn. */
+/** Promise client for public/wasm/tool-runner.js (vendored minimap2, samtools, bcftools; all MIT). Cancel = terminate + respawn. */
 export interface ToolResult { code: number; stdout: string; stderr: string; out: Record<string, Uint8Array> }
 let worker: Worker | null = null, seq = 0;
 const get = () => (worker ??= new Worker(assetUrl('wasm/tool-runner.js')));
-export function runTool(tool: 'minimap2' | 'samtools', args: string[], files: Record<string, Uint8Array | string>, outputs: string[] = [], opts: { onLog?(l: string): void; signal?: AbortSignal } = {}): Promise<ToolResult> {
+export function runTool(tool: 'minimap2' | 'samtools' | 'bcftools', args: string[], files: Record<string, Uint8Array | string>, outputs: string[] = [], opts: { onLog?(l: string): void; signal?: AbortSignal } = {}): Promise<ToolResult> {
   return new Promise((resolve, reject) => {
     const w = get(), id = ++seq;
     const done = () => { w.removeEventListener('message', on); opts.signal?.removeEventListener('abort', abort); };

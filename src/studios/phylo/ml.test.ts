@@ -71,3 +71,20 @@ describe('cached-partial edge optimisation agrees with full likelihood and is fa
     const ll0 = logLikelihood(msa.aligned, msa.names, start, { model: 'Poisson', gamma: true }); expect(r.logL).toBeGreaterThanOrEqual(ll0 - 1e-6);
   }, 30_000); // the budget is asserted above (25 s); vitest's 5 s default would make this flaky on slower CI runners
 });
+
+describe('ML bootstrap', () => {
+  it('gives ≥ 90 % support to well-separated clades and reports percentages on every split', async () => {
+    const { mlBootstrap } = await import('./ml');
+    // ((A,B):0.3,(C,D):0.3,(E,F):0.002): the A+B and C+D splits are long; E+F vs the rest is barely resolved.
+    const truth = parseNewick('((A:0.05,B:0.05):0.3,(C:0.05,D:0.05):0.3,(E:0.08,F:0.08):0.002);');
+    const { names, aln } = simulate(truth, 600, 11);
+    const ml = inferMl(aln, names, nj(distanceMatrix(aln, 'jc'), names), { model: 'JC69', gamma: false });
+    const boot = mlBootstrap(aln, names, ml.tree, { model: 'JC69', gamma: false }, 20, undefined, 3);
+    const clade = (t: TreeNode, a: string, b: string): TreeNode | undefined => { const set = (x: TreeNode) => leaves(x).map((l) => l.name).sort().join(); let hit: TreeNode | undefined; const rec = (x: TreeNode) => { if (x.children.length && set(x) === [a, b].sort().join()) hit = x; x.children.forEach(rec); }; rec(t); return hit; };
+    const sup = (a: string, b: string) => { const all = names.filter((n) => n !== a && n !== b); return clade(boot, a, b)?.support ?? clade(boot, all[0], all[1])?.support; };
+    expect(sup('A', 'B')).toBeGreaterThanOrEqual(90);
+    expect(sup('C', 'D')).toBeGreaterThanOrEqual(90);
+    const values: number[] = []; const rec = (x: TreeNode) => { if (x.support !== undefined) values.push(x.support); x.children.forEach(rec); }; rec(boot);
+    expect(values.every((v) => v >= 0 && v <= 100)).toBe(true);
+  }, 60_000);
+});

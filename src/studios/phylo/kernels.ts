@@ -121,24 +121,31 @@ function cladeSets(t: TreeNode, idx: Map<string, number>, n: number): string[] {
   const rec = (x: TreeNode): number[] => { if (!x.children.length) return [idx.get(x.name!)!]; const s = x.children.flatMap(rec); if (s.length > 1 && s.length < n - 1) { const set = new Set(s); const side = set.has(0) ? [...Array(n).keys()].filter((k) => !set.has(k)) : s; out.push(side.slice().sort((a, b) => a - b).join(',')); } return s; };
   rec(t); return out;
 }
-/** Annotates internal nodes of `tree` with bootstrap support (% of replicate trees containing the same split). */
-export function bootstrapSupport(aln: string[], names: string[], tree: TreeNode, model: DistModel, method: 'nj' | 'upgma', reps: number, progress?: (p: number) => void, seed = 1): TreeNode {
-  const idx = new Map(names.map((n, i) => [n, i])), n = names.length, L = aln[0].length;
-  const counts = new Map<string, number>();
-  let s = seed; const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
-  for (let r = 0; r < reps; r++) {
-    const cols = Array.from({ length: L }, () => Math.floor(rnd() * L));
-    const rs = aln.map((row) => { let o = ''; for (const c of cols) o += row[c]; return o; });
-    const D = distanceMatrix(rs, model);
-    const t = method === 'nj' ? nj(D, names) : upgma(D, names);
-    for (const k of new Set(cladeSets(t, idx, n))) counts.set(k, (counts.get(k) ?? 0) + 1);
-    if (progress && r % 5 === 0) progress(r / reps);
-  }
+/** Annotates internal nodes of `tree` with support: % of `replicates` containing the same split. */
+export function supportFromTrees(tree: TreeNode, names: string[], replicates: TreeNode[]): TreeNode {
+  const idx = new Map(names.map((n, i) => [n, i])), n = names.length, counts = new Map<string, number>();
+  for (const t of replicates) for (const k of new Set(cladeSets(t, idx, n))) counts.set(k, (counts.get(k) ?? 0) + 1);
   const copy = (x: TreeNode): TreeNode => ({ ...x, children: x.children.map(copy) });
   const out = copy(tree);
-  const annotate = (x: TreeNode): number[] => { if (!x.children.length) return [idx.get(x.name!)!]; const sset = x.children.flatMap(annotate); if (sset.length > 1 && sset.length < n - 1) { const set = new Set(sset); const side = set.has(0) ? [...Array(n).keys()].filter((k) => !set.has(k)) : sset; x.support = Math.round(((counts.get(side.slice().sort((a, b) => a - b).join(',')) ?? 0) / reps) * 100); } return sset; };
+  const annotate = (x: TreeNode): number[] => { if (!x.children.length) return [idx.get(x.name!)!]; const sset = x.children.flatMap(annotate); if (sset.length > 1 && sset.length < n - 1) { const set = new Set(sset); const side = set.has(0) ? [...Array(n).keys()].filter((k) => !set.has(k)) : sset; x.support = Math.round(((counts.get(side.slice().sort((a, b) => a - b).join(',')) ?? 0) / replicates.length) * 100); } return sset; };
   annotate(out);
   return out;
+}
+/** Columns resampled with replacement (one bootstrap pseudo-alignment). */
+export function resampleColumns(aln: string[], rnd: () => number): string[] {
+  const L = aln[0].length, cols = Array.from({ length: L }, () => Math.floor(rnd() * L));
+  return aln.map((row) => { let o = ''; for (const c of cols) o += row[c]; return o; });
+}
+export const lcg = (seed: number) => { let s = seed >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); };
+/** Annotates internal nodes of `tree` with bootstrap support (% of replicate trees containing the same split). */
+export function bootstrapSupport(aln: string[], names: string[], tree: TreeNode, model: DistModel, method: 'nj' | 'upgma', reps: number, progress?: (p: number) => void, seed = 1): TreeNode {
+  const rnd = lcg(seed), trees: TreeNode[] = [];
+  for (let r = 0; r < reps; r++) {
+    const D = distanceMatrix(resampleColumns(aln, rnd), model);
+    trees.push(method === 'nj' ? nj(D, names) : upgma(D, names));
+    if (progress && r % 5 === 0) progress(r / reps);
+  }
+  return supportFromTrees(tree, names, trees);
 }
 
 // ---------------- Progressive MSA ----------------

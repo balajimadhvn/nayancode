@@ -24,15 +24,14 @@ export default function Overview() {
           </motion.div>); })}
       </div>
       <div className="cols-2">
-        <Card title="Needs a server later" sub="by design">
+        <Card title="What still needs more than a browser" sub="hardware limits, not missing features">
           <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6, color: 'var(--text-dim)', fontSize: 13.5 }}>
-            <li>FASTQ → counts / BAM / VCF pipelines for large genomes (nf-core)</li>
-            <li>Structure prediction, docking screens, GNN-based QSAR (GPU)</li>
-            <li>Maximum-likelihood trees and BUSCO-style completeness at scale</li>
-            <li>Atlas-scale single-cell integration</li>
-            <li>Accounts, sharing and cloud projects</li>
+            <li>Whole human genomes: a 30× run is ~100 GB of reads, beyond a browser tab's ~4 GB of memory. Bacterial, viral, organellar and targeted data map here, with SNV and indel calling.</li>
+            <li>Shotgun metagenome classification: reference databases are tens of gigabytes.</li>
+            <li>Protein structure prediction: AlphaFold-class models need a GPU and gigabytes of weights. Predicted structures can be opened from AlphaFold DB.</li>
+            <li>Atlas-scale single-cell integration (100,000+ cells).</li>
           </ul>
-          <div className="faint" style={{ marginTop: 10, fontSize: 12.5 }}>Everything in the studios above runs locally and works offline after the first visit. See <Link to="/licenses" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>licences</Link>.</div>
+          <div className="faint" style={{ marginTop: 10, fontSize: 12.5 }}>For these, nf-core pipelines run on your own computer or institute cluster, and their outputs open here through Import. Everything in the studios above runs locally and works offline after the first visit. See <Link to="/licenses" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>licences</Link>.</div>
         </Card>
         <Card title="Recent analyses" sub={`${records.length} recorded`} actions={<button className="btn sm" onClick={() => set({ methods: true })}>Methods</button>}>
           {records.length === 0 ? <div className="faint">Nothing yet. Open a studio and load an example dataset to see provenance in action.</div> :
