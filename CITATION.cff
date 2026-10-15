@@ -7,6 +7,7 @@ authors:
     given-names: "Balaji"
     orcid: "https://orcid.org/0009-0007-8654-3864"
     affiliation: "Vivofold, India"
+doi: "10.5281/zenodo.23393495"
 version: "1.0.0"
 date-released: "2026-10-15"
 license: Apache-2.0
@@ -28,3 +29,10 @@ abstract: >-
   microbiome diversity, cheminformatics and QSAR, protein structure analysis and maximum-likelihood
   phylogenetics. Input files are analysed on the user's own computer, and every result records its own
   provenance and methods text.
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.23393495"
+    description: "Concept DOI (all versions)"
+  - type: doi
+    value: "10.5281/zenodo.23393496"
+    description: "Version 1.0.0"
