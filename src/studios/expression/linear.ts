@@ -197,8 +197,14 @@ export function lmFit(y: Float64Array, w: Float64Array | null, genes: string[], 
 }
 
 export interface Voom { y: Float64Array; w: Float64Array; libSize: number[]; trend: { x: number[]; y: number[] } }
-/** voom: log-CPM with observation-level precision weights from the fitted mean–variance trend (span 0.5). */
-export function voom(m: CountMatrix, design: Design, normFactors: number[]): Voom {
+/** limma's chooseLowessSpan: smaller spans for more genes (0.3 + 0.7·(50/n)^(1/3), capped at 1). */
+export const voomSpan = (nGenes: number) => Math.min(0.3 + 0.7 * (50 / nGenes) ** (1 / 3), 1);
+
+/**
+ * voom: log-CPM with observation-level precision weights from the fitted mean–variance trend. The lowess span is
+ * chosen from the number of genes as in limma ≥ 3.64 (adaptive.span = TRUE, its default); pass a number to fix it.
+ */
+export function voom(m: CountMatrix, design: Design, normFactors: number[], span: number | 'adaptive' = 'adaptive'): Voom {
   const S = m.samples.length, G = m.genes.length;
   const lib = colSums(m).map((l, j) => l * normFactors[j]);
   const y = new Float64Array(G * S);
@@ -207,7 +213,7 @@ export function voom(m: CountMatrix, design: Design, normFactors: number[]): Voo
   const meanLogLib = lib.reduce((a, l) => a + Math.log2(l + 1), 0) / S;
   const sx = fit.amean.map((a) => a + meanLogLib - Math.log2(1e6));
   const sy = fit.s2.map((v) => Math.sqrt(Math.sqrt(v)));
-  const ly = lowess(sx, sy, 0.5);
+  const ly = lowess(sx, sy, span === 'adaptive' ? voomSpan(G) : span);
   const f = interpolator(sx, ly);
   const w = new Float64Array(G * S);
   for (let g = 0; g < G; g++) for (let j = 0; j < S; j++) {

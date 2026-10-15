@@ -31,13 +31,13 @@ describe('linear models agree with edgeR + limma', () => {
   });
   it('voom weights match', () => {
     const w0 = Array.from(v.w.subarray(0, 12));
-    expect(maxAbs(w0, T.voomWeightsFirst)).toBeLessThan(0.02 * Math.max(...T.voomWeightsFirst));
+    expect(maxAbs(w0, T.voomWeightsFirst)).toBeLessThan(1e-6 * Math.max(...T.voomWeightsFirst));
     const mean = v.w.reduce((a, b) => a + b, 0) / v.w.length;
-    expect(Math.abs(mean - T.voomWeightsMean) / T.voomWeightsMean).toBeLessThan(0.01);
+    expect(Math.abs(mean - T.voomWeightsMean) / T.voomWeightsMean).toBeLessThan(1e-8);
   });
   it('empirical-Bayes prior matches eBayes', () => {
-    expect(Math.abs(eb.d0 - T.df0) / T.df0).toBeLessThan(0.02);
-    expect(Math.abs(eb.s02 - T.s02) / T.s02).toBeLessThan(0.02);
+    expect(Math.abs(eb.d0 - T.df0) / T.df0).toBeLessThan(1e-6);
+    expect(Math.abs(eb.s02 - T.s02) / T.s02).toBeLessThan(1e-6);
   });
   it('coefficient tests (drugA vs control, drugB vs control) match topTable', () => {
     for (const [coef, ref] of [['groupdrugA', T.drugA], ['groupdrugB', T.drugB]] as const) {
@@ -45,19 +45,20 @@ describe('linear models agree with edgeR + limma', () => {
       const r = contrastTest(fit, eb, c);
       expect(maxAbs(r.map((x) => x.logFC), ref.logFC)).toBeLessThan(1e-6);
       expect(corr(r.map((x) => x.t), ref.t)).toBeGreaterThan(0.9999);
-      expect(maxAbs(r.map((x) => x.t), ref.t)).toBeLessThan(0.05);
-      expect(jaccard(sigSet(r.map((x) => x.fdr)), sigSet(ref.fdr))).toBeGreaterThan(0.97);
+      expect(maxAbs(r.map((x) => x.t), ref.t)).toBeLessThan(1e-6);
+      expect(maxAbs(r.map((x) => x.p), ref.p)).toBeLessThan(1e-8);
+      expect(jaccard(sigSet(r.map((x) => x.fdr)), sigSet(ref.fdr))).toBe(1);
     }
   });
   it('a contrast between two non-reference groups (drugB − drugA) matches contrasts.fit', () => {
     const r = contrastTest(fit, eb, levelContrast(design, 'group', 'drugA', 'drugB'));
     expect(maxAbs(r.map((x) => x.logFC), T.BvsA.logFC)).toBeLessThan(1e-6);
-    expect(corr(r.map((x) => x.t), T.BvsA.t)).toBeGreaterThan(0.9999);
+    expect(maxAbs(r.map((x) => x.t), T.BvsA.t)).toBeLessThan(1e-6);
   });
   it('the moderated F-test for any group difference matches topTable(coef = 2:3)', () => {
     const f = fTest(fit, eb, factorContrasts(design, 'group'));
-    expect(corr(f.map((x) => Math.log(x.F)), T.F.F.map(Math.log))).toBeGreaterThan(0.999);
-    expect(jaccard(sigSet(f.map((x) => x.fdr)), sigSet(T.F.fdr))).toBeGreaterThan(0.95);
+    expect(maxAbs(f.map((x) => x.F), T.F.F)).toBeLessThan(1e-6 * Math.max(...T.F.F));
+    expect(jaccard(sigSet(f.map((x) => x.fdr)), sigSet(T.F.fdr))).toBe(1);
   });
   it('unweighted fit on the same log-CPM matches lmFit without weights', () => {
     const f0 = lmFit(v.y, null, m.genes, design), e0 = moderate(f0);
@@ -77,8 +78,8 @@ describe('paired designs', () => {
     const v = voom(m, design, nf), fit = lmFit(v.y, v.w, m.genes, design), eb = moderate(fit);
     const r = contrastTest(fit, eb, design.columns.map((x) => (x === 'timeafter' ? 1 : 0)));
     expect(maxAbs(r.map((x) => x.logFC), P.after.logFC)).toBeLessThan(1e-6);
-    expect(corr(r.map((x) => x.t), P.after.t)).toBeGreaterThan(0.9999);
-    expect(jaccard(sigSet(r.map((x) => x.fdr)), sigSet(P.after.fdr))).toBeGreaterThan(0.97);
+    expect(maxAbs(r.map((x) => x.t), P.after.t)).toBeLessThan(1e-6);
+    expect(jaccard(sigSet(r.map((x) => x.fdr)), sigSet(P.after.fdr))).toBe(1);
   });
 });
 
