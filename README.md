@@ -1,5 +1,7 @@
 # Nayancode Workbench
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23393495.svg)](https://doi.org/10.5281/zenodo.23393495)
+
 **Free, open-source bioinformatics and cheminformatics that runs in your web browser.**
 By [Vivofold](https://vivofold.in) · Licence: [Apache-2.0](LICENSE) · Use it: **https://balajimadhvn.github.io/nayancode/**
 
@@ -37,7 +39,10 @@ Head-to-head benchmarks against DESeq2, limma, Scanpy, bcftools and IQ-TREE on p
 `benchmarks/`.
 
 ## Cite
-Use the "Cite this repository" button on GitHub (from `CITATION.cff`), or the Zenodo DOI of the release you used.
+Madhavan B. *Nayancode Workbench: open-source bioinformatics and cheminformatics in the web browser.* Vivofold, 2026.
+DOI: [10.5281/zenodo.23393495](https://doi.org/10.5281/zenodo.23393495) (all versions; version 1.0.0 is
+[10.5281/zenodo.23393496](https://doi.org/10.5281/zenodo.23393496)). GitHub's "Cite this repository" button gives the same
+reference from `CITATION.cff`. Please cite the version you used.
 
 ## Run locally
 ```bash
