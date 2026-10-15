@@ -3,9 +3,10 @@ message: "If you use the Nayancode Workbench in your research, please cite it as
 title: "Nayancode Workbench: open-source bioinformatics and cheminformatics in the web browser"
 type: software
 authors:
-  - name: "Vivofold"
-    website: "https://vivofold.in"
-    email: "support@vivofold.in"
+  - family-names: "Madhavan"
+    given-names: "Balaji"
+    orcid: "https://orcid.org/0009-0007-8654-3864"
+    affiliation: "Vivofold, India"
 version: "1.0.0"
 date-released: "2026-10-15"
 license: Apache-2.0
@@ -23,7 +24,7 @@ keywords:
 abstract: >-
   The Nayancode Workbench is a free, open-source collection of analysis studios that run entirely in the web
   browser: sequence analysis and cloning, read mapping with minimap2 and samtools compiled to WebAssembly,
-  variant interpretation, bulk RNA-seq differential expression and enrichment, single-cell clustering,
+  variant interpretation, bulk RNA-seq differential expression for any experimental design (validated against edgeR and limma) and enrichment, single-cell clustering,
   microbiome diversity, cheminformatics and QSAR, protein structure analysis and maximum-likelihood
   phylogenetics. Input files are analysed on the user's own computer, and every result records its own
   provenance and methods text.
