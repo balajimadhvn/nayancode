@@ -104,7 +104,7 @@ Worked examples from the papers (tests in `src/studios/lab/qpcr.test.ts`; data t
   tuning the test.
 - **Pfaffl 2001, Table 3** (TyrA and PyrB against Gst, E = 2.09, 2.16, 1.99; three cDNA inputs at two levels): all 12
   published ratios R are reproduced from the Table 2 crossing points to within 0.5 % (efficiencies are printed to two
-  decimals; the largest gap is 0.48 %, TyrA at 4.0 ng).
+  decimals; the largest gap is 0.48 %, PyrB at 4.0 ng).
 
 ## Figure export
 SVG, PDF (own minimal writer, no dependency) and PNG are drawn from one scene description, so all three show the same
