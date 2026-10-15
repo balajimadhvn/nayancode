@@ -1,0 +1,2 @@
+participant,group,exp_code,exp_analysis,t1_success,t1_seconds,t1_hints,t2_success,t2_seconds,t2_hints,t3_success,t3_seconds,t3_hints,t4_success,t4_seconds,t4_hints,t5_success,t5_seconds,t5_hints,sus1,sus2,sus3,sus4,sus5,sus6,sus7,sus8,sus9,sus10,problems,comments
+P01,A,none,some,1,210,0,1,95,0,0.5,400,1,1,120,0,1,150,0,4,2,4,2,4,2,4,2,4,2,"T3: did not find Import (sev 3)","example row: delete before use"

@@ -1,3 +1,4 @@
+import { brandedName } from '@/core/filename';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ToolInfo } from '@/core/provenance';
 import { trackedFetch } from '@/core/net';
@@ -94,7 +95,7 @@ export default function StructureStudio() {
   }, [loadData]);
   const hand = useHandoff((s) => s.structure);
   useEffect(() => { if (!hand || !ready) return; clearHandoffSoon('structure'); if (hand.kind === 'af') { setUni(hand.id); void loadAf(hand.id); } else { setPdb(hand.id); void loadPdb(hand.id); } /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [hand, ready]);
-  const snapshot = () => { const c = host.current?.querySelector('canvas'); if (!c) return; const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'structure.png'; a.click(); };
+  const snapshot = () => { const c = host.current?.querySelector('canvas'); if (!c) return; const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = brandedName('structure.png'); a.click(); };
 
   return (
     <div className="stack" style={{ gap: 18 }}>
