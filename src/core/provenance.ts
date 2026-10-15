@@ -12,6 +12,7 @@ export const CITATIONS: Record<string, string> = {
   henikoff1992: 'Henikoff S, Henikoff JG (1992) Amino acid substitution matrices from protein blocks. Proc Natl Acad Sci USA 89:10915–10919.',
   robinson2010: 'Robinson MD, Oshlack A (2010) A scaling normalization method for differential expression analysis of RNA-seq data. Genome Biol 11:R25.',
   anders2010: 'Anders S, Huber W (2010) Differential expression analysis for sequence count data. Genome Biol 11:R106.',
+  nayancode: 'Madhavan B (2026) Nayancode Workbench: open-source bioinformatics and cheminformatics in the web browser. Zenodo. https://doi.org/10.5281/zenodo.23393495',
   law2014: 'Law CW, Chen Y, Shi W, Smyth GK (2014) voom: precision weights unlock linear model analysis tools for RNA-seq read counts. Genome Biol 15:R29.',
   smyth2004: 'Smyth GK (2004) Linear models and empirical Bayes methods for assessing differential expression in microarray experiments. Stat Appl Genet Mol Biol 3:Article3.',
   benjamini1995: 'Benjamini Y, Hochberg Y (1995) Controlling the false discovery rate. J R Stat Soc B 57:289–300.',
@@ -118,6 +119,7 @@ export function buildMethods(records: ProvRecord[]): { text: string; refs: strin
     return r ? `${s} ${nums(r.citations)}`.trim() : s;
   }).join(' ');
   const last = records[records.length - 1];
-  const tail = ` All computation ran locally in the web browser (${last.app}); no data were uploaded to a server.`;
+  refKeys.push('nayancode');
+  const tail = ` Analyses were run in the web browser with the ${last.app} [${refKeys.length}]; input files were analysed locally and not uploaded.`;
   return { text: text + tail, refs: refKeys.map((k, i) => `[${i + 1}] ${CITATIONS[k] ?? k}`) };
 }

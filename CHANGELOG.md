@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- The auto-written Methods paragraph cites the Workbench by its Zenodo DOI, and states precisely that input files
+  were analysed locally.
+
 ## 1.0.0 (2026-10-15)
 First public, open-source release (Apache-2.0).
 - Studios: Sequence, Genome (minimap2 + samtools, WebAssembly), Variant, Expression, Single-Cell, Microbiome,
