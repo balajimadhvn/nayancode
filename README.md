@@ -18,7 +18,7 @@ symbol, variant or compound name), and only when you ask. A badge in the header 
 | Sequence | ORFs, translation, restriction digest and virtual gel, primer design and in-silico PCR, Golden Gate / Gibson cloning, CRISPR guides, Sanger traces, motifs (JASPAR) | TypeScript | Browser-scale sequences |
 | Genome | FASTQ QC, read mapping (minimap2), sort / index / depth / pileup (samtools), SNV calling, coverage | minimap2 + samtools (WebAssembly) | ~100 Mb reference, ~300 MB reads; substitutions only |
 | Variant | VCF parsing and filtering, Ti/Tv and spectra, mutational signatures (NMF + NNLS), ClinVar / gnomAD / CIViC / Ensembl VEP evidence | TypeScript | Research use only |
-| Expression | Normalisation, PCA, moderated-t differential expression with FDR, ComBat batch correction, ORA and preranked GSEA (Reactome, WikiPathways, GO) | TypeScript | Two-group designs (design-matrix models in progress) |
+| Expression | TMM + voom linear models for any design (groups, covariates, batches, paired samples; contrasts and F-tests), PCA, ComBat for plots, ORA and preranked GSEA (Reactome, WikiPathways, GO) | TypeScript | Results agree with edgeR + limma; DESeq2's negative-binomial model is not implemented |
 | Single-Cell | QC, HVGs, PCA, kNN graph, Louvain clustering, UMAP and t-SNE, marker genes, 10x import | TypeScript | Embeddings on 3,000 cells by default |
 | Microbiome | Alpha / beta diversity, UniFrac, PERMANOVA, CLR, differential abundance | TypeScript | Amplicon-scale tables |
 | Chemistry | Descriptors, fingerprints, similarity, substructure, Lipinski, QSAR with cross-validation and Y-randomisation | RDKit (WebAssembly) | Interactive library sizes |
@@ -32,7 +32,7 @@ for nf-core pipeline outputs.
 Every analysis kernel is tested against a known answer: published reference values (for example t-distribution
 tables, Benjamini–Hochberg against R's `p.adjust`, UMAP curve parameters), hand-computed examples, or simulations with
 a planted truth (planted variants, differentially expressed genes, batch effects, clusters, signatures and pathways).
-`npm test` runs 187 unit tests; `npm run e2e` runs 13 end-to-end browser tests that execute each studio on demo data.
+`npm test` runs 208 unit tests; `npm run e2e` runs 14 end-to-end browser tests that execute each studio on demo data.
 Head-to-head benchmarks against DESeq2, limma, Scanpy, bcftools and IQ-TREE on public data are being added under
 `benchmarks/`.
 

@@ -12,6 +12,7 @@ export const CITATIONS: Record<string, string> = {
   henikoff1992: 'Henikoff S, Henikoff JG (1992) Amino acid substitution matrices from protein blocks. Proc Natl Acad Sci USA 89:10915–10919.',
   robinson2010: 'Robinson MD, Oshlack A (2010) A scaling normalization method for differential expression analysis of RNA-seq data. Genome Biol 11:R25.',
   anders2010: 'Anders S, Huber W (2010) Differential expression analysis for sequence count data. Genome Biol 11:R106.',
+  law2014: 'Law CW, Chen Y, Shi W, Smyth GK (2014) voom: precision weights unlock linear model analysis tools for RNA-seq read counts. Genome Biol 15:R29.',
   smyth2004: 'Smyth GK (2004) Linear models and empirical Bayes methods for assessing differential expression in microarray experiments. Stat Appl Genet Mol Biol 3:Article3.',
   benjamini1995: 'Benjamini Y, Hochberg Y (1995) Controlling the false discovery rate. J R Stat Soc B 57:289–300.',
   rdkit: 'RDKit: Open-source cheminformatics. https://www.rdkit.org',

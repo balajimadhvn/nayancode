@@ -1,32 +1,38 @@
 import { exposeKernels, type Kernel } from '@/compute/rpc';
 import * as k from './kernels';
 import * as en from './enrichment';
-import { combat, parseBatches } from './combat';
+import { combat } from './combat';
+import { alignColumn, designDe, parseSheet, type DesignRun, type StudioDe } from './design';
 
-export interface Analysed { qc: { samples: string[]; libSize: number[]; detected: number[]; sf: number[]; groups: string[] }; pca: k.PcaResult; de: k.DeResult; heat: { genes: string[]; z: number[][]; samples: string[] }; batch?: { labels: string[]; nBatches: number; pcaBefore: k.PcaResult; correctedCsv: string } }
+export interface Analysed { qc: { samples: string[]; libSize: number[]; detected: number[]; sf: number[]; groups: string[]; colourBy: string }; pca: k.PcaResult; de: StudioDe; heat: { genes: string[]; z: number[][]; samples: string[] }; batch?: { column: string; labels: string[]; nBatches: number; pcaBefore: k.PcaResult; correctedCsv: string } }
 
-const analyse: Kernel<{ counts: string; sheet: string; params: Omit<k.DeParams, 'groupA' | 'groupB'> & { groupA: string; groupB: string } }, Analysed> = (a, ctx) => {
+const analyse: Kernel<{ counts: string; sheet: string; run: DesignRun }, Analysed> = (a, ctx) => {
   ctx.progress(0.05, 'Parsing matrix');
   const m = k.parseMatrix(a.counts);
-  const groups = k.parseGroups(a.sheet, m.samples);
-  ctx.progress(0.2, 'Normalising (median-of-ratios)');
+  const sheet = parseSheet(a.sheet, m.samples);
+  const t = a.run.test, used = a.run.specs.filter((s) => s.use);
+  // Samples are coloured (and protected in ComBat) by the tested factor, else the first factor in the design.
+  const colourBy = t.kind !== 'slope' ? t.factor : used.find((s) => s.kind === 'factor')?.name ?? '';
+  const groups = colourBy ? alignColumn(sheet, colourBy, m.samples) : m.samples.map(() => 'all');
+  ctx.progress(0.15, 'Normalising (median-of-ratios, for QC and PCA)');
   const logged = k.normalise(m);
-  const batches = parseBatches(a.sheet, m.samples);
-  ctx.progress(0.4, batches ? 'ComBat batch correction' : 'PCA');
+  const batchCol = sheet.columns.find((c) => /^batch$/i.test(c) && c !== colourBy);
+  const batches = batchCol ? alignColumn(sheet, batchCol, m.samples) : null;
+  ctx.progress(0.3, batches ? 'ComBat batch correction (for PCA and heatmap)' : 'PCA');
   const S = m.samples.length;
-  const cb = batches ? combat(logged.x, m.genes.length, S, batches, groups) : null;
+  const cb = batches && new Set(batches).size > 1 ? combat(logged.x, m.genes.length, S, batches, colourBy ? groups : undefined) : null;
   const view: k.Logged = cb ? { ...logged, x: cb.x } : logged;
   const pcaRaw = k.pca(logged, 500, 4);
   const pca = cb ? k.pca(view, 500, 4) : pcaRaw;
-  ctx.progress(0.6, 'Differential expression');
-  const de = k.differential(m, groups, a.params);
+  ctx.progress(0.5, a.run.useVoom ? 'Linear model (TMM, voom, empirical Bayes)' : 'Linear model (TMM, empirical Bayes)');
+  const de = designDe(m, sheet, a.run);
   ctx.progress(0.85, 'Clustering top genes');
   const idx = new Map(m.genes.map((g, i) => [g, i]));
   const top = de.rows.slice(0, 40).map((r) => r.gene);
   const rows = top.map((g) => Float64Array.from({ length: S }, (_, j) => view.x[idx.get(g)! * S + j]));
   const order = k.clusterOrder(rows);
   const z = order.map((i) => { const r = rows[i]; const mean = r.reduce((x, y) => x + y, 0) / S; const sd = Math.sqrt(r.reduce((x, y) => x + (y - mean) ** 2, 0) / (S - 1)) || 1; return Array.from(r, (v) => (v - mean) / sd); });
-  return { qc: { samples: m.samples, libSize: logged.libSize, detected: logged.detected, sf: Array.from(logged.sf), groups }, pca, de, heat: { genes: order.map((i) => top[i]), z, samples: m.samples }, batch: cb ? { labels: batches!, nBatches: cb.nBatches, pcaBefore: pcaRaw, correctedCsv: 'gene,' + m.samples.join(',') + '\n' + m.genes.map((g, i) => g + ',' + Array.from({ length: S }, (_, j) => cb.x[i * S + j].toFixed(4)).join(',')).join('\n') } : undefined };
+  return { qc: { samples: m.samples, libSize: logged.libSize, detected: logged.detected, sf: Array.from(logged.sf), groups, colourBy }, pca, de, heat: { genes: order.map((i) => top[i]), z, samples: m.samples }, batch: cb ? { column: batchCol!, labels: batches!, nBatches: cb.nBatches, pcaBefore: pcaRaw, correctedCsv: 'gene,' + m.samples.join(',') + '\n' + m.genes.map((g, i) => g + ',' + Array.from({ length: S }, (_, j) => cb.x[i * S + j].toFixed(4)).join(',')).join('\n') } : undefined };
 };
 const packCache = new Map<string, unknown>();
 async function loadJson<T>(url: string): Promise<T> { if (!packCache.has(url)) { const r = await fetch(url); if (!r.ok) throw new Error(`Could not load ${url} (${r.status})`); packCache.set(url, await r.json()); } return packCache.get(url) as T; }
