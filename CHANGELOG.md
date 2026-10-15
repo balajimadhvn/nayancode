@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- Downloaded files are named `vivofold-nayancode_<name>_<date>.<ext>`.
+- Expression Studio defaults to testing the treatment rather than a paired donor or batch column.
+- Usability-study kit in `docs/usability/` (protocol, consent form, tasks, SUS questionnaire, analysis script).
 - Benchmarks on public data (`benchmarks/`, `npm run bench`): Expression Studio vs DESeq2, limma-voom and edgeR on
   airway and pasilla; Single-Cell Studio vs Scanpy on 10x PBMC3k. Results in benchmarks/RESULTS.md.
 - Expression: voom chooses its lowess span from the number of genes, and the empirical-Bayes prior follows limma's

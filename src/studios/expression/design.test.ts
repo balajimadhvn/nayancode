@@ -20,6 +20,10 @@ describe('sample sheet', () => {
     expect(formula(g)).toBe('~ group + age');
     expect(defaultTest(s, g)).toEqual({ kind: 'pair', factor: 'group', a: 'c', b: 't' });
   });
+  it('defaults to the treatment, not the donor column it is paired with (airway layout)', () => {
+    const s = parseSheet('sample\tcell\tdex\na\tN1\tuntrt\nb\tN1\ttrt\nc\tN2\tuntrt\nd\tN2\ttrt\ne\tN3\tuntrt\nf\tN3\ttrt');
+    expect(defaultTest(s, guessSpecs(s))).toEqual({ kind: 'pair', factor: 'dex', a: 'untrt', b: 'trt' });
+  });
   it('explains an impossible design', () => {
     const s = parseSheet('sample,group,batch\na,c,x\nb,c,x\nc,t,y\nd,t,y');
     const g = guessSpecs(s);

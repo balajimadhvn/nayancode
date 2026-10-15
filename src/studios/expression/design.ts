@@ -59,10 +59,13 @@ export function guessSpecs(sheet: Sheet): VarSpec[] {
   });
 }
 
-/** First used factor with ≥2 levels, preferring a column called group/condition/treatment. */
+/**
+ * What to test by default: a used factor called group/condition/treatment/genotype, else the factor with the fewest
+ * levels (a donor or batch column usually has more levels than the treatment it is paired with).
+ */
 export function defaultTest(sheet: Sheet, specs: VarSpec[]): TestSpec | null {
   const fs = specs.filter((s) => s.use && s.kind === 'factor');
-  const f = fs.find((s) => /^(group|condition|treatment|genotype)$/i.test(s.name)) ?? fs[0];
+  const f = fs.find((s) => /^(group|condition|treatment|genotype)$/i.test(s.name)) ?? [...fs].sort((a, b) => levelsOf(sheet, a.name).length - levelsOf(sheet, b.name).length)[0];
   if (f) { const lv = levelsOf(sheet, f.name), a = f.reference && lv.includes(f.reference) ? f.reference : lv[0]; return { kind: 'pair', factor: f.name, a, b: lv.find((x) => x !== a) ?? a }; }
   const n = specs.find((s) => s.use && s.kind === 'numeric');
   return n ? { kind: 'slope', variable: n.name } : null;

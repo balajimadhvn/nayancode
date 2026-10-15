@@ -5,3 +5,4 @@ playwright-report
 *.local
 .DS_Store
 benchmarks/.cache/
+docs/usability/materials/
