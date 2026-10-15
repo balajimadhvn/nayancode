@@ -59,7 +59,7 @@ export function toMolBlock(m: MolG, coords?: Float64Array | number[][]): string 
     const c = coords ? (Array.isArray(coords) ? coords[i] : [coords[3 * i], coords[3 * i + 1], coords[3 * i + 2]]) : [a.x, a.y, a.z];
     lines.push(`${c[0].toFixed(4).padStart(10)}${c[1].toFixed(4).padStart(10)}${c[2].toFixed(4).padStart(10)} ${a.el.padEnd(3)} 0  0  0  0  0  0  0  0  0  0  0  0`);
   });
-  for (const b of m.bonds) lines.push(`${pad(b.a + 1)}${pad(b.b + 1)}${pad(b.aromatic ? 4 : b.order)}${pad(0)}`);
+  for (const b of m.bonds) lines.push(`${pad(b.a + 1)}${pad(b.b + 1)}${pad(b.aromatic ? 4 : b.order)}${pad(b.wedge)}`);
   const ch = m.atoms.map((a, i) => [i, a.fc] as const).filter(([, c]) => c !== 0);
   for (let k = 0; k < ch.length; k += 8) { const part = ch.slice(k, k + 8); lines.push(`M  CHG${pad(part.length)}${part.map(([i, c]) => ` ${pad(i + 1)} ${pad(c)}`).join('')}`); }
   lines.push('M  END');
@@ -85,7 +85,7 @@ export type Hyb = 'sp' | 'sp2' | 'sp3';
 export function hybridisation(m: MolG, nb = neighbours(m)): Hyb[] {
   const bo = m.atoms.map(() => [] as number[]);
   for (const b of m.bonds) { bo[b.a].push(b.aromatic ? 1.5 : b.order); bo[b.b].push(b.aromatic ? 1.5 : b.order); }
-  const hyb: Hyb[] = m.atoms.map((a, i) => {
+  const hyb: Hyb[] = m.atoms.map((_a, i) => {
     if (m.aromaticAtom[i] || bo[i].some((o) => o === 2 || o === 1.5)) return bo[i].filter((o) => o === 2).length >= 2 || bo[i].includes(3) ? 'sp' : 'sp2';
     if (bo[i].includes(3)) return 'sp';
     return 'sp3';
@@ -203,5 +203,5 @@ export const PROTONATION_RULES: { name: string; smarts: string; atom: number; ch
   { name: 'acyl sulfonamide', smarts: '[CX3](=O)[NX3H1][SX4](=O)=O', atom: 2, charge: -1 },
   { name: 'guanidine', smarts: '[NX3;!$(N-C=O);!$(N-S=O)][CX3](=[NX2;!$(N-C=O);!$(N-S=O);!$(N-a);!$(N=C-a)])[NX3;!$(N-C=O)]', atom: 3, charge: 1 },
   { name: 'amidine', smarts: '[CX3;!$(C(-[N,O,S])(-[N,O,S])=*)]([#6,#1])(=[NX2;!$(N-[O,N,S]);!$(N-C=O);!$(N-a)])[NX3;H2,H1;!$(N-C=O);!$(N-a)]', atom: 2, charge: 1 },
-  { name: 'aliphatic amine', smarts: '[NX3;H2,H1,H0;+0;!$(N-[!#6;!#1]);!$(N-C=[O,S,N]);!$(N-C#N);!$(N-a);!$(N-C=C);!$(N-[SX4]);!$(N(-C)(-C)-C-C(F)(F)F);!$(N-C-[F,Cl])]', atom: 0, charge: 1 },
+  { name: 'aliphatic amine', smarts: '[NX3;H2,H1,H0;+0;!$(N-[!#6;!#1]);!$(N-C=[O,S,N]);!$(N-C#N);!$(N-a);!$(N-C=C);!$(N-[SX4]);!$(N-C-[F,Cl]);!$([NX3;H0,H1]-C-C=O);!$([NX3;H0,H1;R]1CC[N,O,S]CC1)]', atom: 0, charge: 1 },
 ];

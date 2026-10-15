@@ -137,7 +137,8 @@ export function rmsdOrdered(a: V3[], b: V3[]): number {
   return Math.sqrt(s / a.length);
 }
 
-/** Heavy-atom graph automorphisms (same element, same bond order), enumerated by backtracking up to `cap` mappings. */
+/** Heavy-atom graph automorphisms (same element and connectivity; bond orders are ignored, as in spyrmsd, so that carboxylate and nitro
+ *  oxygens are interchangeable), enumerated by backtracking up to `cap` mappings. */
 export function automorphisms(el: string[], bonds: [number, number, number][], cap = 20000): number[][] {
   const n = el.length, nb = el.map(() => new Map<number, number>());
   for (const [a, b, o] of bonds) { nb[a].set(b, o); nb[b].set(a, o); }
@@ -152,7 +153,7 @@ export function automorphisms(el: string[], bonds: [number, number, number][], c
     for (let t = 0; t < n; t++) {
       if (used[t] || el[t] !== el[i] || deg[t] !== deg[i]) continue;
       let ok = true;
-      for (const [j, o] of nb[i]) if (map[j] >= 0 && nb[t].get(map[j]) !== o) { ok = false; break; }
+      for (const j of nb[i].keys()) if (map[j] >= 0 && !nb[t].has(map[j])) { ok = false; break; }
       if (!ok) continue;
       map[i] = t; used[t] = 1; rec(k + 1); map[i] = -1; used[t] = 0;
     }

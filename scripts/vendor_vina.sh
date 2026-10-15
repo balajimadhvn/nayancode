@@ -20,7 +20,7 @@ LIBSRC="ad4cache cache non_cache conf_independent coords grid szv_grid model mon
 build() { # $1 = st|mt
   local mode=$1 B=$WORK/obj-$1; mkdir -p "$B/vina"
   local cf="-O3 -DNDEBUG -std=c++20 -fexceptions -DBOOST_ALL_NO_LIB -DBOOST_FILESYSTEM_STATIC_LINK=1 -Wno-deprecated-declarations -I$ROOT/scripts/vina-wasm -I$V -I$BOOST_INC -I$WORK/boost-filesystem/src"
-  local lf="-sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sMAXIMUM_MEMORY=2GB -sMODULARIZE=1 -sEXPORT_NAME=VinaModule -sENVIRONMENT=worker -fexceptions -sEXPORTED_FUNCTIONS=_vina_dock,_vina_score,_vina_free,_malloc,_free -sEXPORTED_RUNTIME_METHODS=FS,UTF8ToString,stringToUTF8,lengthBytesUTF8 -sFORCE_FILESYSTEM=1"
+  local lf="-sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sMAXIMUM_MEMORY=2GB -sMODULARIZE=1 -sEXPORT_NAME=VinaModule -sENVIRONMENT=web,worker,node -fexceptions -sEXPORTED_FUNCTIONS=_vina_dock,_vina_score,_vina_free,_malloc,_free -sEXPORTED_RUNTIME_METHODS=FS,UTF8ToString,stringToUTF8,lengthBytesUTF8 -sFORCE_FILESYSTEM=1"
   [ $mode = mt ] && { cf="$cf -pthread"; lf="$lf -pthread -sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency -sPTHREAD_POOL_SIZE_STRICT=0"; }
   local objs=()
   for f in $LIBSRC; do em++ $cf -c "$V/$f.cpp" -o "$B/vina/$f.o" & objs+=("$B/vina/$f.o"); while [ "$(jobs -r | wc -l)" -ge 8 ]; do sleep 0.2; done; done
