@@ -40,7 +40,7 @@ describe('Livak & Schmittgen 2001 worked examples', () => {
     const sdW = (g: string) => r.samples.find((x) => x.sample === g)!.sdWells!;
     expect(kid.meanX).toBeCloseTo(4.47, 2); expect(sdW('kidney')).toBeCloseTo(0.14, 2);
     expect(brain.meanX).toBeCloseTo(6.9967, 3); expect(sdW('brain')).toBeCloseTo(0.2103, 3);
-    expect(kid.ddct).toBeCloseTo(4.4667 - 6.9967, 3); expect(kid.fold).toBeCloseTo(5.77, 2);        // paper prints 5.5 (−2.47) from its brain average 6.93; 5.5–5.8 depending on that line
+    expect(kid.ddct).toBeCloseTo(4.4667 - 6.9967, 3); expect(kid.fold).toBeCloseTo(5.776, 2);        // paper prints 5.5 (−2.47) from its brain average 6.93; 5.5–5.8 depending on that line
     
   });
 });
