@@ -34,7 +34,7 @@ for nf-core pipeline outputs.
 Every analysis kernel is tested against a known answer: published reference values (for example t-distribution
 tables, Benjamini–Hochberg against R's `p.adjust`, UMAP curve parameters), hand-computed examples, or simulations with
 a planted truth (planted variants, differentially expressed genes, batch effects, clusters, signatures and pathways).
-`npm test` runs 208 unit tests; `npm run e2e` runs 14 end-to-end browser tests that execute each studio on demo data.
+`npm test` runs 209 unit tests; `npm run e2e` runs 14 end-to-end browser tests that execute each studio on demo data.
 Head-to-head benchmarks against DESeq2, limma, Scanpy, bcftools and IQ-TREE on public data are being added under
 `benchmarks/`.
 
