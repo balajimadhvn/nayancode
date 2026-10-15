@@ -19,7 +19,7 @@ function Sidebar() {
   return (
     <aside className={`sidebar ${open ? 'open' : ''}`}>
       <NavLink to="/" className="brand" onClick={() => set({ sidebar: false })} title={`${BRAND.name} home`}><img src={`${import.meta.env.BASE_URL}brand/vivofold-mark.svg`} width={26} height={27} alt="" /><span className="brand-t"><b>{BRAND.name}</b><small>Nayancode Workbench</small></span></NavLink>
-      <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={() => set({ sidebar: false })}>
+      <NavLink to={BRAND.workbenchHome} end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={() => set({ sidebar: false })}>
         {({ isActive }) => <>{isActive && <motion.i layoutId="nav-bg" className="nav-bg" />}<Icon.Home className="ico" /> Overview</>}
       </NavLink>
       <NavLink to="/report" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={() => set({ sidebar: false })}>{({ isActive }) => <>{isActive && <motion.i layoutId="nav-bg" className="nav-bg" />}<Icon.Doc className="ico" /> Report</>}</NavLink>

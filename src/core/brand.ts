@@ -6,4 +6,6 @@ export const BRAND = {
   siteUrl: 'https://vivofold.in',
   repo: 'https://github.com/balajimadhvn/nayancode',
   email: 'support@vivofold.in',
+  /** Route of the Workbench overview (the website mounts the Workbench under /workbench). */
+  workbenchHome: '/',
 };
