@@ -192,11 +192,11 @@ export function buildScatter(s: ScatterSpec, o: FigureOptions): Scene {
   return p.scene(o.title);
 }
 
-export interface BarSpec { labels: string[]; values: number[]; colors: string[]; yLabel: string; fmt?: (v: number) => string; errors?: number[]; dots?: number[][]; xLabel?: string }
+export interface BarSpec { labels: string[]; values: number[]; colors: string[]; yLabel: string; fmt?: (v: number) => string; errors?: number[]; /** lower error-bar length when asymmetric (defaults to `errors`) */ errorsLo?: number[]; dots?: number[][]; xLabel?: string }
 export function buildBars(s: BarSpec, o: FigureOptions): Scene {
   const p = baseScene(o), n = s.labels.length, th = p.th;
   const tops = s.values.map((v, i) => v + (s.errors?.[i] ?? 0)), all = [...tops, ...(s.dots?.flat() ?? [])];
-  const lo = Math.min(0, ...s.values.map((v, i) => v - (s.errors?.[i] ?? 0)), ...(s.dots?.flat() ?? []));
+  const lo = Math.min(0, ...s.values.map((v, i) => v - (s.errorsLo?.[i] ?? s.errors?.[i] ?? 0)), ...(s.dots?.flat() ?? []));
   const hi = Math.max(...all, 1e-9), ticks = nice(lo, hi, 5), y1 = Math.max(hi, ticks[ticks.length - 1]), y0 = Math.min(lo, ticks[0]);
   const fm = s.fmt ?? fmtTick;
   const f = drawFrame(p, { x0: 0, x1: n, y0, y1, yTicks: ticks, yTickLabels: fm, xTicks: s.labels.map((l, i) => ({ x: i + 0.5, label: l })), xRot: s.labels.some((l) => textWidth(l, o.fontPt) > ((p.w / Math.max(n, 1)) * 0.9)) }, { title: o.title, x: o.xLabel || s.xLabel || '', y: orDefault(o.yLabel, s.yLabel) });
@@ -205,7 +205,7 @@ export function buildBars(s: BarSpec, o: FigureOptions): Scene {
     const cx = f.sx(i + 0.5), fill = pickColor(o, s.colors[i % s.colors.length], i, true), ya = f.sy(Math.max(0, y0)), yb = f.sy(v);
     p.rect(cx - bw / 2, Math.min(ya, yb), bw, Math.abs(ya - yb), fill, 0.9, undefined, undefined, `bar-${i}`);
     const e = s.errors?.[i];
-    if (e && Number.isFinite(e)) { const a = f.sy(v + e), b = f.sy(v - e), cw = bw * 0.3; p.line(cx, a, cx, b, th.text, 0.7); p.line(cx - cw, a, cx + cw, a, th.text, 0.7); p.line(cx - cw, b, cx + cw, b, th.text, 0.7); }
+    if (e && Number.isFinite(e)) { const a = f.sy(v + e), b = f.sy(v - (s.errorsLo?.[i] ?? e)), cw = bw * 0.3; p.line(cx, a, cx, b, th.text, 0.7); p.line(cx - cw, a, cx + cw, a, th.text, 0.7); p.line(cx - cw, b, cx + cw, b, th.text, 0.7); }
     s.dots?.[i]?.forEach((d, k, arr) => p.circle(cx + ((k + 0.5) / arr.length - 0.5) * bw * 0.6, f.sy(d), Math.max(0.8, o.fontPt * 0.17), th.text, 0.85));
   });
   return p.scene(o.title);

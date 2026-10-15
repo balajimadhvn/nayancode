@@ -122,7 +122,7 @@ export function Histogram({ values, bins = 30, label, height = 170, color = '--c
   return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name="histogram" defaults={{ xLabel: label, yLabel: 'Count' }} build={(o) => buildHistogram({ values, bins, label, marker }, o)} /></div>;
 }
 
-export function BarChart({ labels, values, colors, yLabel, height = 220, fmt = (v: number) => String(Math.round(v)), errors, dots, exportName = 'bar-chart' }: { labels: string[]; values: number[]; colors: string[]; yLabel: string; height?: number; fmt?: (v: number) => string; errors?: number[]; dots?: number[][]; exportName?: string }) {
+export function BarChart({ labels, values, colors, yLabel, height = 220, fmt = (v: number) => String(Math.round(v)), errors, errorsLo, dots, exportName = 'bar-chart' }: { labels: string[]; values: number[]; colors: string[]; yLabel: string; height?: number; fmt?: (v: number) => string; errors?: number[]; errorsLo?: number[]; dots?: number[][]; exportName?: string }) {
   const ref = useCanvas(height, (g, w, h) => {
     const m = { l: 56, r: 10, t: 14, b: 46 }, mx = Math.max(...values.map((v, i) => v + (errors?.[i] ?? 0)), ...(dots?.flat() ?? []), 1e-9), bw = (w - m.l - m.r) / labels.length;
     g.strokeStyle = cssVar('--border'); g.fillStyle = cssVar('--text-faint'); g.font = '11px ' + cssVar('--mono'); g.textAlign = 'right'; g.textBaseline = 'middle';
@@ -133,12 +133,12 @@ export function BarChart({ labels, values, colors, yLabel, height = 220, fmt = (
       g.fillStyle = cssVar('--text-faint'); g.textAlign = 'center'; g.textBaseline = 'top'; g.save(); g.translate(x + bw * 0.35, h - m.b + 6); if (bw < 56) g.rotate(0.6); g.textAlign = bw < 56 ? 'left' : 'center'; g.fillText(l.length > 12 ? l.slice(0, 11) + '…' : l, 0, 0); g.restore();
       const px = x + bw * 0.35, Y = (v: number) => h - m.b - (v / mx) * (h - m.t - m.b), e = errors?.[i];
       g.strokeStyle = cssVar('--text'); g.fillStyle = cssVar('--text');
-      if (e && Number.isFinite(e)) { g.beginPath(); g.moveTo(px, Y(values[i] + e)); g.lineTo(px, Y(Math.max(0, values[i] - e))); g.moveTo(px - 4, Y(values[i] + e)); g.lineTo(px + 4, Y(values[i] + e)); g.moveTo(px - 4, Y(Math.max(0, values[i] - e))); g.lineTo(px + 4, Y(Math.max(0, values[i] - e))); g.stroke(); }
+      if (e && Number.isFinite(e)) { g.beginPath(); g.moveTo(px, Y(values[i] + e)); g.lineTo(px, Y(Math.max(0, values[i] - (errorsLo?.[i] ?? e)))); g.moveTo(px - 4, Y(values[i] + e)); g.lineTo(px + 4, Y(values[i] + e)); g.moveTo(px - 4, Y(Math.max(0, values[i] - (errorsLo?.[i] ?? e)))); g.lineTo(px + 4, Y(Math.max(0, values[i] - (errorsLo?.[i] ?? e)))); g.stroke(); }
       dots?.[i]?.forEach((d, k, a) => { g.beginPath(); g.arc(px + ((k + 0.5) / a.length - 0.5) * bw * 0.5, Y(d), 2.2, 0, 6.3); g.fill(); });
     });
     g.save(); g.translate(11, h / 2); g.rotate(-Math.PI / 2); g.fillStyle = cssVar('--text-dim'); g.font = '600 11.5px ' + cssVar('--font'); g.textAlign = 'center'; g.textBaseline = 'top'; g.fillText(yLabel, 0, 0); g.restore();
-  }, [labels, values, colors, yLabel, errors, dots]);
-  return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name={exportName} defaults={{ yLabel }} build={(o) => buildBars({ labels, values, colors, yLabel, fmt, errors, dots }, o)} /></div>;
+  }, [labels, values, colors, yLabel, errors, errorsLo, dots]);
+  return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name={exportName} defaults={{ yLabel }} build={(o) => buildBars({ labels, values, colors, yLabel, fmt, errors, errorsLo, dots }, o)} /></div>;
 }
 
 /** Diverging heatmap of z-scores with row/column labels. */

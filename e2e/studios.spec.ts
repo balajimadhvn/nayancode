@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -165,5 +165,18 @@ test('figures: a volcano plot exports to SVG, PDF and 600 dpi PNG with labelled 
   const pdfDl = await save('PDF'); const pdf = (await import('node:fs')).readFileSync((await pdfDl.path())!, 'latin1'); expect(pdf.startsWith('%PDF-1.4')).toBe(true); expect(pdf).toContain('%%EOF');
   const pngDl = await save('PNG 600 dpi'); const png = (await import('node:fs')).readFileSync((await pngDl.path())!);
   expect(png.subarray(1, 4).toString()).toBe('PNG'); expect(png.readUInt32BE(16)).toBe(Math.round(114 / 25.4 * 600)); expect(png.readUInt32BE(20)).toBe(Math.round(80 / 25.4 * 600));
+  expect(errs).toEqual([]);
+});
+
+test('lab: Livak 2001 example, dose–response fit and a power calculation', async ({ page }) => {
+  const errs = watch(page); await page.goto('/lab');
+  await page.getByRole('button', { name: 'Livak 2001 example' }).click(); await page.getByRole('button', { name: 'Calculate' }).click();
+  const table = page.locator('table').first(); await expect(table).toContainText('kidney', { timeout: 15_000 }); await expect(table).toContainText('-2.5'); await expect(table).toContainText('5.6');
+  await page.getByRole('button', { name: 'Demo', exact: true }).click(); await page.getByRole('button', { name: 'Fit', exact: true }).click(); await expect(page.getByText(/Efficiency/).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Dose–response' }).click(); await page.getByRole('button', { name: /Load demo/ }).click(); await page.getByRole('button', { name: 'Fit curves' }).click();
+  await expect(page.getByRole('cell', { name: 'Cmpd A' })).toBeVisible({ timeout: 15_000 }); await expect(page.getByRole('cell', { name: 'Cmpd B' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Power & sample size' }).click(); await page.getByLabel('Power', { exact: true }).fill('0.8');
+  await expect(page.locator('.stat').first()).toContainText(/\d+/); // two-sample t, d = 0.625 → n per group 42
+  await expect(page.locator('.stat .v').first()).toHaveText('42');
   expect(errs).toEqual([]);
 });
