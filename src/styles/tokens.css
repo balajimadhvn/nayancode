@@ -1,0 +1,60 @@
+/* Workbench design tokens, aligned with the public site: ink and cobalt on neutral surfaces, one vermilion signal
+   colour, flat surfaces and hairline borders. No gradients, glows or translucent glass. */
+:root, [data-theme='dark'] {
+  --bg: #0b1220;
+  --bg-elev: #111a2c;
+  --surface: #111a2c;
+  --surface-solid: #111a2c;
+  --surface-hi: #18233a;
+  --border: rgba(214, 224, 242, 0.12);
+  --border-hi: rgba(214, 224, 242, 0.24);
+  --text: #e9edf4;
+  --text-dim: #b4bccb;
+  --text-faint: #939cae;
+  --accent: #8ea6ff;
+  --accent-2: #ff8a5c;
+  --accent-3: #5fd39a;
+  --on-accent: #0b1220;
+  --gold: #e0a848;
+  --warn: #f2b84b;
+  --danger: #ff8a80;
+  --grad: linear-gradient(#8ea6ff, #8ea6ff);
+  --glow: 0 0 0 1px rgba(142, 166, 255, 0.28);
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 16px 36px -20px rgba(0, 0, 0, 0.75);
+  --grid-line: transparent;
+  --chart-a: #8ea6ff; --chart-b: #ff8a5c; --chart-c: #c2cfff; --chart-d: #e0a848; --chart-mute: rgba(180, 188, 203, .35);
+  --code-bg: #0d1524;
+}
+[data-theme='light'] {
+  --bg: #f4f5f7;
+  --bg-elev: #ffffff;
+  --surface: #ffffff;
+  --surface-solid: #ffffff;
+  --surface-hi: #eef0f4;
+  --border: #e2e5eb;
+  --border-hi: #cdd2da;
+  --text: #0d1526;
+  --text-dim: #3b4557;
+  --text-faint: #5a6475;
+  --accent: #2445c6;
+  --accent-2: #c2410c;
+  --accent-3: #17703f;
+  --on-accent: #ffffff;
+  --gold: #9a5b06;
+  --warn: #9a5b06;
+  --danger: #b42318;
+  --grad: linear-gradient(#2445c6, #2445c6);
+  --glow: 0 0 0 1px rgba(36, 69, 198, 0.3);
+  --shadow: 0 1px 2px rgba(13, 21, 38, 0.05), 0 10px 24px -14px rgba(13, 21, 38, 0.2);
+  --grid-line: transparent;
+  --chart-a: #2445c6; --chart-b: #c2410c; --chart-c: #56637c; --chart-d: #b7791f; --chart-mute: rgba(90, 100, 117, .35);
+  --code-bg: #f4f5f7;
+}
+:root {
+  --font: 'IBM Plex Sans Variable', 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --r-sm: 4px; --r: 6px; --r-lg: 8px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --sidebar-w: 248px;
+  --topbar-h: 58px;
+}
