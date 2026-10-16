@@ -163,8 +163,8 @@ function Results({ res, tab, setTab, truth, planted }: { res: Analysed; tab: Res
       <Tabs value={tab} onChange={setTab} items={[{ id: 'de', label: 'Differential expression' }, { id: 'enrich', label: 'Enrichment' }, { id: 'pca', label: 'PCA' }, { id: 'qc', label: 'QC' }, { id: 'heat', label: 'Top genes' }]} />
       {tab === 'de' && <>
         <div className="cols-2">
-          <Card title="Volcano" sub={`${de.label} · ${de.formula}`}><Scatter points={volcano} colors={dcols} names={['not significant', 'up', 'down']} xLabel={lfcLabel} yLabel="-log10 p" vlines={de.params.lfcThreshold ? [-de.params.lfcThreshold, de.params.lfcThreshold] : []} height={360} /></Card>
-          <Card title="MA plot"><Scatter points={ma} colors={dcols} xLabel="mean log2 CPM" yLabel={lfcLabel} hlines={[0]} height={360} /></Card>
+          <Card title="Volcano" sub={`${de.label} · ${de.formula}`}><Scatter points={volcano} colors={dcols} names={['not significant', 'up', 'down']} xLabel={lfcLabel} yLabel="-log10 p" labelScore={(q) => Math.abs(q.x) * q.y} labelDefault={10} exportName="volcano" vlines={de.params.lfcThreshold ? [-de.params.lfcThreshold, de.params.lfcThreshold] : []} height={360} /></Card>
+          <Card title="MA plot"><Scatter points={ma} colors={dcols} xLabel="mean log2 CPM" yLabel={lfcLabel} hlines={[0]} labelScore={(q) => Math.abs(q.y)} labelDefault={10} exportName="ma-plot" height={360} /></Card>
         </div>
         <Card title="Results table" sub={`${rows.length.toLocaleString()} genes`} actions={<><input className="input" style={{ width: 160 }} placeholder="Filter gene…" value={filter} onChange={(e) => setFilter(e.target.value)} /><button className="btn sm" onClick={exportDe}>Export CSV</button></>} pad={false}>
           <DataTable<DeRow> rows={rows} rowKey={(r) => r.gene} cols={[

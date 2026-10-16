@@ -53,3 +53,61 @@ Corrections from this benchmark: highly variable gene selection now follows Scan
 library sizes over the genes kept, scaling clips only the upper side, and the randomized PCA uses more oversampling and
 power iterations so that lower components match an exact SVD. Before these changes only 1,093 of the 2,000 variable
 genes were shared and only PC1–PC2 agreed.
+
+## Lab Studio against R and the original papers
+Reference values are produced natively in R 4.5.3 in a separate conda environment (`benchmarks/lab/make-reference.R`,
+`qpcr-reference.R`; packages drc 3.0.1, pwr 1.3.0, RNASeqPower 1.50.0, gsDesign 3.11.0, NormqPCR 1.56.0) and stored in
+`benchmarks/lab/reference.json`. Unit tests check every row (`src/studios/lab/*.test.ts`); `npm run bench -- benchmarks/lab`
+writes the deviations below to `results/lab.json`.
+
+| Method | Reference | Cases | Largest deviation |
+|---|---|---|---|
+| Power / n, t tests (two-sample, paired, one-sample; two-sided and one-sided) | R `pwr.t.test` | 48 | n: 1.6e-12 relative; power: 3.7e-15 |
+| Power / n, one-way ANOVA | `pwr.anova.test` | 18 | n: 9e-10; power: 9e-10 (R's non-central F stops at 1e-9) |
+| Power / n, two proportions (Cohen's h) | `pwr.2p.test` | 8 | n: 9e-13; power: 7e-16 |
+| RNA-seq n, power, detectable fold change, tolerable CV | `RNASeqPower::rnapower` | 18 | 4e-15 |
+| Log-rank events (Schoenfeld) | `gsDesign::nEvents`, equal and 1:2 allocation | 6 | 2e-15 |
+| Non-central t and F distribution functions | R `pt(ncp=)`, `pf(ncp=)` | 4 | 1e-12 (t); 2e-10 (F) |
+| geNorm M, pairwise variation V, ranking, 10 genes | `NormqPCR::selectHKs` on its geNorm example | 1 | 4e-15 |
+| Welch / Student t, one-way ANOVA, Holm on ΔCt | `t.test`, `aov`, `p.adjust` | 1 | 1e-14 |
+| Standard curve slope, intercept, R², efficiency, CI | `lm`, `confint` | 1 | 2e-15 |
+
+Dose–response (Levenberg–Marquardt) against `drc::drm` on its own datasets, with the same model (LL.4 / LL.5) and the same data:
+
+| Dataset and model | RSS vs drc | Largest parameter difference | EC50 SE vs Gauss–Newton in R | EC50 SE vs drc's Hessian |
+|---|---|---|---|---|
+| ryegrass, 4PL | 1.2e-10 | 6.7e-6 | 3.2e-6 | 0.1 % |
+| S. alba glyphosate, 4PL | 5e-12 | 3.0e-6 | 1.9e-6 | 0.4 % |
+| S. alba bentazone, 4PL | 2e-11 | 3.5e-6 | 4.6e-7 | 0.4 % |
+| secalonic acid, 4PL | 4e-10 | 8.3e-5 | 8.2e-6 | 8.2 % |
+| ryegrass, bottom fixed at 0 | 1e-11 | 1.0e-6 | 2.9e-7 | 2.9 % |
+| S. alba glyphosate, bottom fixed at 0 | 1e-11 | 2.8e-6 | 1.8e-6 | 2.9 % |
+| simulated 5PL (seed 42) | 1.4e-7 | 7.0e-4 | 1.5e-4 | 2.1 % |
+| S. alba bentazone, 5PL (real data) | 1.7e-4 | not identifiable | not identifiable | 18 % |
+
+Reading the dose–response table: the Workbench reaches the same least-squares optimum as drc (our residual sum of
+squares is never larger, and differs from drc's by at most 1.7e-4 relative; drc stops at an optimiser tolerance of
+about 1e-7). Standard errors come from the Gauss–Newton matrix JᵀJ, the same quantity as in R `nls`; they agree with an
+independent R computation to 1e-5, but drc reports Hessian-based errors, which differ by up to 8 % for 4PL fits on small
+datasets. Five-parameter fits to real data (here 36 points) are nearly unidentifiable: shape parameters differ by more
+than 10 % between optimisers while the fitted curves agree within 0.3 % of the response range, so only the curve, the
+midpoint dose and the top and bottom are compared. The EC50 in the tables is drc's parameter `e`; for 5PL the app
+reports the midpoint dose separately.
+
+Worked examples from the papers (tests in `src/studios/lab/qpcr.test.ts`; data typed from the printed tables):
+- **Livak and Schmittgen 2001, Table 1** (c-myc, GAPDH, brain vs kidney, six wells each, separate wells): ΔCt 6.86 and
+  4.37, ΔΔCt −2.50, 5.6-fold, replicate SDs 0.15, 0.09, 0.06, 0.08 and propagated SDs 0.17 and 0.10, range 5.3–6.0:
+  all reproduced.
+- **Livak and Schmittgen 2001, Table 2** (same well): kidney ΔCt 4.47 ± 0.14 reproduced. The printed brain row (6.93 ±
+  0.16) is not consistent with its own six wells, whose ΔCt values average 7.00 ± 0.21; the Workbench gives 7.00, so the
+  published ΔΔCt of −2.47 (5.5-fold) becomes −2.53 (5.8-fold) from the printed data. We report this instead of
+  tuning the test.
+- **Pfaffl 2001, Table 3** (TyrA and PyrB against Gst, E = 2.09, 2.16, 1.99; three cDNA inputs at two levels): all 12
+  published ratios R are reproduced from the Table 2 crossing points to within 0.5 % (efficiencies are printed to two
+  decimals; the largest gap is 0.48 %, PyrB at 4.0 ng).
+
+## Figure export
+SVG, PDF (own minimal writer, no dependency) and PNG are drawn from one scene description, so all three show the same
+marks. Tests parse the output (SVG: well-formed XML, millimetre size, one circle per point, editable text, no CSS
+variables; PDF: cross-reference offsets, stream length, page size, one path per point, fonts; PNG: pixel size at 600 dpi
+in the e2e test). Exported PDFs were also rasterised with poppler (`pdftoppm`) and inspected.
