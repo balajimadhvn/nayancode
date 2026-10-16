@@ -178,3 +178,61 @@ Captured: `docs/case-studies/figures/pbmc3k_umap.png`.
 To capture (`npx playwright test -c docs/case-studies/playwright.config.ts`, ~10 minutes, mostly the E. coli run):
 `airway_volcano.png`, `airway_ma.png`, `airway_gsea_reactome.png`, `pbmc3k_annotation.png`,
 `ecoli_coverage.png`, `ecoli_variants.png`. The case-study README links to these files; the links are broken until they are captured.
+## Genome tools (Genome Studio): CRISPR off-targets and primer specificity
+Measured 2026-10-16 on an AMD Ryzen 7 7735HS laptop, one JavaScript thread (Node 22). Raw metrics:
+`results/genome-tools-crispr.json`, `results/genome-tools-primers.json`. Genomes are the bundled RefSeq files
+(`public/genomes`, NCBI public domain); guides and primers are sampled from them with a fixed seed.
+
+### CRISPR off-target search against Cas-OFFinder 2.4.1
+Reference: Cas-OFFinder 2.4.1 (BSD-3-Clause), run natively on the CPU through OpenCL (PoCL) by
+`genome-tools/make-reference.mjs`; it is a benchmark tool only and is not shipped. Same genome, same guides (20 real
+protospacers followed by NGG and 4 random 20-mers per genome; 16 real 23-nt Cas12a guides), same PAM (NRG = NGG plus NAG for
+SpCas9; TTTV for Cas12a) and mismatch limit. A site counts as found only if guide, sequence, strand, coordinate, mismatch
+count and site sequence are all identical.
+
+| Genome | Nuclease, mismatch limit | Guides | Cas-OFFinder sites | Workbench sites | Identical | Workbench time |
+|---|---|---|---|---|---|---|
+| lambda (<0.1 Mb) | SpCas9 NRG, ≤ 4 | 24 | 20 | 20 | yes | 0.07 s |
+| t7 (<0.1 Mb) | SpCas9 NRG, ≤ 4 | 24 | 20 | 20 | yes | 0.03 s |
+| ecoli-k12 (4.6 Mb) | SpCas9 NRG, ≤ 4 | 24 | 37 | 37 | yes | 1.42 s |
+| bsubtilis-168 (4.2 Mb) | SpCas9 NRG, ≤ 4 | 24 | 38 | 38 | yes | 1.48 s |
+| mtb-h37rv (4.4 Mb) | SpCas9 NRG, ≤ 4 | 24 | 74 | 74 | yes | 2.02 s |
+| saureus-8325 (2.8 Mb) | SpCas9 NRG, ≤ 4 | 24 | 41 | 41 | yes | 0.68 s |
+| scer-s288c (12.2 Mb) | SpCas9 NRG, ≤ 4 | 24 | 95 | 95 | yes | 3.89 s |
+| ecoli-k12 (4.6 Mb) | SpCas9 NRG, ≤ 6 | 8 | 401 | 401 | yes | 0.91 s |
+| ecoli-k12 (4.6 Mb) | Cas12a TTTV, ≤ 4 | 16 | 16 | 16 | yes | 0.3 s |
+| scer-s288c (12.2 Mb) | Cas12a TTTV, ≤ 4 | 16 | 58 | 58 | yes | 0.75 s |
+**All 10 comparisons are identical: 800 of 800 sites in both directions, no missing and no extra site.** The search is
+exhaustive (every PAM site on both strands), so identical output is the expected result when the semantics agree; the test
+confirms that PAM handling, strand and coordinate conventions, reverse-complement handling and mismatch counting do.
+Cas-OFFinder's OpenCL run took 0.4 to 0.7 s per genome on this machine, faster than the Workbench's single-threaded
+JavaScript (up to 3.9 s for 24 guides on 12 Mb, about 13 ms per guide per Mb); both are fast enough for the browser.
+Differences that the benchmark does not cover: Cas-OFFinder treats IUPAC ambiguity codes in the genome as matching, the
+Workbench counts them as mismatches (S. aureus NCTC 8325 has one such base, which no tested site touched); bulged sites
+(DNA/RNA bulges) are a Workbench extra and are covered by unit tests only, because Cas-OFFinder 2.4.1 does not search bulges.
+
+Scoring is not part of the Cas-OFFinder comparison. CFD uses the published tables of Doench et al. (2016), taken from
+the MIT-licensed crisprScore package (`scripts/make-cfd-data.mjs`); MIT uses the position weights of Hsu et al. (2013).
+Unit tests check the PAM weights (NGG 1, NAG 0.259) and table lookups, and that the on-target site is excluded from the
+aggregate specificity; the aggregate scores were not compared against another implementation.
+
+### Primer specificity against exhaustive search
+Two independent references: `bruteForceSites` (tests every window of every sequence) and a separate string-based scan
+written in the test file. Rule: at most N mismatches, at most 1 in the last 5 bases of the 3′ end; mismatches are
+weighted 5, 4, 3, 2, 2, then 1 from the 3′ end. Primers are 18 to 26 nt, 40 to 60 % GC, cut from the genome (half
+reverse-complemented). The seeded search (pigeonhole: N+1 disjoint exact k-mers, then base-by-base verification) must
+return exactly the same sites, mismatch counts and penalties.
+
+| Genome | Primers | Max mismatches | Sites | Seed index | Seeded search | Exhaustive scan |
+|---|---|---|---|---|---|---|
+| ecoli-k12 | 12 | 3 | 35 (22 exact) | pigeonhole k-mers | 0.50 s | 4.53 s |
+| bsubtilis-168 | 12 | 4 | 62 (30 exact) | pigeonhole k-mers | 1.42 s | 4.70 s |
+| scer-s288c | 10 | 3 | 26 (10 exact) | pigeonhole k-mers | 1.26 s | 8.97 s |
+| lambda | 8 | 5 | 11 (8 exact) | none (seeds < 4 bp, scans) | 0.03 s | 0.04 s |
+**The seeded search and both references agree on every site, in all four genomes.** The seed index is used only when
+each of the N+1 segments has at least 4 bases (otherwise a plain scan runs, as for lambda at 5 mismatches); with it the search
+is 3 to 9 times faster than the exhaustive scan on 4 to 12 Mb. The amplicon predictor was checked against an all-pairs
+enumeration, and for 8 primer pairs designed by Sequence Studio on random 900-bp E. coli regions the intended product
+was found at its exact coordinates 8 of 8 times, each as the single perfect product in the genome. There is no comparison
+with Primer-BLAST (a remote NCBI service, not run here), so the product list is validated against the stated rule, not
+against NCBI's thermodynamic filtering.
