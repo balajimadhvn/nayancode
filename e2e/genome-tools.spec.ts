@@ -55,6 +55,8 @@ test('genome: Genome Studio mapping output opens in the viewer as BAM + VCF trac
   await page.getByRole('tab', { name: 'Mapping & variants' }).click(); await page.getByRole('button', { name: /Demo: simulated/ }).click(); await page.getByRole('button', { name: 'Map & call' }).click();
   await expect(page.getByText(/8\/8 planted variants recovered/)).toBeVisible({ timeout: 60_000 });
   await page.getByRole('button', { name: 'Open in genome browser' }).click();
+  // Wait until the default (E. coli) browser is live, so that switching to the mapping reference replaces a ready browser (the slower CI timing).
+  await expect(page.getByTestId('igv-host').locator('.igv-viewport, canvas').first()).toBeVisible({ timeout: 60_000 });
   await page.getByRole('button', { name: /Add Genome Studio mapping/ }).click();
   await expect(page.getByText('mapped.bam').first()).toBeVisible(); await expect(page.getByText('mapped_variants.vcf').first()).toBeVisible();
   await expect(page.getByTestId('igv-host').getByText(/mapped\.bam/).first()).toBeVisible({ timeout: 30_000 });

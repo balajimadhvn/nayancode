@@ -34,7 +34,7 @@ let seq = 0;
 
 export function GenomeViewer({ mapped }: { mapped: Mapped | null }) {
   const { manifest } = useManifest(), view = useHandoff((s) => s.view);
-  const host = useRef<HTMLDivElement>(null), br = useRef<IgvBrowser | null>(null), igv = useRef<IgvApi | null>(null), loaded = useRef(new Map<string, IgvTrack>()), urls = useRef(new Map<string, string[]>());
+  const host = useRef<HTMLDivElement>(null), br = useRef<IgvBrowser | null>(null), igv = useRef<IgvApi | null>(null), loaded = useRef(new Map<string, IgvTrack>()), pending = useRef(new Set<string>()), urls = useRef(new Map<string, string[]>());
   const [choice, setChoice] = useState<string>('ecoli-k12'), [ref, setRef] = useState<RefSpec | null>(null), [tracks, setTracks] = useState<TrackSpec[]>([]), [err, setErr] = useState(''), [ready, setReady] = useState(false), [locus, setLocus] = useState(''), [local, setLocal] = useState<RefSpec | null>(null);
   const tracksRef = useRef(tracks); tracksRef.current = tracks;
   const mappedRef = useMemo<RefSpec | null>(() => { if (!mapped) return null; const f = parseFasta(mapped.refText)[0]; return { key: 'mapped', label: `Genome Studio reference (${f.id})`, fasta: new Blob([mapped.refText], { type: 'text/plain' }), first: { id: f.id, length: f.seq.length } }; }, [mapped]);
@@ -58,7 +58,8 @@ export function GenomeViewer({ mapped }: { mapped: Mapped | null }) {
     if (t.kind === 'alignment') cfg.height = 260; if (t.kind === 'wig') { cfg.height = 70; cfg.autoscale = true; }
     urls.current.set(t.id, u); return cfg;
   };
-  const addToBrowser = async (t: TrackSpec) => { const b = br.current; if (!b || loaded.current.has(t.id)) return; try { loaded.current.set(t.id, await b.loadTrack(track(t))); } catch (e) { setErr(`${t.name}: ${(e as Error).message}`); } };
+  // Tracks go only into the browser built for the reference currently chosen; if the browser is replaced while a track is loading, the stale result is dropped.
+  const addToBrowser = async (t: TrackSpec) => { const b = br.current; if (!b || loaded.current.has(t.id) || pending.current.has(t.id)) return; pending.current.add(t.id); try { const lt = await b.loadTrack(track(t)); if (br.current === b) loaded.current.set(t.id, lt); } catch (e) { if (br.current === b) setErr(`${t.name}: ${(e as Error).message}`); } finally { pending.current.delete(t.id); } };
 
   // (Re)create the browser when the reference changes, then load the current tracks.
   useEffect(() => {
@@ -75,11 +76,11 @@ export function GenomeViewer({ mapped }: { mapped: Mapped | null }) {
         for (const t of tracksRef.current) await addToBrowser(t);
       } catch (e) { setErr((e as Error).message); }
     })();
-    return () => { dead = true; try { if (br.current && igv.current) igv.current.removeBrowser(br.current); } catch { /* gone */ } br.current = null; el?.remove(); loaded.current.clear(); for (const l of urls.current.values()) l.forEach((x) => URL.revokeObjectURL(x)); urls.current.clear(); setReady(false); };
+    return () => { dead = true; try { if (br.current && igv.current) igv.current.removeBrowser(br.current); } catch { /* gone */ } br.current = null; el?.remove(); loaded.current.clear(); pending.current.clear(); for (const l of urls.current.values()) l.forEach((x) => URL.revokeObjectURL(x)); urls.current.clear(); setReady(false); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref]);
   // Add tracks to a live browser.
-  useEffect(() => { if (ready) for (const t of tracks) void addToBrowser(t); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tracks, ready]);
+  useEffect(() => { if (ready && ref?.key === choice) for (const t of tracks) void addToBrowser(t); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tracks, ready, ref, choice]);
 
   const add = (specs: Omit<TrackSpec, 'id'>[]) => setTracks((t) => [...t, ...specs.map((s) => ({ ...s, id: `t${++seq}` }))]);
   const remove = (t: TrackSpec) => { const lt = loaded.current.get(t.id); if (lt && br.current) br.current.removeTrack(lt); loaded.current.delete(t.id); urls.current.get(t.id)?.forEach((x) => URL.revokeObjectURL(x)); setTracks((all) => all.filter((x) => x.id !== t.id)); };
