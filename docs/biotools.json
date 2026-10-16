@@ -1,0 +1,177 @@
+{
+  "name": "Nayancode Workbench",
+  "biotoolsID": "nayancode",
+  "version": [
+    "1.1.0"
+  ],
+  "description": "Free, open-source bioinformatics and cheminformatics studios that run entirely in the web browser: molecular docking with AutoDock Vina, read mapping and variant calling (minimap2, samtools, bcftools in WebAssembly), RNA-seq differential expression, single-cell clustering, microbiome diversity, QSAR, structure analysis, phylogenetics and lab calculators. Files are analysed on the user's computer and every result records its provenance.",
+  "homepage": "https://solagene.com/nayancode/",
+  "function": [
+    {
+      "operation": [
+        {
+          "uri": "http://edamontology.org/operation_0478",
+          "term": "Molecular docking"
+        },
+        {
+          "uri": "http://edamontology.org/operation_3198",
+          "term": "Read mapping"
+        },
+        {
+          "uri": "http://edamontology.org/operation_3227",
+          "term": "Variant calling"
+        },
+        {
+          "uri": "http://edamontology.org/operation_3223",
+          "term": "Differential gene expression profiling"
+        },
+        {
+          "uri": "http://edamontology.org/operation_3432",
+          "term": "Clustering"
+        },
+        {
+          "uri": "http://edamontology.org/operation_0323",
+          "term": "Phylogenetic inference"
+        },
+        {
+          "uri": "http://edamontology.org/operation_0308",
+          "term": "PCR primer design"
+        }
+      ]
+    }
+  ],
+  "toolType": [
+    "Web application"
+  ],
+  "topic": [
+    {
+      "uri": "http://edamontology.org/topic_0091",
+      "term": "Bioinformatics"
+    },
+    {
+      "uri": "http://edamontology.org/topic_2258",
+      "term": "Cheminformatics"
+    },
+    {
+      "uri": "http://edamontology.org/topic_3336",
+      "term": "Drug discovery"
+    },
+    {
+      "uri": "http://edamontology.org/topic_0622",
+      "term": "Genomics"
+    },
+    {
+      "uri": "http://edamontology.org/topic_3170",
+      "term": "RNA-Seq"
+    },
+    {
+      "uri": "http://edamontology.org/topic_4028",
+      "term": "Single-cell sequencing"
+    },
+    {
+      "uri": "http://edamontology.org/topic_3697",
+      "term": "Microbial ecology"
+    },
+    {
+      "uri": "http://edamontology.org/topic_0084",
+      "term": "Phylogeny"
+    },
+    {
+      "uri": "http://edamontology.org/topic_0080",
+      "term": "Sequence analysis"
+    },
+    {
+      "uri": "http://edamontology.org/topic_2269",
+      "term": "Statistics and probability"
+    }
+  ],
+  "operatingSystem": [
+    "Linux",
+    "Windows",
+    "Mac"
+  ],
+  "language": [
+    "JavaScript",
+    "C++"
+  ],
+  "license": "Apache-2.0",
+  "collectionID": [],
+  "maturity": "Emerging",
+  "cost": "Free of charge",
+  "accessibility": "Open access",
+  "link": [
+    {
+      "url": "https://github.com/balajimadhvn/nayancode",
+      "type": [
+        "Repository"
+      ]
+    },
+    {
+      "url": "https://github.com/balajimadhvn/nayancode/issues",
+      "type": [
+        "Issue tracker"
+      ]
+    },
+    {
+      "url": "https://solagene.com/workbench/",
+      "type": [
+        "Other"
+      ],
+      "note": "Run the Workbench online"
+    }
+  ],
+  "download": [
+    {
+      "url": "https://doi.org/10.5281/zenodo.23393495",
+      "type": "Source code",
+      "note": "Zenodo archive (all versions)"
+    }
+  ],
+  "documentation": [
+    {
+      "url": "https://github.com/balajimadhvn/nayancode#readme",
+      "type": [
+        "General"
+      ]
+    },
+    {
+      "url": "https://solagene.com/nayancode/docs/",
+      "type": [
+        "User manual"
+      ]
+    },
+    {
+      "url": "https://github.com/balajimadhvn/nayancode/blob/main/benchmarks/RESULTS.md",
+      "type": [
+        "Other"
+      ],
+      "note": "Benchmarks against native tools and R"
+    },
+    {
+      "url": "https://github.com/balajimadhvn/nayancode/blob/main/CITATION.cff",
+      "type": [
+        "Citation instructions"
+      ]
+    }
+  ],
+  "credit": [
+    {
+      "name": "Balaji Madhavan",
+      "orcidid": "https://orcid.org/0009-0007-8654-3864",
+      "typeEntity": "Person",
+      "typeRole": [
+        "Developer",
+        "Maintainer"
+      ]
+    },
+    {
+      "name": "Solagene",
+      "url": "https://solagene.com",
+      "email": "support@solagene.com",
+      "typeEntity": "Institute",
+      "typeRole": [
+        "Provider"
+      ]
+    }
+  ]
+}
