@@ -1,7 +1,7 @@
 /** Matching a crystallographic ligand (coordinates only) to a ligand built from SMILES, for redocking RMSD. */
 import { isProteinRes, listLigands, residues, type Atom, type Structure } from '../structure/geometry';
 import { neighbours, type MolG } from './molgraph';
-import type { V3 } from './pdbqt';
+import { automorphisms, symmetryRmsd, type V3 } from './pdbqt';
 
 const COV: Record<string, number> = { C: 0.76, N: 0.71, O: 0.66, S: 1.05, P: 1.07, F: 0.57, CL: 1.02, BR: 1.2, I: 1.39, H: 0.31, B: 0.84 };
 
@@ -55,4 +55,15 @@ export function mapCrystalToMol(c: CrystalLigand, mol: MolG): { molAtom: number;
   const map = isoMap(c.atoms.map((a) => a.el), adjA, elB, adjB);
   if (!map) return null;
   return c.atoms.map((a, i) => ({ molAtom: heavy[map[i]], pos: [a.x, a.y, a.z] as V3 }));
+}
+
+/** Symmetry-corrected heavy-atom RMSD (Å) of every pose against the crystal ligand, or null when the crystal ligand is not the docked compound. */
+export function redockRmsd(c: CrystalLigand, mol: MolG, atomMap: number[], poses: { atoms: { x: number; y: number; z: number }[] }[]): number[] | null {
+  const map = mapCrystalToMol(c, mol); if (!map) return null;
+  const heavy = atomMap.map((a, k) => ({ a, k })).filter(({ a }) => mol.atoms[a].el !== 'H'), hi = new Map(heavy.map(({ a }, h) => [a, h]));
+  const ref: V3[] = new Array(heavy.length); for (const m of map) ref[hi.get(m.molAtom)!] = m.pos;
+  const el = heavy.map(({ a }) => mol.atoms[a].el);
+  const bonds: [number, number, number][] = mol.bonds.filter((b) => hi.has(b.a) && hi.has(b.b)).map((b) => [hi.get(b.a)!, hi.get(b.b)!, b.order]);
+  const autos = automorphisms(el, bonds);
+  return poses.map((p) => symmetryRmsd(el, bonds, ref, heavy.map(({ k }) => [p.atoms[k].x, p.atoms[k].y, p.atoms[k].z] as V3), autos));
 }

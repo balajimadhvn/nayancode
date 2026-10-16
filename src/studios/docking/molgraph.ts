@@ -86,8 +86,10 @@ export function hybridisation(m: MolG, nb = neighbours(m)): Hyb[] {
   const bo = m.atoms.map(() => [] as number[]);
   for (const b of m.bonds) { bo[b.a].push(b.aromatic ? 1.5 : b.order); bo[b.b].push(b.aromatic ? 1.5 : b.order); }
   const hyb: Hyb[] = m.atoms.map((_a, i) => {
-    if (m.aromaticAtom[i] || bo[i].some((o) => o === 2 || o === 1.5)) return bo[i].filter((o) => o === 2).length >= 2 || bo[i].includes(3) ? 'sp' : 'sp2';
-    if (bo[i].includes(3)) return 'sp';
+    const el = m.atoms[i].el, linearCapable = el === 'C' || el === 'N' || el === 'B'; // S and P with two double bonds (sulfonyl, phosphoryl) are tetrahedral
+    if (linearCapable && (bo[i].includes(3) || bo[i].filter((o) => o === 2).length >= 2)) return 'sp';
+    if (el === 'S' || el === 'P') return bo[i].length >= 4 ? 'sp3' : bo[i].some((o) => o === 2 || o === 1.5) ? 'sp2' : 'sp3';
+    if (m.aromaticAtom[i] || bo[i].some((o) => o === 2 || o === 1.5)) return 'sp2';
     return 'sp3';
   });
   // Lone-pair donors conjugated to an sp2/sp neighbour (amide N, aniline N, ester/phenol O, thioether S in rings) are planar.
@@ -205,3 +207,6 @@ export const PROTONATION_RULES: { name: string; smarts: string; atom: number; ch
   { name: 'amidine', smarts: '[CX3;!$(C(-[N,O,S])(-[N,O,S])=*)]([#6,#1])(=[NX2;!$(N-[O,N,S]);!$(N-C=O);!$(N-a)])[NX3;H2,H1;!$(N-C=O);!$(N-a)]', atom: 2, charge: 1 },
   { name: 'aliphatic amine', smarts: '[NX3;H2,H1,H0;+0;!$(N-[!#6;!#1]);!$(N-C=[O,S,N]);!$(N-C#N);!$(N-a);!$(N-C=C);!$(N-[SX4]);!$(N-C-[F,Cl]);!$([NX3;H0,H1]-C-C=O);!$([NX3;H0,H1;R]1CC[N,O,S]CC1)]', atom: 0, charge: 1 },
 ];
+
+/** Rings of 9 or more atoms: Vina keeps ring geometry rigid, so a macrocycle is docked in the single conformation the embedder produced. */
+export const hasMacrocycle = (m: MolG) => m.rings.some((r) => r.length >= 9);

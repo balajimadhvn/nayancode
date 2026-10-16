@@ -1,7 +1,7 @@
 /** Ligand preparation on top of RDKit (WebAssembly, BSD-3): SMILES / SDF / MOL2 → protonated (pH 7.4) molecule with explicit hydrogens
  *  and 3-D coordinates (our own embedder when the input is 2-D). Shared by the browser worker and the Node benchmarks. */
 import { embed3d } from './embed';
-import { firstSdfRecord, mol2ToMolBlock, parseMolBlock, PROTONATION_RULES, toMolBlock, type MolG } from './molgraph';
+import { firstSdfRecord, hasMacrocycle, mol2ToMolBlock, parseMolBlock, PROTONATION_RULES, toMolBlock, type MolG } from './molgraph';
 
 /** The subset of the RDKit MinimalLib API used here. */
 export interface RDMol { is_valid(): boolean; delete(): void; get_molblock(): string; get_smiles(): string; get_json(): string; add_hs_in_place(): boolean; remove_hs_in_place(): boolean; set_new_coords(): boolean; get_substruct_matches(q: RDMol): string; get_num_atoms(): number }
@@ -68,11 +68,21 @@ function finish(RD: RDKitModule, g: MolG, applied: string[], seed?: number): Pre
   if (g.atoms.some((a) => ['Se', 'As', 'Hg', 'Pt', 'Au', 'Ag', 'Cu', 'Co', 'Ni', 'Fe', 'Zn', 'Mn', 'Mg', 'Ca', 'Na', 'K', 'Li', 'Al', 'Ti'].includes(a.el))) throw new Error('This ligand contains an element Vina cannot score (metals, Se, As); remove it or dock a different species.');
   let embedded = false, emb: PreparedLigand['embed'];
   if (!g.is3d) {
-    const r = embed3d(g, { seed });
-    r.coords.forEach((c, i) => { g.atoms[i].x = c[0]; g.atoms[i].y = c[1]; g.atoms[i].z = c[2]; });
-    g.is3d = true; embedded = true; emb = { violation: r.violation, attempts: r.attempts, chiralOk: r.chiralOk, bondRms: r.bondRms };
-    if (!r.chiralOk) applied = [...applied, 'warning: stereochemistry could not be reproduced in 3-D'];
+    // Embed, then confirm with RDKit that the 3-D structure encodes the same stereochemistry (tetrahedral centres and E/Z) as the input;
+    // retry with new random seeds when it does not (bridged polycycles can invert a centre that the chirality penalty alone misses).
+    const expected = canonicalSmiles(RD, toMolBlock(g)), twoD = g.atoms.map((a) => ({ x: a.x, y: a.y, z: a.z }));
+    let verified = false, r = embed3d(g, { seed }), tries = 1;
+    for (; tries <= 8; tries++) {
+      r.coords.forEach((c, i) => { g.atoms[i].x = c[0]; g.atoms[i].y = c[1]; g.atoms[i].z = c[2]; });
+      if (!expected || canonicalSmiles(RD, toMolBlock(g)) === expected) { verified = true; break; }
+      twoD.forEach((c, i) => { g.atoms[i].x = c.x; g.atoms[i].y = c.y; g.atoms[i].z = c.z; });
+      r = embed3d(g, { seed: (seed ?? 42) + 1000 * tries });
+    }
+    if (!verified) r.coords.forEach((c, i) => { g.atoms[i].x = c[0]; g.atoms[i].y = c[1]; g.atoms[i].z = c[2]; }); // keep the last 3-D attempt, flagged below
+    g.is3d = true; embedded = true; emb = { violation: r.violation, attempts: r.attempts * tries, chiralOk: verified, bondRms: r.bondRms };
+    if (!verified) applied = [...applied, 'warning: stereochemistry could not be reproduced in 3-D'];
   }
+  if (hasMacrocycle(g)) applied = [...applied, 'warning: macrocycle: Vina keeps ring conformations rigid, so only one ring conformation is docked'];
   const smiles = canonicalSmiles(RD, toMolBlock(g));
   return { mol: g, smiles, protonation: applied, embedded, embed: emb, heavyAtoms: g.atoms.filter((a) => a.el !== 'H').length };
 }

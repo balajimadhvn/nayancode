@@ -3,6 +3,7 @@
  *  the metric matrix is embedded in 3-D and refined by minimising bound violations, chirality and planarity penalties.
  *  Stereochemistry (tetrahedral centres, E/Z double bonds) is read from the 2-D coordinates and wedge bonds of the input graph.
  *  Torsions about acyclic single bonds are free: Vina samples them. Quality is reported, not assumed. */
+import { ffEnergy, ffMinimise, type FFTerms, type FFTorsion } from './ff';
 import { hybridisation, neighbours, type Hyb, type MolG } from './molgraph';
 
 const RAD: Record<string, [number, number, number]> = { // covalent radii by hybridisation [sp3, sp2, sp]
@@ -63,7 +64,7 @@ interface Torsion { a: number; b: number; c: number; d: number; lo: number; hi: 
 /** Distance-geometry embedding. Strict ring-geometry bounds first; if the polycyclic system cannot satisfy them, the ring torsion ranges are relaxed. */
 export function embed3d(m: MolG, opts: { seed?: number; maxAttempts?: number } = {}): EmbedResult {
   const r1 = embedCore(m, opts, false);
-  if (r1.violation < 0.01 && r1.chiralOk) return r1;
+  if (r1.violation < 0.05 && r1.chiralOk) return r1;
   const r2 = embedCore(m, { ...opts, seed: (opts.seed ?? 42) + 7 }, true);
   return (r2.chiralOk && !r1.chiralOk) || (r2.chiralOk === r1.chiralOk && r2.violation < r1.violation) ? { ...r2, attempts: r1.attempts + r2.attempts } : { ...r1, attempts: r1.attempts + r2.attempts };
 }
@@ -85,6 +86,7 @@ function embedCore(m: MolG, opts: { seed?: number; maxAttempts?: number }, relax
   m.bonds.forEach((b, k) => { set(b.a, b.b, bl[k] - 0.01, bl[k] + 0.01); known[b.a * n + b.b] = known[b.b * n + b.a] = 1; });
   // 1-3
   const angle = new Map<string, number>(); // key a,b,c (b centre) → radians
+  const ffAngles: FFTerms['angles'] = [];
   for (let b = 0; b < n; b++) {
     const ns = nb[b];
     for (let x = 0; x < ns.length; x++) for (let y = x + 1; y < ns.length; y++) {
@@ -95,7 +97,7 @@ function embedCore(m: MolG, opts: { seed?: number; maxAttempts?: number }, relax
       if (inRing) { const sz = ringSharesBothBonds(m.rings, a, b, c)!; th = hyb[b] === 'sp3' && sz === 5 ? 104 : hyb[b] === 'sp3' && sz === 6 ? 111 : ((sz - 2) * 180) / sz; if (sz === 3) th = 60; if (sz === 4) th = 90; } else if (size < 99 && (rs(a, b) === 3 || rs(b, c) === 3)) th = 118; // exocyclic at a cyclopropane carbon
       if (hyb[b] === 'sp3' && ns.length === 4 && m.atoms[a].el === 'H' && m.atoms[c].el === 'H') th = 107;
       const t = (th * Math.PI) / 180, d = Math.sqrt(r1 * r1 + r2 * r2 - 2 * r1 * r2 * Math.cos(t)), tol = hyb[b] === 'sp3' && !inRing ? 0.06 * d : 0.035 * d;
-      angle.set(`${a},${b},${c}`, t); angle.set(`${c},${b},${a}`, t);
+      angle.set(`${a},${b},${c}`, t); angle.set(`${c},${b},${a}`, t); ffAngles.push({ a, b, c, t0: t, k: 100 });
       if (!known[a * n + c]) { set(a, c, Math.max(0.5, d - tol), d + tol); known[a * n + c] = known[c * n + a] = 2; }
     }
   }
@@ -108,6 +110,7 @@ function embedCore(m: MolG, opts: { seed?: number; maxAttempts?: number }, relax
   const dbl = (x: number, y: number) => { const k = bondOf.get(`${x},${y}`); return k != null && (m.bonds[k].order === 2); };
   const carbonylLike = (c: number) => nb[c].find((j) => (m.atoms[j].el === 'O' || m.atoms[j].el === 'S') && dbl(c, j));
   const tors: Torsion[] = [];
+  const ffTors: FFTorsion[] = [];
   for (const bk of m.bonds) {
     const b = bk.a, c = bk.b;
     for (const a of nb[b]) { if (a === c) continue; for (const d of nb[c]) { if (d === b || d === a) continue;
@@ -146,6 +149,9 @@ function embedCore(m: MolG, opts: { seed?: number; maxAttempts?: number }, relax
       const fixed = lo === up;
       const tol = fixed ? 0.05 : 0.02;
       tors.push({ a, b, c, d, lo, hi: up });
+      if (lo === up && (doubleOrAromatic || (rsz > 0 && hyb[b] !== 'sp3' && hyb[c] !== 'sp3') || (bk.order === 1 && hyb[b] === 'sp2' && hyb[c] === 'sp2'))) ffTors.push({ a, b, c, d, k: doubleOrAromatic || rsz ? 12 : 6, n: 1, delta: (lo * Math.PI) / 180 + Math.PI });
+      else if (hyb[b] === 'sp3' && hyb[c] === 'sp3') ffTors.push({ a, b, c, d, k: 0.4, n: 3, delta: 0 });
+      else if (!rsz && bk.order === 1 && hyb[b] === 'sp2' && hyb[c] === 'sp2') ffTors.push({ a, b, c, d, k: 2, n: 2, delta: Math.PI });
       if (known[a * n + d]) { // ring closure shorter path wins: keep existing tighter bounds
         const i = a * n + d; if (known[i] === 3) { lb[i] = lb[d * n + a] = Math.max(lb[i], lowD - tol); ub[i] = ub[d * n + a] = Math.min(ub[i], hiD + tol); }
         continue;
@@ -153,7 +159,7 @@ function embedCore(m: MolG, opts: { seed?: number; maxAttempts?: number }, relax
       set(a, d, Math.max(0.8, lowD - tol), hiD + tol); known[a * n + d] = known[d * n + a] = 3;
     } }
   }
-  void tors;
+  void tors; void ffEnergy;
 
   // triangle smoothing
   const sl = Float64Array.from(lb), su = Float64Array.from(ub);
@@ -163,16 +169,22 @@ function embedCore(m: MolG, opts: { seed?: number; maxAttempts?: number }, relax
 
   const chir = chiralCentres(m, nb);
   const planarCentres = m.atoms.map((_, i) => i).filter((i) => hyb[i] === 'sp2' && nb[i].length === 3);
-  const maxAttempts = opts.maxAttempts ?? (relax ? 10 : 8);
-  let best: { x: Float64Array; viol: number; chiralOk: boolean } | null = null, attempts = 0;
-  for (; attempts < maxAttempts; attempts++) {
+  const maxAttempts = opts.maxAttempts ?? (relax ? 12 : 10), wanted = 6;
+  const T: FFTerms = {
+    bonds: m.bonds.map((b, k) => ({ a: b.a, b: b.b, r0: bl[k] })), angles: ffAngles, torsions: ffTors,
+    chiral: chir.map(([c, a, b, d, sign]) => ({ c, a, b, d, sign })), planar: planarCentres.map((c) => [c, nb[c][0], nb[c][1], nb[c][2]] as [number, number, number, number]),
+    repel: [],
+  };
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (!known[i * n + j]) T.repel.push([i, j, 0.9 * lb[i * n + j]]);
+  let best: { x: Float64Array; viol: number; chiralOk: boolean; e: number } | null = null, attempts = 0, good = 0;
+  for (; attempts < maxAttempts && good < wanted; attempts++) {
     const x = embedOnce(n, sl, su, rnd);
     minimise(x, n, sl, su, chir, planarCentres, nb);
     const flip = chiralFlipState(x, chir);
     if (flip === 'all') for (let i = 0; i < n; i++) x[3 * i] = -x[3 * i];
     const viol = violation(x, n, sl, su, chir, planarCentres, nb), ok = flip !== 'mixed';
-    if (!best || (ok && !best.chiralOk) || (ok === best.chiralOk && viol < best.viol)) best = { x, viol, chiralOk: ok };
-    if (ok && viol < 0.01) { attempts++; break; }
+    if (ok && viol < 0.05) { const e = ffMinimise(x, T, 800); good++; if (!best || !best.chiralOk || (best.e > e)) best = { x, viol, chiralOk: true, e }; }
+    else if (!best || (ok && !best.chiralOk) || (ok === best.chiralOk && best.e === Infinity && viol < best.viol)) { if (!best || best.e === Infinity) best = { x, viol, chiralOk: ok, e: Infinity }; }
   }
   const x = best!.x;
   const coords = Array.from({ length: n }, (_, i) => [x[3 * i], x[3 * i + 1], x[3 * i + 2]]);

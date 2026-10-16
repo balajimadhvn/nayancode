@@ -14,6 +14,7 @@ const live: Record<string, ReturnType<typeof lazyRetry<() => React.JSX.Element>>
   expression: lazyRetry(() => import('@/studios/expression/ExpressionStudio')),
   chemistry: lazyRetry(() => import('@/studios/chemistry/ChemistryStudio')),
   structure: lazyRetry(() => import('@/studios/structure/StructureStudio')),
+  docking: lazyRetry(() => import('@/studios/docking/DockingStudio')),
   phylo: lazyRetry(() => import('@/studios/phylo/PhyloStudio')),
   genome: lazyRetry(() => import('@/studios/genome/GenomeStudio')),
   variant: lazyRetry(() => import('@/studios/variants/VariantStudio')),

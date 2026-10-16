@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -178,5 +178,19 @@ test('lab: Livak 2001 example, dose–response fit and a power calculation', asy
   await page.getByRole('tab', { name: 'Power & sample size' }).click(); await page.getByLabel('Power', { exact: true }).fill('0.8');
   await expect(page.locator('.stat').first()).toContainText(/\d+/); // two-sample t, d = 0.625 → n per group 42
   await expect(page.locator('.stat .v').first()).toHaveText('42');
+
+test('docking: 1HSG + indinavir demo docks with Vina in WebAssembly and reports RMSD to the crystal pose', async ({ page }) => {
+  test.setTimeout(8 * 60_000);
+  const errs = watch(page); await page.goto('/docking');
+  await page.getByRole('button', { name: /Demo: HIV protease/ }).click();
+  await expect(page.getByText(/1HSG \(bundled copy\)/)).toBeVisible({ timeout: 20_000 });
+  await page.locator('label.field', { hasText: 'Exhaustiveness' }).locator('input[type=range]').fill('1');
+  await page.getByRole('button', { name: 'Dock', exact: true }).click();
+  await expect(page.getByText('Top pose < 2 Å from crystal')).toBeVisible({ timeout: 6 * 60_000 });
+  await expect(page.getByRole('columnheader', { name: /RMSD to crystal/ }).first()).toBeVisible();
+  const aff = await page.locator('table').first().locator('tbody tr').first().locator('td').nth(1).innerText();
+  expect(Number(aff)).toBeLessThan(-7);
+  await page.getByRole('button', { name: /Interaction profile of pose 1/ }).click();
+  await expect(page.getByText(/hydrogen bond/).first()).toBeVisible({ timeout: 30_000 });
   expect(errs).toEqual([]);
 });

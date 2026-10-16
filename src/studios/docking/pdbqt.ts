@@ -169,3 +169,12 @@ export function symmetryRmsd(el: string[], bonds: [number, number, number][], re
   for (const p of A) { let s = 0; for (let i = 0; i < ref.length; i++) s += d2(ref[i], pose[p[i]]); if (s < best) best = s; }
   return Math.sqrt(best / ref.length);
 }
+
+const TYPE_EL: Record<string, string> = { A: 'C', NA: 'N', OA: 'O', SA: 'S', HD: 'H', Cl: 'Cl', Br: 'Br' };
+/** Element symbol of an AutoDock atom type. */
+export const typeElement = (t: string) => TYPE_EL[t] ?? t;
+
+/** A pose as PDB HETATM records (element column set), for viewers. */
+export function poseToPdb(p: Pose, resName = 'LIG'): string {
+  return p.atoms.map((a, i) => { const el = typeElement(a.type); return `HETATM${String(i + 1).padStart(5)} ${(el.length > 1 ? a.name.slice(0, 4).padEnd(4) : ` ${a.name.slice(0, 3)}`.padEnd(4))} ${resName.padStart(3)} Z   1    ${f(a.x, 8, 3)}${f(a.y, 8, 3)}${f(a.z, 8, 3)}  1.00  0.00          ${el.padStart(2)}`; }).join('\n') + '\nEND\n';
+}

@@ -34,6 +34,8 @@ describe('redocking shard', () => {
         const box = boxFromAtoms(xl.atoms, 6, 20);
         const rec = prepareReceptor(s, { cropCenter: box.center, cropRadius: Math.hypot(...box.size) / 2 + 12 });
         const L = ligandFromSmiles(RD, c.smiles, { protonate: true, name: c.comp });
+        if (L.protonation.some((w) => w.includes('macrocycle'))) throw new Error('macrocycle (ring of 9 or more atoms): Vina keeps ring conformations rigid');
+        if (L.protonation.some((w) => w.includes('stereochemistry could not'))) throw new Error('3-D stereochemistry could not be reproduced');
         const map = mapCrystalToMol(xl, L.mol);
         if (!map) throw new Error('crystal ligand does not match the SMILES graph');
         const lig = ligandToPdbqt(L.mol);

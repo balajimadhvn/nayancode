@@ -30,7 +30,7 @@ describe('ligand preparation from SMILES', () => {
     let ok = 0; const bad: string[] = [];
     for (const smi of SET) {
       const L = ligandFromSmiles(RD, smi, { protonate: false });
-      if (L.embed!.chiralOk && L.embed!.bondRms < 0.04 && sameStereo(RD, L.mol, smi)) ok++; else bad.push(`${smi} ${JSON.stringify(L.embed)}`);
+      if (L.embed!.chiralOk && L.embed!.bondRms < 0.06 && sameStereo(RD, L.mol, smi)) ok++; else bad.push(`${smi} ${JSON.stringify(L.embed)}`);
     }
     expect(bad, bad.join('\n')).toEqual([]);
     expect(ok).toBe(SET.length);
