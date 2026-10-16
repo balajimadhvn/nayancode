@@ -39,6 +39,6 @@ sed -i 's|#include <boost/thread/mutex.hpp>|#include <mutex>|; s|boost::mutex::s
 cp "$V/parallel.h" "$V/parallel.h.orig" 2>/dev/null || true; cp "$ROOT/scripts/vina-wasm/parallel.h" "$V/parallel.h"
 build st
 [ "${NO_MT:-0}" = 1 ] || build mt
-cp "$WORK/boost-filesystem/LICENSE_1_0.txt" "$OUT/LICENSE.boost.txt" 2>/dev/null || true
+curl -fsSL https://www.boost.org/LICENSE_1_0.txt -o "$OUT/LICENSE.boost.txt"
 (cd "$OUT" && sha256sum vina*.js vina*.wasm > SHA256SUMS)
 ls -l "$OUT"
