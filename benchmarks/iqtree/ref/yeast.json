@@ -1,0 +1,12 @@
+{
+ "iqtree": "IQ-TREE version 3.1.4 for Linux x86 64-bit built Sep 29 2026",
+ "model": "HKY+F+G4",
+ "logL": -684686.8009,
+ "kappa": 6.1655,
+ "alpha": 0.4089,
+ "runtimeSeconds": 9.9840481,
+ "tree": "(Scer:0.0602398544,Spar:0.0365473813,(Smik:0.0805291795,(Skud:0.0809466742,(Sbay:0.0791278839,(Scas:0.3648436365,(Sklu:0.3155058797,Calb:1.4649165428):0.1440939995):0.2450498067):0.0334787211):0.0385071739):0.0331155294);",
+ "modelSelectionBIC": "HKY+F+G4",
+ "bootstrapTree": null,
+ "bootstrapRuntimeSeconds": null
+}

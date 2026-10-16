@@ -22,7 +22,8 @@
     "typecheck": "tsc --noEmit",
     "licenses": "node scripts/license-check.mjs",
     "e2e": "playwright test",
-    "bench": "vitest run --config benchmarks/vitest.config.ts"
+    "bench": "vitest run --config benchmarks/vitest.config.ts",
+    "case-studies": "vitest run --config docs/case-studies/vitest.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.3.0",

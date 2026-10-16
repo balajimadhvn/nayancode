@@ -111,3 +111,70 @@ SVG, PDF (own minimal writer, no dependency) and PNG are drawn from one scene de
 marks. Tests parse the output (SVG: well-formed XML, millimetre size, one circle per point, editable text, no CSS
 variables; PDF: cross-reference offsets, stream length, page size, one path per point, fonts; PNG: pixel size at 600 dpi
 in the e2e test). Exported PDFs were also rasterised with poppler (`pdftoppm`) and inspected.
+## Variant calling (Genome Studio) vs native bcftools on real E. coli reads
+Data: the first 800,000 read-1 sequences (150 bp, 25×) of SRR2584863, an evolved line of the E. coli long-term
+evolution experiment, mapped to its ancestor REL606 (NC_012967.1) **with 230 edits planted into the reference**
+(150 SNVs, 40 deletions and 40 insertions of 1–10 bp; `bcftools/plant.mjs`). The real reads carry the original
+sequence, so they show exactly those 230 differences, with a real Illumina error profile, on top of the line's own
+mutations. Both sides run the same commands: minimap2 `-x sr`, samtools sort/index, bcftools mpileup
+(MAPQ ≥ 20, BQ ≥ 20) and `call -mv --ploidy 1`. Workbench: the shipped WebAssembly builds (minimap2 2.22, samtools
+1.17, bcftools 1.10), run under Node through the same pipeline code as the browser. Native: minimap2 2.28,
+samtools 1.21, bcftools 1.21 (bioconda).
+
+| | Workbench (WebAssembly) | Native |
+|---|---|---|
+| Planted SNVs recovered | 147 / 150 (98.0 %) | 147 / 150 (98.0 %) |
+| Planted indels recovered | 77 / 80 (96.3 %) | 77 / 80 (96.3 %) |
+| All calls | 250 | 252 |
+| Calls beyond the planted edits (the line's own mutations) | 24 | 27 |
+| Runtime, one thread | 388 s (minimap2 304 s, bcftools 60 s) | 25 s |
+
+Concordance: every Workbench call is also a native call; the 3 native calls with no Workbench counterpart are
+low-confidence (QUAL 6, 22 and 26). Genotypes agree for 100 % of shared calls and depth correlates at r = 0.98.
+
+QUAL and DP4-derived allele fractions differ between the two versions of bcftools (Spearman 0.29 for QUAL, Pearson
+0.84 for allele fraction). Running native bcftools 1.21 on the Workbench's own BAM reproduces the full native QUAL
+exactly (Spearman 1.000, the same 252 calls), so the alignments are equivalent and the difference comes from the
+caller version; the browser build of bcftools (biowasm) is 1.10.
+
+The minimap2 WebAssembly build is about 20× slower than the native binary, so in-browser mapping of a bacterial
+genome at 25× takes several minutes. One fix came out of this benchmark: the pipeline no longer runs a full samtools
+text pileup when bcftools calls the variants (it is only needed for the built-in caller), saving ~30 s here.
+
+## Maximum-likelihood phylogenetics (Phylogenetics Studio) vs IQ-TREE 3.1.4
+Four public alignments; IQ-TREE was run with the reference models (HKY+F+G4, Poisson+G4) and its ModelFinder result.
+The Workbench infers each tree by ML from a neighbour-joining start, with gamma rate heterogeneity (4 categories) and
+the same model. Both sides are single-threaded for the tree search. The bootstrap is compared on the splits both
+programs report.
+
+| Dataset (taxa × sites) | Topology RF distance | Log-likelihood, Workbench vs IQ-TREE | Model chosen (BIC) | Runtime, Workbench vs IQ-TREE |
+|---|---|---|---|---|
+| woodmouse (15 × 965) | 0 (identical) | −1746.17 vs −1745.97 | HKY+F+G4, same as IQ-TREE | 0.4 s vs 0.4 s |
+| Laurasiatherian (47 × 3179) | 0.205 | −45064.82 vs −45052.39 | HKY+F+G4, same | 58.5 s vs 29.8 s |
+| chloroplast protein (19 × 5144) | 0 (identical) | −81528.73 vs −81528.72 | Poisson+G4, same | 171 s vs 154 s |
+| yeast (8 × 127026) | 0.2 | −685053.88 vs −684686.80 | HKY+F+G4, same | 10.6 s vs 10.0 s |
+
+What this shows:
+- **Model selection agrees everywhere**: the BIC winner matches IQ-TREE's ModelFinder on all four datasets.
+- **Two datasets give the same tree**; the other two have a normalised Robinson–Foulds distance of 0.205 and 0.2.
+- **The gap in log-likelihood is in the search, not the likelihood.** Scoring IQ-TREE's own tree with the Workbench's
+  likelihood gives −45053.18 for Laurasiatherian (0.8 units from IQ-TREE's optimum) and −684758.5 for yeast (72 units
+  below it). Scoring the Workbench's tree in IQ-TREE gives −45064.46 and −684905.47. The Workbench's search settles on
+  a less likely tree on the two larger datasets, and its parameter optimisation also stops short on yeast
+  (α 0.457 vs 0.409, κ 5.45 vs 6.17). On the same tree the Workbench's likelihood is within 0.8 units of IQ-TREE's on
+  Laurasiatherian and within 0.2 on woodmouse, but 72 units lower on yeast, so the parameter optimisation is also a
+  gap there.
+- **Bootstrap support is correlated with IQ-TREE's**: Pearson 0.92 (woodmouse, 12 splits) and 0.87 (Laurasiatherian,
+  44 splits); mean absolute difference 5.2 and 12.6 percentage points. The Workbench bootstrap runs 100 replicates in
+  4 s and 135 s; IQ-TREE's standard bootstrap ran 34 s and 2047 s. **This is not a like-for-like speed comparison**: the
+  Workbench used 15 threads and IQ-TREE was started with `-T 1`. Single-thread runtimes are in the table above.
+- Yeast is the largest alignment (127k sites), where a 0.2 RF distance and a 367-unit log-likelihood gap are the
+  clearest remaining differences. The search, not the model, needs work.
+
+Source: `benchmarks/results/phylogenetics.json`; reference runs in `benchmarks/iqtree/ref/`.
+
+## Case-study figures: status
+Captured: `docs/case-studies/figures/pbmc3k_umap.png`.
+To capture (`npx playwright test -c docs/case-studies/playwright.config.ts`, ~10 minutes, mostly the E. coli run):
+`airway_volcano.png`, `airway_ma.png`, `airway_gsea_reactome.png`, `pbmc3k_annotation.png`,
+`ecoli_coverage.png`, `ecoli_variants.png`. The case-study README links to these files; the links are broken until they are captured.

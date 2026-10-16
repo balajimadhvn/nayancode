@@ -1,0 +1,172 @@
+{
+  "woodmouse": {
+    "taxa": 15,
+    "sites": 965,
+    "model": "HKY+F+G4",
+    "nRF": 0,
+    "logL": {
+      "workbench": -1746.17,
+      "iqtree": -1745.9691,
+      "workbenchOnIqtreeTree": -1746.17,
+      "iqtreeOnWorkbenchTree": -1745.9748
+    },
+    "parameters": {
+      "workbench": {
+        "alpha": 0.02,
+        "kappa": 22.39
+      },
+      "iqtree": {
+        "alpha": 0.02003,
+        "kappa": 22.3293
+      }
+    },
+    "modelSelection": {
+      "workbench": "HKY+F+G4",
+      "iqtree": "HKY+F+G4",
+      "ranking": [
+        "HKY+F+G4",
+        "HKY+F",
+        "K2P+G4",
+        "K2P",
+        "JC+G4",
+        "JC"
+      ]
+    },
+    "bootstrap": {
+      "replicates": 100,
+      "splits": 12,
+      "pearson": 0.918,
+      "spearman": 0.893,
+      "meanAbsDiff": 5.2,
+      "workbenchSeconds": 4.4,
+      "iqtreeSeconds": 33.72971892,
+      "threads": 15
+    },
+    "runtimeSeconds": {
+      "workbench": 0.3,
+      "iqtree": 0.351712
+    }
+  },
+  "Laurasiatherian": {
+    "taxa": 47,
+    "sites": 3179,
+    "model": "HKY+F+G4",
+    "nRF": 0.205,
+    "logL": {
+      "workbench": -45064.82,
+      "iqtree": -45052.3861,
+      "workbenchOnIqtreeTree": -45053.18,
+      "iqtreeOnWorkbenchTree": -45064.4581
+    },
+    "parameters": {
+      "workbench": {
+        "alpha": 0.341,
+        "kappa": 6.964
+      },
+      "iqtree": {
+        "alpha": 0.3447,
+        "kappa": 7.0452
+      }
+    },
+    "modelSelection": {
+      "workbench": "HKY+F+G4",
+      "iqtree": "HKY+F+G4",
+      "ranking": [
+        "HKY+F+G4",
+        "K2P+G4",
+        "JC+G4",
+        "HKY+F",
+        "K2P",
+        "JC"
+      ]
+    },
+    "bootstrap": {
+      "replicates": 100,
+      "splits": 44,
+      "pearson": 0.868,
+      "spearman": 0.916,
+      "meanAbsDiff": 12.6,
+      "workbenchSeconds": 151.3,
+      "iqtreeSeconds": 2046.555789,
+      "threads": 15
+    },
+    "runtimeSeconds": {
+      "workbench": 53.7,
+      "iqtree": 29.8053
+    }
+  },
+  "chloroplast": {
+    "taxa": 19,
+    "sites": 5144,
+    "model": "Poisson+G4",
+    "nRF": 0,
+    "logL": {
+      "workbench": -81528.73,
+      "iqtree": -81528.7219,
+      "workbenchOnIqtreeTree": -81528.78,
+      "iqtreeOnWorkbenchTree": -81528.7219
+    },
+    "parameters": {
+      "workbench": {
+        "alpha": 0.465,
+        "kappa": null
+      },
+      "iqtree": {
+        "alpha": 0.4641,
+        "kappa": null
+      }
+    },
+    "modelSelection": {
+      "workbench": "Poisson+G4",
+      "iqtree": "POISSON+F+G4",
+      "ranking": [
+        "Poisson+G4",
+        "Poisson"
+      ]
+    },
+    "bootstrap": null,
+    "runtimeSeconds": {
+      "workbench": 183.5,
+      "iqtree": 154.218
+    }
+  },
+  "yeast": {
+    "taxa": 8,
+    "sites": 127026,
+    "model": "HKY+F+G4",
+    "nRF": 0.2,
+    "logL": {
+      "workbench": -685053.88,
+      "iqtree": -684686.8009,
+      "workbenchOnIqtreeTree": -684758.5,
+      "iqtreeOnWorkbenchTree": -684905.4651
+    },
+    "parameters": {
+      "workbench": {
+        "alpha": 0.457,
+        "kappa": 5.452
+      },
+      "iqtree": {
+        "alpha": 0.4089,
+        "kappa": 6.1655
+      }
+    },
+    "modelSelection": {
+      "workbench": "HKY+F+G4",
+      "iqtree": "HKY+F+G4",
+      "ranking": [
+        "HKY+F+G4",
+        "K2P+G4",
+        "HKY+F",
+        "K2P",
+        "JC+G4",
+        "JC"
+      ]
+    },
+    "bootstrap": null,
+    "runtimeSeconds": {
+      "workbench": 10.8,
+      "iqtree": 9.9840481
+    }
+  }
+}

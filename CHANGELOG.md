@@ -8,6 +8,14 @@
   technical-replicate outlier flags, t-test / ANOVA on ΔCt and standard-curve efficiency; 4PL / 5PL dose–response with
   IC50 confidence intervals; power and sample size for t tests, ANOVA, proportions, log-rank and RNA-seq. Validated
   against the original papers and R (drc, pwr, RNASeqPower, gsDesign, NormqPCR), see benchmarks/RESULTS.md.
+- Benchmarks: variant calling vs native minimap2/samtools/bcftools on real E. coli reads with 230 planted SNVs and
+  indels; maximum-likelihood phylogenetics vs IQ-TREE on four public alignments. Three case studies on public data
+  (docs/case-studies): airway dexamethasone RNA-seq, PBMC3k cell types, mutations of an E. coli LTEE line.
+- Phylogenetics: κ (K80/HKY85) and the Γ shape are now estimated by maximum likelihood (κ was fixed at 2 and α
+  chosen from a 9-value grid); identical alignment columns are computed once (site-pattern compression); base
+  frequencies are the empirical ones, as IQ-TREE's +F.
+- Genome: the mapping pipeline is shared between the browser and Node (src/studios/genome/pipeline.ts) and no longer
+  runs a samtools text pileup when bcftools calls the variants.
 - Downloaded files are named `vivofold-nayancode_<name>_<date>.<ext>`.
 - Expression Studio defaults to testing the treatment rather than a paired donor or batch column.
 - Usability-study kit in `docs/usability/` (protocol, consent form, tasks, SUS questionnaire, analysis script).

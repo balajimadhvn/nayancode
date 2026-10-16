@@ -1,3 +1,4 @@
+import { brandedName } from '@/core/filename';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHandoff } from '@/core/handoff';
@@ -6,8 +7,9 @@ import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, downloadText, fm
 import { useRunner } from '@/ui/useRunner';
 import { cssVar } from '@/viz/charts';
 import { MultiLine } from '@/viz/more';
-import { callSnvs, DEFAULT_CALLER, parseBcftoolsVcf, parseFlagstat, simulateReads, simulateReference, snvsToVcf, summariseDepth, type CallerOpts, type Coverage, type Flagstat, type PlantedSnv, type SnvCall } from './mapping';
+import { DEFAULT_CALLER, simulateReads, simulateReference, type CallerOpts, type Coverage, type Flagstat, type PlantedSnv, type SnvCall } from './mapping';
 import { runTool } from './wasmTools';
+import { mapAndCall } from './pipeline';
 import { parseFasta } from '../sequence/kernels';
 
 const TOOL: ToolInfo = {
@@ -31,29 +33,8 @@ export function MappingPanel({ onMapped, onBrowse }: { onMapped(m: Mapped): void
     snvs.push({ pos: 6000, ref: ref.slice(6000, 6004), alt: ref[6000], af: 1 }, { pos: 10500, ref: ref[10500], alt: ref[10500] + (ref[10500] === 'G' ? 'TT' : 'GG'), af: 1 }, { pos: 15000, ref: ref.slice(15000, 15002), alt: ref[15000], af: 1 });
     const sim = simulateReads(ref, { n: 3800, len: 150, err: 0.004, snvs, seed: 5 }); setRefText(`>demo_ref synthetic 20 kb reference\n${ref.replace(/(.{70})/g, '$1\n')}\n`); setReads({ data: sim.fastq, name: 'simulated_reads.fastq (synthetic)', size: sim.fastq.length }); setTruth(snvs); setRes(null); };
   const go = () => void run({ label: `Mapping · ${reads?.name}`, tool: TOOL, params: { preset, caller, ploidy, ...opt }, inputs: [{ name: 'reference', data: refText.slice(0, 200000) }, { name: reads!.name, data: typeof reads!.data === 'string' ? reads!.data.slice(0, 200000) : `${reads!.name}:${reads!.size}` }], run: async (h) => {
-    const sig = { signal: h.signal }, log: string[] = [], readsData = typeof reads!.data === 'string' ? enc(reads!.data) : reads!.data;
-    h.onProgress(0.05, 'minimap2: aligning'); const m = await runTool('minimap2', ['-a', '-x', preset, '--secondary=no', '/ref.fa', '/reads.fq', '-o', '/aln.sam'], { 'ref.fa': refText, 'reads.fq': readsData }, ['aln.sam'], { ...sig, onLog: (l) => log.push(l) });
-    if (m.code !== 0 || !m.out['aln.sam']) throw new Error(`minimap2 failed (exit ${m.code}): ${m.stderr.split('\n').filter(Boolean).slice(-2).join(' ')}`);
-    h.onProgress(0.4, 'samtools: sort + index'); const so = await runTool('samtools', ['sort', '-o', '/sorted.bam', '/aln.sam'], { 'aln.sam': m.out['aln.sam'] }, ['sorted.bam'], sig); if (!so.out['sorted.bam']) throw new Error('samtools sort failed: ' + so.stderr.slice(-200));
-    const ix = await runTool('samtools', ['index', '/sorted.bam'], { 'sorted.bam': so.out['sorted.bam'] }, ['sorted.bam.bai'], sig); if (!ix.out['sorted.bam.bai']) throw new Error('samtools index failed: ' + ix.stderr.slice(-200));
-    h.onProgress(0.55, 'samtools: flagstat + depth'); const files = { 'sorted.bam': so.out['sorted.bam'], 'sorted.bam.bai': ix.out['sorted.bam.bai'] };
-    const fs = await runTool('samtools', ['flagstat', '/sorted.bam'], files, [], sig), dp = await runTool('samtools', ['depth', '-a', '/sorted.bam', '-o', '/depth.txt'], files, ['depth.txt'], sig);
-    h.onProgress(0.7, 'samtools: pileup'); const fai = await runTool('samtools', ['faidx', '/ref.fa'], { 'ref.fa': refText }, ['ref.fa.fai'], sig);
-    const pu = await runTool('samtools', ['mpileup', '-f', '/ref.fa', '-Q', String(opt.minBaseQ), '-q', '20', '-d', '100000', '/sorted.bam', '-o', '/pile.txt'], { ...files, 'ref.fa': refText, 'ref.fa.fai': fai.out['ref.fa.fai'] }, ['pile.txt'], sig);
-    if (!pu.out['pile.txt']) throw new Error('samtools mpileup failed: ' + pu.stderr.slice(-200));
-    let calls: SnvCall[], bcfVcf = '';
-    if (caller === 'bcftools') {
-      h.onProgress(0.8, 'bcftools: mpileup + call'); const refFiles = { ...files, 'ref.fa': refText, 'ref.fa.fai': fai.out['ref.fa.fai'] };
-      const mp = await runTool('bcftools', ['mpileup', '-f', '/ref.fa', '-q', '20', '-Q', String(opt.minBaseQ), '-d', '10000', '-a', 'AD,DP', '-Ob', '-o', '/pile.bcf', '/sorted.bam'], refFiles, ['pile.bcf'], sig);
-      if (!mp.out['pile.bcf']) throw new Error('bcftools mpileup failed: ' + mp.stderr.slice(-200));
-      const cl = await runTool('bcftools', ['call', '-mv', ...(ploidy === 1 ? ['--ploidy', '1'] : []), '-Ov', '-o', '/calls.vcf', '/pile.bcf'] /* diploid is bcftools' default */, { 'pile.bcf': mp.out['pile.bcf'] }, ['calls.vcf'], sig);
-      if (!cl.out['calls.vcf']) throw new Error('bcftools call failed: ' + cl.stderr.slice(-200));
-      bcfVcf = new TextDecoder().decode(cl.out['calls.vcf']); calls = parseBcftoolsVcf(bcfVcf);
-    } else calls = callSnvs(new TextDecoder().decode(pu.out['pile.txt']), opt);
-    h.onProgress(0.9, 'summarising'); const flag = parseFlagstat(fs.stdout || fs.stderr), cov = summariseDepth(new TextDecoder().decode(dp.out['depth.txt'] ?? new Uint8Array()));
-    let consensus: string | null = null; try { const cs = await runTool('samtools', ['consensus', '-f', 'fasta', '-a', '--min-depth', '3', '-o', '/cons.fa', '/sorted.bam'], files, ['cons.fa'], sig); if (cs.out['cons.fa']?.length) consensus = new TextDecoder().decode(cs.out['cons.fa']); } catch { /* optional */ }
-    const vcf = bcfVcf || snvsToVcf(calls, contigs.map((c) => ({ id: c.id, length: c.seq.length })), 'reads');
-    return { flag, cov, calls, log: log.join('\n'), mapped: { refName: contigs[0]?.id ?? 'ref', refText, bam: so.out['sorted.bam'], bai: ix.out['sorted.bam.bai'], vcf, calls, consensus } };
+    const p = await mapAndCall(runTool, { refText, contigs: contigs.map((c) => ({ id: c.id, length: c.seq.length })), reads: typeof reads!.data === 'string' ? enc(reads!.data) : reads!.data, preset, caller, ploidy, opt }, h);
+    return { flag: p.flag, cov: p.cov, calls: p.calls, log: p.log, mapped: { refName: contigs[0]?.id ?? 'ref', refText, bam: p.bam, bai: p.bai, vcf: p.vcf, calls: p.calls, consensus: p.consensus } };
   } }).then((r) => { if (r) { setRes(r); onMapped(r.mapped); } });
   useEffect(() => setRes(null), [refText, reads]);
     // Indels may be left-aligned by the caller, so they match by length change within 10 bp; SNVs match exactly.
@@ -87,7 +68,7 @@ export function MappingPanel({ onMapped, onBrowse }: { onMapped(m: Mapped): void
       <Card title="Variants" sub={caller === 'bcftools' ? 'bcftools call, SNVs + indels' : 'samtools mpileup, SNVs'} pad={false} actions={<><button className="btn sm" onClick={() => { setHandoff({ text: res.mapped.vcf, label: 'mapped_variants.vcf' }); nav('/variants'); }}>Open in Variant Studio</button><button className="btn sm" onClick={() => downloadText('variants.vcf', res.mapped.vcf)}>VCF</button></>}>
         <DataTable rows={res.calls} rowKey={(c, i) => `${c.chrom}${c.pos}${c.alt}${i}`} cols={[{ key: 'chrom', label: 'Contig' }, { key: 'pos', label: 'Pos', num: true, sort: (c) => c.pos }, { key: 'ra', label: 'Ref>Alt', render: (c) => `${c.ref}>${c.alt}` }, { key: 'ty', label: 'Type', render: (c) => (c.ref.length === c.alt.length ? 'SNV' : c.alt.length > c.ref.length ? 'insertion' : 'deletion') }, { key: 'dp', label: 'Depth', num: true, sort: (c) => c.depth }, { key: 'ac', label: 'Alt reads', num: true, sort: (c) => c.altCount }, { key: 'af', label: 'AF', num: true, sort: (c) => c.af, render: (c) => fmt(c.af, 3) }, { key: 'sb', label: 'Fwd/Rev', num: true, render: (c) => `${c.fwd}/${c.rev}` }, { key: 'q', label: 'QUAL', num: true, sort: (c) => c.qual, render: (c) => fmt(c.qual, 0) }, { key: 'f', label: 'Filter', render: (c) => (c.flags.length ? <span className="badge building">{c.flags.join(', ')}</span> : <span className="badge live">PASS</span>) }]} />
       </Card>
-      <Card title="Outputs"><div className="row"><button className="btn" onClick={onBrowse}>Open in genome browser</button><button className="btn sm" onClick={() => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([res.mapped.bam.slice().buffer as ArrayBuffer])); a.download = 'sorted.bam'; a.click(); }}>BAM</button><button className="btn sm" onClick={() => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([res.mapped.bai.slice().buffer as ArrayBuffer])); a.download = 'sorted.bam.bai'; a.click(); }}>BAI</button>{res.mapped.consensus && <button className="btn sm" onClick={() => downloadText('consensus.fasta', res.mapped.consensus!)}>Consensus FASTA</button>}<button className="btn sm" onClick={() => downloadText('coverage.csv', toCsv(res.cov.map(({ bins, ...c }) => { void bins; return c; })), 'text/csv')}>Coverage CSV</button></div></Card>
+      <Card title="Outputs"><div className="row"><button className="btn" onClick={onBrowse}>Open in genome browser</button><button className="btn sm" onClick={() => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([res.mapped.bam.slice().buffer as ArrayBuffer])); a.download = brandedName('sorted.bam'); a.click(); }}>BAM</button><button className="btn sm" onClick={() => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([res.mapped.bai.slice().buffer as ArrayBuffer])); a.download = brandedName('sorted.bam.bai'); a.click(); }}>BAI</button>{res.mapped.consensus && <button className="btn sm" onClick={() => downloadText('consensus.fasta', res.mapped.consensus!)}>Consensus FASTA</button>}<button className="btn sm" onClick={() => downloadText('coverage.csv', toCsv(res.cov.map(({ bins, ...c }) => { void bins; return c; })), 'text/csv')}>Coverage CSV</button></div></Card>
     </>}</div></div>
   </>);
 }
