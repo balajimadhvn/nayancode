@@ -1,7 +1,7 @@
 # Participant information and consent form
 
 **Study:** Usability of the Nayancode Workbench, a free web tool for biological data analysis
-**Researcher:** Balaji Madhavan, Vivofold (support@vivofold.in)
+**Researcher:** Balaji Madhavan, Solagene (support@solagene.com)
 **Ethics reference:** ____________
 
 ## What is this study?
@@ -29,7 +29,7 @@ There are no expected risks beyond mild frustration with the tasks. There is no 
 improve a free tool for students and researchers.
 
 ## Questions or complaints
-Contact support@vivofold.in, or the ethics committee named above.
+Contact support@solagene.com, or the ethics committee named above.
 
 ---
 

@@ -1,6 +1,6 @@
 # Usability study protocol: Nayancode Workbench
 
-Version 1.0 · 2026-10-15 · Principal investigator: Balaji Madhavan (Vivofold, ORCID 0009-0007-8654-3864)
+Version 1.0 · 2026-10-15 · Principal investigator: Balaji Madhavan (Solagene, ORCID 0009-0007-8654-3864)
 
 ## 1. Aim
 Measure whether researchers and students can complete standard bioinformatics analyses in the Nayancode Workbench
@@ -21,7 +21,7 @@ and task success is reported with 95 % confidence intervals.
 - **Group A, students:** 12–20 students from Vedicgen courses and partner colleges (biology, biotechnology or
   bioinformatics), with at most basic command-line experience.
 - **Group B, researchers:** 5–10 external researchers (PhD students, post-docs, lab scientists) who analyse data
-  as part of their work. Recruit at least half from outside Vivofold and Vedicgen to limit bias.
+  as part of their work. Recruit at least half from outside Solagene and Vedicgen to limit bias.
 - Inclusion: 18 or older; can use a laptop with Chrome, Edge or Firefox. Exclusion: anyone who helped build the
   Workbench.
 - Sample size: 5 users find most usability problems (Nielsen 2000). 15 or more per group gives a usable SUS
@@ -48,7 +48,7 @@ opts in separately on the consent form; recordings are deleted after notes are c
 are stored separately from data sheets.
 
 ## 6. Materials
-- A laptop with a current browser, the Workbench at https://balajimadhvn.github.io/nayancode/ (or vivofold.in),
+- A laptop with a current browser, the Workbench at https://balajimadhvn.github.io/nayancode/ (or solagene.com),
   and the task files (section 8). Clear the browser's site data before each session.
 - TASKS.md (participant sheet), SUS.md (questionnaire), results-template.csv (facilitator sheet).
 - A stopwatch, or the timestamps in the Workbench's exported report (each analysis records its start time).

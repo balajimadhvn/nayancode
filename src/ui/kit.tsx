@@ -92,7 +92,7 @@ export function DataTable<R>({ rows, cols, limit = 300, onRow, rowKey }: { rows:
   );
 }
 
-/** Saves text as a file; the name is branded by brandedName (vivofold-nayancode_<name>_<date>.<ext>). */
+/** Saves text as a file; the name is branded by brandedName (solagene-nayancode_<name>_<date>.<ext>). */
 export function downloadText(name: string, text: string, mime = 'text/plain') {
   const url = URL.createObjectURL(new Blob([text], { type: mime }));
   const a = document.createElement('a'); a.href = url; a.download = brandedName(name); a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
