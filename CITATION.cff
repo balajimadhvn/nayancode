@@ -8,26 +8,41 @@ authors:
     orcid: "https://orcid.org/0009-0007-8654-3864"
     affiliation: "Solagene, India"
 doi: "10.5281/zenodo.23393495"
-version: "1.0.0"
-date-released: "2026-10-15"
+version: "1.1.0"
+date-released: "2026-10-16"
 license: Apache-2.0
 repository-code: "https://github.com/balajimadhvn/nayancode"
-url: "https://balajimadhvn.github.io/nayancode/"
+url: "https://solagene.com/nayancode/"
 keywords:
   - bioinformatics
   - cheminformatics
-  - webassembly
-  - rna-seq
-  - single-cell
+  - WebAssembly
+  - molecular docking
+  - AutoDock Vina
+  - drug discovery
+  - virtual screening
+  - QSAR
+  - RNA-seq
+  - differential expression
+  - single-cell RNA-seq
+  - read mapping
+  - variant calling
+  - genome analysis
+  - CRISPR guide design
+  - primer design
+  - qPCR
+  - dose-response
   - phylogenetics
+  - microbiome
+  - open science
   - privacy
   - reproducibility
 abstract: >-
   The Nayancode Workbench is a free, open-source collection of analysis studios that run entirely in the web
-  browser: sequence analysis and cloning, read mapping with minimap2 and samtools compiled to WebAssembly,
+  browser: molecular docking with AutoDock Vina compiled to WebAssembly, sequence analysis and cloning, read mapping and variant calling with minimap2, samtools and bcftools compiled to WebAssembly,
   variant interpretation, bulk RNA-seq differential expression for any experimental design (validated against edgeR and limma) and enrichment, single-cell clustering,
   microbiome diversity, cheminformatics and QSAR, protein structure analysis and maximum-likelihood
-  phylogenetics. Input files are analysed on the user's own computer, and every result records its own
+  phylogenetics, and lab calculators (qPCR, dose-response, power) with publication-ready figures. Input files are analysed on the user's own computer, and every result records its own
   provenance and methods text.
 identifiers:
   - type: doi
