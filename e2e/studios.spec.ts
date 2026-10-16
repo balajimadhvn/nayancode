@@ -178,6 +178,8 @@ test('lab: Livak 2001 example, dose–response fit and a power calculation', asy
   await page.getByRole('tab', { name: 'Power & sample size' }).click(); await page.getByLabel('Power', { exact: true }).fill('0.8');
   await expect(page.locator('.stat').first()).toContainText(/\d+/); // two-sample t, d = 0.625 → n per group 42
   await expect(page.locator('.stat .v').first()).toHaveText('42');
+  expect(errs).toEqual([]);
+});
 
 test('docking: 1HSG + indinavir demo docks with Vina in WebAssembly and reports RMSD to the crystal pose', async ({ page }) => {
   test.setTimeout(8 * 60_000);

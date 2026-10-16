@@ -9,7 +9,7 @@ WebAssembly memory per tab, a few CPU threads, optional WebGPU, and static files
 ## Tier 1: highest value for researchers and for the paper
 | Tool | How it runs free | Notes |
 |---|---|---|
-| Molecular docking (AutoDock Vina) | Vina compiled to WebAssembly (Apache-2.0; Webina-style build); ligand prep with RDKit, receptor from PDB / AlphaFold DB | One ligand, or a library of hundreds; exhaustiveness limited by threads. Add redocking validation on PDBbind-type complexes (RMSD < 2 Å rate) |
+| Molecular docking (AutoDock Vina), shipped in Docking Studio | Vina compiled to WebAssembly (Apache-2.0; Webina-style build); ligand prep with RDKit, receptor from PDB / AlphaFold DB | One ligand, or a library of hundreds; exhaustiveness limited by threads. Add redocking validation on PDBbind-type complexes (RMSD < 2 Å rate) |
 | Publication-ready figures (shipped for scatter, bar, heatmap, line, histogram, curve charts; trees, MSA and box plots to follow) | Pure TypeScript SVG/PDF/PNG export | Why people cite tools; about one week |
 | qPCR ΔΔCt, dose-response / IC50, power and sample size (shipped as Lab Studio) | Pure TypeScript | Wet-lab users; links to Vedicgen courses |
 | ~~Genome viewer (igv.js) and BAM/VCF/BED viewer~~ done | igv.js (MIT) | Local BAM/CRAM/VCF/BED/GFF/bigWig, Genome Studio and Variant Studio hand-off, SVG export |
