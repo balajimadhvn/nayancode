@@ -1,0 +1,62 @@
+{
+  "rows": [
+    {
+      "genome": "ecoli-k12",
+      "primers": 12,
+      "maxMismatch": 3,
+      "sitesFound": 35,
+      "exactSites": 22,
+      "identicalToBruteForce": true,
+      "identicalToIndependentScan": true,
+      "seedIndex": "pigeonhole k-mers",
+      "msSeeded": 500,
+      "msBruteForce": 4534,
+      "genomeBp": 4641653
+    },
+    {
+      "genome": "bsubtilis-168",
+      "primers": 12,
+      "maxMismatch": 4,
+      "sitesFound": 62,
+      "exactSites": 30,
+      "identicalToBruteForce": true,
+      "identicalToIndependentScan": true,
+      "seedIndex": "pigeonhole k-mers",
+      "msSeeded": 1417,
+      "msBruteForce": 4701,
+      "genomeBp": 4215607
+    },
+    {
+      "genome": "scer-s288c",
+      "primers": 10,
+      "maxMismatch": 3,
+      "sitesFound": 26,
+      "exactSites": 10,
+      "identicalToBruteForce": true,
+      "identicalToIndependentScan": true,
+      "seedIndex": "pigeonhole k-mers",
+      "msSeeded": 1263,
+      "msBruteForce": 8973,
+      "genomeBp": 12157122
+    },
+    {
+      "genome": "lambda",
+      "primers": 8,
+      "maxMismatch": 5,
+      "sitesFound": 11,
+      "exactSites": 8,
+      "identicalToBruteForce": true,
+      "identicalToIndependentScan": true,
+      "seedIndex": "none (seeds too short; scans)",
+      "msSeeded": 25,
+      "msBruteForce": 39,
+      "genomeBp": 48503
+    },
+    {
+      "experiment": "Sequence Studio primer pairs on E. coli K-12",
+      "pairs": 8,
+      "intendedProductFoundAtExactCoordinates": 8,
+      "pairsWithASinglePerfectProduct": 8
+    }
+  ]
+}
