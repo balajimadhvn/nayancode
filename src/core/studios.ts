@@ -58,6 +58,16 @@ export const STUDIOS: StudioDef[] = [
     cloudLater: 'Structure prediction, MD, virtual screening',
   },
   {
+    id: 'docking', path: '/docking', name: 'Docking Studio', short: 'Docking',
+    blurb: 'Dock small molecules into protein structures with AutoDock Vina, in your browser.',
+    status: 'live', milestone: 'M1', accent: 35,
+    inputs: ['PDB ID / AlphaFold DB / PDB or mmCIF file', 'SMILES, SDF, MOL2 or PubChem name'],
+    analyses: ['Receptor and ligand preparation (pH 7.4, Gasteiger charges, PDBQT)', 'Vina 1.2.7 docking with box from a co-crystal ligand, residues or coordinates', 'Pose viewer and interaction profile', 'Small virtual screen (up to 300 compounds)', 'Redocking validation against crystal poses'],
+    engines: 'AutoDock Vina 1.2.7 (WebAssembly, threads when cross-origin isolated) + RDKit + TypeScript preparation',
+    limits: 'Rigid receptor, one box up to 40 Å, ligands up to 70 heavy atoms and 20 rotatable bonds, up to 300 compounds per screen; scores are estimates, not binding free energies',
+    cloudLater: 'Flexible side chains, GPU and large-library screening',
+  },
+  {
     id: 'phylo', path: '/phylogenetics', name: 'Alignment & Phylogenetics', short: 'Phylogenetics',
     blurb: 'MSA, curation, tree inference and publication-grade tree figures.',
     status: 'live', milestone: 'M1', accent: 120,

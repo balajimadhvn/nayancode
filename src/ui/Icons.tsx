@@ -34,10 +34,11 @@ export const Icon = {
   Mail: (p: SVGProps<SVGSVGElement>) => <svg {...base(p)}><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>,
   Layers: (p: SVGProps<SVGSVGElement>) => <svg {...base(p)}><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg>,
   Beaker: (p: SVGProps<SVGSVGElement>) => <svg {...base(p)}><path d="M9 3h6M10 3v6l-5 9.5A1.5 1.5 0 0 0 6.3 21h11.4a1.5 1.5 0 0 0 1.3-2.5L14 9V3"/><path d="M7.5 15h9"/></svg>,
+  Docking: (p: SVGProps<SVGSVGElement>) => <svg {...base(p)}><path d="M4 9a8 8 0 0 1 16 0v1H4z"/><path d="M12 13v8M9 21h6"/><circle cx="12" cy="6.5" r="1.6" fill="currentColor"/></svg>,
   Flask: (p: SVGProps<SVGSVGElement>) => <svg {...base(p)}><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9V3"/><path d="M7.5 15h9"/></svg>,
 };
 export const StudioIcon: Record<string, (p: SVGProps<SVGSVGElement>) => React.JSX.Element> = {
-  sequence: Icon.Sequence, expression: Icon.Expression, chemistry: Icon.Chemistry, structure: Icon.Structure,
+  sequence: Icon.Sequence, expression: Icon.Expression, chemistry: Icon.Chemistry, structure: Icon.Structure, docking: Icon.Docking,
   phylo: Icon.Phylo, genome: Icon.Genome, variant: Icon.Variant, singlecell: Icon.SingleCell, microbiome: Icon.Microbiome, lab: Icon.Flask,
 };
 export const Logo = ({ size = 26 }: { size?: number }) => (

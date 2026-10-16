@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Docking Studio (`/docking`): AutoDock Vina 1.2.7 compiled to WebAssembly (Apache-2.0, built by `scripts/vendor_vina.sh`), clean-room receptor and ligand preparation (pH 7.4, Gasteiger charges, PDBQT, distance-geometry 3-D), box from a co-crystal ligand, residues or coordinates, pose viewer, interaction profile, small virtual screens, redocking benchmark (35.7 % of top poses < 2 Å on 42 complexes; identical scores to native Vina within 0.14 kcal/mol on average).
 - The publisher is now **Solagene** (formerly Vivofold), https://solagene.com; new logo and icons.
 - Publication-ready figures: every chart exports to SVG (editable text, light or dark), PDF (vector) and PNG at 300 or
   600 dpi, with width and height in mm, font size, a colour-blind-safe palette (Okabe–Ito) and editable title and axis

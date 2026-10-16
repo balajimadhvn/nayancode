@@ -1,0 +1,5 @@
+AutoDock Vina 1.2.7 compiled to WebAssembly with Emscripten 4.0.15 by scripts/vendor_vina.sh.
+  Vina: Apache-2.0, Copyright The Scripps Research Institute (LICENSE.vina.txt). Trott & Olson (2010) J Comput Chem 31:455; Eberhardt et al. (2021) J Chem Inf Model 61:3891.
+  Boost (filesystem; headers for the rest): Boost Software License 1.0 (LICENSE.boost.txt).
+  Changes to Vina: parallel.h and parallel_progress.h use std::thread / std::mutex instead of Boost.Thread; thin C entry points in scripts/vina-wasm/wrapper.cpp.
+No Open Babel or other GPL code is linked.
