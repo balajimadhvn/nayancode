@@ -4,14 +4,22 @@
   "version": [
     "1.1.0"
   ],
-  "description": "Free, open-source bioinformatics and cheminformatics studios that run entirely in the web browser: molecular docking with AutoDock Vina, read mapping and variant calling (minimap2, samtools, bcftools in WebAssembly), RNA-seq differential expression, single-cell clustering, microbiome diversity, QSAR, structure analysis, phylogenetics and lab calculators. Files are analysed on the user's computer and every result records its provenance.",
+  "description": "Free, open-source bioinformatics and cheminformatics in the web browser. Eleven studios: Docking (AutoDock Vina 1.2.7 in WebAssembly, receptor and ligand preparation, virtual screens); Genome (FASTQ QC, minimap2 mapping, samtools, bcftools SNV and indel calling, genome viewer, bundled genomes, CRISPR off-targets); Variant (VCF filtering, signatures, ClinVar/gnomAD/VEP evidence); Expression (RNA-seq differential expression for any design, enrichment); Single-Cell (clustering, UMAP); Microbiome (diversity, UniFrac, PERMANOVA); Chemistry (RDKit descriptors, QSAR); Structure (Mol* viewer, interactions); Phylogenetics (alignment, maximum-likelihood trees); Sequence (primers, cloning, restriction digests, CRISPR guides); Lab (qPCR, IC50, power). Files stay on the user's computer; every result records provenance and methods text.",
   "homepage": "https://solagene.com/nayancode/",
   "function": [
     {
       "operation": [
         {
-          "uri": "http://edamontology.org/operation_0478",
-          "term": "Molecular docking"
+          "uri": "http://edamontology.org/operation_0482",
+          "term": "Protein-ligand docking"
+        },
+        {
+          "uri": "http://edamontology.org/operation_3938",
+          "term": "Virtual screening"
+        },
+        {
+          "uri": "http://edamontology.org/operation_3218",
+          "term": "Sequencing quality control"
         },
         {
           "uri": "http://edamontology.org/operation_3198",
@@ -22,12 +30,32 @@
           "term": "Variant calling"
         },
         {
+          "uri": "http://edamontology.org/operation_3208",
+          "term": "Genome visualisation"
+        },
+        {
+          "uri": "http://edamontology.org/operation_0331",
+          "term": "Variant effect prediction"
+        },
+        {
           "uri": "http://edamontology.org/operation_3223",
           "term": "Differential gene expression profiling"
         },
         {
+          "uri": "http://edamontology.org/operation_2436",
+          "term": "Gene-set enrichment analysis"
+        },
+        {
           "uri": "http://edamontology.org/operation_3432",
           "term": "Clustering"
+        },
+        {
+          "uri": "http://edamontology.org/operation_3935",
+          "term": "Dimensionality reduction"
+        },
+        {
+          "uri": "http://edamontology.org/operation_0492",
+          "term": "Multiple sequence alignment"
         },
         {
           "uri": "http://edamontology.org/operation_0323",
@@ -36,6 +64,14 @@
         {
           "uri": "http://edamontology.org/operation_0308",
           "term": "PCR primer design"
+        },
+        {
+          "uri": "http://edamontology.org/operation_0365",
+          "term": "Restriction digest"
+        },
+        {
+          "uri": "http://edamontology.org/operation_2238",
+          "term": "Statistical calculation"
         }
       ]
     }
@@ -83,6 +119,14 @@
     {
       "uri": "http://edamontology.org/topic_2269",
       "term": "Statistics and probability"
+    },
+    {
+      "uri": "http://edamontology.org/topic_1317",
+      "term": "Structural biology"
+    },
+    {
+      "uri": "http://edamontology.org/topic_3308",
+      "term": "Transcriptomics"
     }
   ],
   "operatingSystem": [
@@ -95,7 +139,6 @@
     "C++"
   ],
   "license": "Apache-2.0",
-  "collectionID": [],
   "maturity": "Emerging",
   "cost": "Free of charge",
   "accessibility": "Open access",
