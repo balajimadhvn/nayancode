@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { ExportBar } from './FigureExport';
+import { buildBars, buildCurves, buildHeatmap, buildHistogram, buildLine, buildScatter, drawScene, type CurveSpec, type FigureOptions } from './figure';
 
 export const cssVar = (n: string) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -32,7 +34,8 @@ const nice = (lo: number, hi: number, n = 5) => {
 };
 
 export interface Pt { x: number; y: number; cat: number; label: string }
-export function Scatter({ points, colors, names, xLabel, yLabel, height = 360, vlines = [], hlines = [], onHover, radius = 2.6, equalAspect = false, xTicks }: {
+export function Scatter({ points, colors, names, xLabel, yLabel, height = 360, vlines = [], hlines = [], onHover, radius = 2.6, equalAspect = false, xTicks, labelScore, labelDefault = 0, exportName = 'scatter' }: {
+  labelScore?: (p: Pt) => number; labelDefault?: number; exportName?: string;
   points: Pt[]; colors: string[]; names?: string[]; xLabel: string; yLabel: string; height?: number; vlines?: number[]; hlines?: number[]; onHover?: (p: Pt | null) => void; radius?: number; equalAspect?: boolean; xTicks?: { x: number; label: string }[];
 }) {
   const [tip, setTip] = useState<{ x: number; y: number; p: Pt } | null>(null);
@@ -77,6 +80,7 @@ export function Scatter({ points, colors, names, xLabel, yLabel, height = 360, v
       <canvas ref={ref} style={{ height }} onMouseMove={onMove} onMouseLeave={() => { setTip(null); onHover?.(null); }} />
       {tip && <div className="chart-tip" style={{ left: tip.x, top: tip.y }}><b>{tip.p.label}</b><div className="faint mono">{xLabel.split(' ')[0]} {tip.p.x.toFixed(3)} · {yLabel.split(' ')[0]} {tip.p.y.toFixed(3)}</div></div>}
       {names && <div className="legend">{names.map((n, i) => <span key={n}><i style={{ background: colors[i] }} />{n}</span>)}</div>}
+      <ExportBar name={exportName} defaults={{ xLabel, yLabel, labelTopN: labelDefault }} canLabel={!!labelScore} build={(o) => buildScatter({ points, colors, names, xLabel, yLabel, vlines, hlines, equalAspect, xTicks, labelScore }, o)} />
     </div>
   );
 }
@@ -97,7 +101,7 @@ export function LineChart({ xs, ys, xLabel, yLabel, height = 200, yMin, yMax }: 
     g.fillStyle = cssVar('--text-dim'); g.font = '600 11.5px ' + cssVar('--font'); g.textBaseline = 'bottom'; g.fillText(xLabel, (w + m.l) / 2, h - 1);
     g.save(); g.translate(11, h / 2); g.rotate(-Math.PI / 2); g.textBaseline = 'top'; g.fillText(yLabel, 0, 0); g.restore();
   }, [xs, ys, yMin, yMax]);
-  return <div className="chart"><canvas ref={ref} style={{ height }} /></div>;
+  return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name="line" defaults={{ xLabel, yLabel }} build={(o) => buildLine({ xs, ys, xLabel, yLabel, yMin, yMax }, o)} /></div>;
 }
 
 export function Histogram({ values, bins = 30, label, height = 170, color = '--chart-a', marker }: { values: number[]; bins?: number; label: string; height?: number; color?: string; marker?: number }) {
@@ -115,22 +119,26 @@ export function Histogram({ values, bins = 30, label, height = 170, color = '--c
     if (marker !== undefined && marker >= lo && marker <= hi) { const x = m.l + ((marker - lo) / (hi - lo || 1)) * (w - m.l - m.r); g.strokeStyle = cssVar('--chart-d'); g.setLineDash([4, 3]); g.beginPath(); g.moveTo(x, m.t); g.lineTo(x, h - m.b); g.stroke(); g.setLineDash([]); }
     g.fillStyle = cssVar('--text-dim'); g.font = '600 11.5px ' + cssVar('--font'); g.textAlign = 'center'; g.textBaseline = 'bottom'; g.fillText(label, (w + m.l) / 2, h - 1);
   }, [values, bins, label, marker]);
-  return <div className="chart"><canvas ref={ref} style={{ height }} /></div>;
+  return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name="histogram" defaults={{ xLabel: label, yLabel: 'Count' }} build={(o) => buildHistogram({ values, bins, label, marker }, o)} /></div>;
 }
 
-export function BarChart({ labels, values, colors, yLabel, height = 220, fmt = (v: number) => String(Math.round(v)) }: { labels: string[]; values: number[]; colors: string[]; yLabel: string; height?: number; fmt?: (v: number) => string }) {
+export function BarChart({ labels, values, colors, yLabel, height = 220, fmt = (v: number) => String(Math.round(v)), errors, errorsLo, dots, exportName = 'bar-chart' }: { labels: string[]; values: number[]; colors: string[]; yLabel: string; height?: number; fmt?: (v: number) => string; errors?: number[]; errorsLo?: number[]; dots?: number[][]; exportName?: string }) {
   const ref = useCanvas(height, (g, w, h) => {
-    const m = { l: 56, r: 10, t: 14, b: 46 }, mx = Math.max(...values, 1e-9), bw = (w - m.l - m.r) / labels.length;
+    const m = { l: 56, r: 10, t: 14, b: 46 }, mx = Math.max(...values.map((v, i) => v + (errors?.[i] ?? 0)), ...(dots?.flat() ?? []), 1e-9), bw = (w - m.l - m.r) / labels.length;
     g.strokeStyle = cssVar('--border'); g.fillStyle = cssVar('--text-faint'); g.font = '11px ' + cssVar('--mono'); g.textAlign = 'right'; g.textBaseline = 'middle';
     for (const t of nice(0, mx, 4)) { const y = h - m.b - (t / mx) * (h - m.t - m.b); g.beginPath(); g.moveTo(m.l, y); g.lineTo(w - m.r, y); g.stroke(); g.fillText(fmt(t), m.l - 6, y); }
     labels.forEach((l, i) => {
       const bh = (values[i] / mx) * (h - m.t - m.b), x = m.l + i * bw + bw * 0.15;
       g.fillStyle = colors[i % colors.length]; g.globalAlpha = 0.9; g.beginPath(); g.roundRect(x, h - m.b - bh, bw * 0.7, bh, 4); g.fill(); g.globalAlpha = 1;
       g.fillStyle = cssVar('--text-faint'); g.textAlign = 'center'; g.textBaseline = 'top'; g.save(); g.translate(x + bw * 0.35, h - m.b + 6); if (bw < 56) g.rotate(0.6); g.textAlign = bw < 56 ? 'left' : 'center'; g.fillText(l.length > 12 ? l.slice(0, 11) + '…' : l, 0, 0); g.restore();
+      const px = x + bw * 0.35, Y = (v: number) => h - m.b - (v / mx) * (h - m.t - m.b), e = errors?.[i];
+      g.strokeStyle = cssVar('--text'); g.fillStyle = cssVar('--text');
+      if (e && Number.isFinite(e)) { g.beginPath(); g.moveTo(px, Y(values[i] + e)); g.lineTo(px, Y(Math.max(0, values[i] - (errorsLo?.[i] ?? e)))); g.moveTo(px - 4, Y(values[i] + e)); g.lineTo(px + 4, Y(values[i] + e)); g.moveTo(px - 4, Y(Math.max(0, values[i] - (errorsLo?.[i] ?? e)))); g.lineTo(px + 4, Y(Math.max(0, values[i] - (errorsLo?.[i] ?? e)))); g.stroke(); }
+      dots?.[i]?.forEach((d, k, a) => { g.beginPath(); g.arc(px + ((k + 0.5) / a.length - 0.5) * bw * 0.5, Y(d), 2.2, 0, 6.3); g.fill(); });
     });
     g.save(); g.translate(11, h / 2); g.rotate(-Math.PI / 2); g.fillStyle = cssVar('--text-dim'); g.font = '600 11.5px ' + cssVar('--font'); g.textAlign = 'center'; g.textBaseline = 'top'; g.fillText(yLabel, 0, 0); g.restore();
-  }, [labels, values, colors, yLabel]);
-  return <div className="chart"><canvas ref={ref} style={{ height }} /></div>;
+  }, [labels, values, colors, yLabel, errors, errorsLo, dots]);
+  return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name={exportName} defaults={{ yLabel }} build={(o) => buildBars({ labels, values, colors, yLabel, fmt, errors, errorsLo, dots }, o)} /></div>;
 }
 
 /** Diverging heatmap of z-scores with row/column labels. */
@@ -143,5 +151,15 @@ export function Heatmap({ rows, cols, z, height = 440 }: { rows: string[]; cols:
     if (rh > 8) rows.forEach((r, i) => g.fillText(r, m.l - 6, m.t + (i + 0.5) * rh));
     g.save(); cols.forEach((c, j) => { g.save(); g.translate(m.l + (j + 0.5) * cw, m.t - 6); g.rotate(-0.7); g.textAlign = 'left'; g.fillText(c, 0, 0); g.restore(); }); g.restore();
   }, [rows, cols, z]);
-  return <div className="chart"><canvas ref={ref} style={{ height }} /></div>;
+  return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name="heatmap" defaults={{}} build={(o) => buildHeatmap({ rows, cols, z }, o)} /></div>;
+}
+
+/** Fitted curves with replicate points, error bars, confidence band and marker lines; linear or log axes. Drawn from the same scene as the export. */
+export function CurvePlot({ spec, height = 320, exportName = 'curves' }: { spec: CurveSpec; height?: number; exportName?: string }) {
+  const build = (o: FigureOptions, w: number, h: number) => buildCurves(spec, { ...o, widthMm: w / (72 / 25.4), heightMm: h / (72 / 25.4) });
+  const ref = useCanvas(height, (g, w, h) => {
+    const sc = build({ widthMm: 0, heightMm: 0, fontPt: 10.5, palette: 'shown', theme: 'page', title: '', xLabel: '', yLabel: '', labelTopN: 0, dpi: 96 }, w, h);
+    sc.bg = null; drawScene(g, sc, 1);
+  }, [spec]);
+  return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name={exportName} defaults={{ xLabel: spec.xLabel, yLabel: spec.yLabel }} build={(o) => buildCurves(spec, o)} /></div>;
 }
