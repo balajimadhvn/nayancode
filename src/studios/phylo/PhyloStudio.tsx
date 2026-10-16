@@ -15,7 +15,7 @@ const remote = createRemote<PhyloKernels>(spawn);
 const cores = () => Math.max(1, Math.min(8, (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2) - 1);
 
 /** ML bootstrap spread over parallel workers (one per spare CPU core); the replicate trees are pooled for support. */
-async function parallelMlBootstrap(job: { names: string[]; aligned: string[]; model: MlModel; gamma: boolean; alpha: number | null }, reps: number, onProgress: (done: number) => void, signal?: AbortSignal): Promise<TreeNode[]> {
+async function parallelMlBootstrap(job: { names: string[]; aligned: string[]; model: MlModel; gamma: boolean; alpha: number | null; kappa: number | null }, reps: number, onProgress: (done: number) => void, signal?: AbortSignal): Promise<TreeNode[]> {
   const n = Math.min(cores(), reps), workers = Array.from({ length: n }, spawn), done = new Array(n).fill(0);
   const stop = () => workers.forEach((w) => w.terminate()); signal?.addEventListener('abort', stop);
   try {
@@ -49,7 +49,7 @@ export default function PhyloStudio() {
     const mlm: MlModel = kind === 'protein' ? 'Poisson' : mlModel;
     if (method !== 'ml' || !reps) return remote.tree({ names, aligned: alns, model, method, reps, root: 'midpoint', ml: { model: mlm, gamma } }, h);
     const main = await remote.tree({ names, aligned: alns, model, method, reps: 0, root: 'midpoint', ml: { model: mlm, gamma } }, { signal: h.signal, onProgress: (f, n) => h.onProgress(0.4 * f, n) });
-    const trees = await parallelMlBootstrap({ names, aligned: alns, model: mlm, gamma, alpha: main.ml?.alpha ?? null }, reps, (d) => h.onProgress(0.4 + 0.6 * (d / reps), `Bootstrap ${d}/${reps} on ${Math.min(cores(), reps)} cores`), h.signal);
+    const trees = await parallelMlBootstrap({ names, aligned: alns, model: mlm, gamma, alpha: main.ml?.alpha ?? null, kappa: main.ml?.kappa ?? null }, reps, (d) => h.onProgress(0.4 + 0.6 * (d / reps), `Bootstrap ${d}/${reps} on ${Math.min(cores(), reps)} cores`), h.signal);
     return { ...main, newick: toNewick(supportFromTrees(parseNewick(main.newick), names, trees)), supported: true };
   } }).then((r) => { if (r) { setNewick(r.newick); setMl(r.ml ?? null); setTab('tree'); } });
   const idMat = msa?.identity;

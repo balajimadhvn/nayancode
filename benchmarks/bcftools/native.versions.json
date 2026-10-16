@@ -1,0 +1,6 @@
+{
+  "minimap2": "2.28-r1209",
+  "samtools": "1.21",
+  "bcftools": "1.21",
+  "runtimeSeconds": 24.501788793, "threads": 1
+}

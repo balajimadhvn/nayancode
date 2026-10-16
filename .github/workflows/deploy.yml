@@ -29,8 +29,10 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with: { path: dist }
-  # Single-cell vs Scanpy needs the 10x PBMC3k download; it reports but does not block a deploy if the download fails.
-  singlecell-benchmark:
+  # Benchmarks that need downloads (10x PBMC3k, E. coli reads) or long runs: single-cell vs Scanpy, variant calling vs
+  # native bcftools, phylogenetics vs IQ-TREE. Reference outputs are committed, so no R, Python or IQ-TREE is needed here.
+  # They report but do not block a deploy.
+  extended-benchmarks:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -38,10 +40,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - uses: actions/cache@v4
-        with: { path: benchmarks/.cache, key: "bench-data-${{ hashFiles('benchmarks/fetch.sh') }}" }
+        with: { path: benchmarks/.cache, key: "bench-data-${{ hashFiles('benchmarks/fetch.sh') }}-v2" }
       - run: npm ci
       - run: bash benchmarks/fetch.sh
-      - run: npm run bench -- benchmarks/scanpy
+      - run: npm run bench -- benchmarks/scanpy benchmarks/bcftools benchmarks/iqtree
       - uses: actions/upload-artifact@v4
         with: { name: benchmark-results, path: benchmarks/results/ }
   deploy:

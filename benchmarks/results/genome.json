@@ -1,0 +1,88 @@
+{
+  "versions": {
+    "workbench": {
+      "minimap2": "2.22 (WebAssembly)",
+      "samtools": "1.17 (WebAssembly)",
+      "bcftools": "1.10 (WebAssembly)"
+    },
+    "native": {
+      "minimap2": "2.28-r1209",
+      "samtools": "1.21",
+      "bcftools": "1.21",
+      "runtimeSeconds": 24.84662286,
+      "threads": 1
+    }
+  },
+  "data": {
+    "reads": 800000,
+    "readLength": 150,
+    "genomeLength": 4629845,
+    "planted": 230,
+    "mappedPct": 99.6,
+    "meanDepth": 24.7
+  },
+  "steps": [
+    {
+      "step": "minimap2: aligning",
+      "seconds": 303.5
+    },
+    {
+      "step": "samtools: sort + index",
+      "seconds": 12.2
+    },
+    {
+      "step": "samtools: flagstat + depth",
+      "seconds": 2.7
+    },
+    {
+      "step": "bcftools: mpileup + call",
+      "seconds": 59.8
+    },
+    {
+      "step": "summarising",
+      "seconds": 9.9
+    }
+  ],
+  "runtimeSeconds": {
+    "workbench": 388.1,
+    "native": 24.84662286
+  },
+  "calls": {
+    "workbench": 250,
+    "native": 252,
+    "shared": 250,
+    "workbenchOnly": 0,
+    "nativeOnly": 3
+  },
+  "recallOfPlanted": {
+    "workbench": {
+      "snv": 0.98,
+      "indel": 0.9625,
+      "all": 0.9739,
+      "snvFound": 147,
+      "snvPlanted": 150,
+      "indelFound": 77,
+      "indelPlanted": 80
+    },
+    "native": {
+      "snv": 0.98,
+      "indel": 0.9625,
+      "all": 0.9739,
+      "snvFound": 147,
+      "snvPlanted": 150,
+      "indelFound": 77,
+      "indelPlanted": 80
+    }
+  },
+  "callsBeyondPlanted": {
+    "workbench": 24,
+    "native": 27,
+    "shared": 24
+  },
+  "sharedCalls": {
+    "genotypeConcordance": 1,
+    "qualSpearman": 0.289,
+    "alleleFractionPearson": 0.8424,
+    "depthPearson": 0.9845
+  }
+}

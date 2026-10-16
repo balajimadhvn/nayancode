@@ -1,0 +1,186 @@
+{
+  "data": {
+    "cellsIn": 2700,
+    "cellsKept": 2699,
+    "genesKept": 13714,
+    "hvg": 2000
+  },
+  "clusters": [
+    {
+      "cluster": 0,
+      "cells": 618,
+      "label": "T cells",
+      "topMarkers": [
+        "LDHB",
+        "LTB",
+        "CD3D",
+        "IL32",
+        "RPS25"
+      ]
+    },
+    {
+      "cluster": 1,
+      "cells": 540,
+      "label": "T cells",
+      "topMarkers": [
+        "RPS12",
+        "RPS27",
+        "RPS25",
+        "RPL13",
+        "MALAT1"
+      ]
+    },
+    {
+      "cluster": 2,
+      "cells": 418,
+      "label": "CD14+ monocytes",
+      "topMarkers": [
+        "LYZ",
+        "S100A9",
+        "FTL",
+        "TYROBP",
+        "CST3"
+      ]
+    },
+    {
+      "cluster": 3,
+      "cells": 352,
+      "label": "B cells",
+      "topMarkers": [
+        "CD74",
+        "HLA-DRA",
+        "HLA-DPB1",
+        "CD79A",
+        "HLA-DRB1"
+      ]
+    },
+    {
+      "cluster": 4,
+      "cells": 342,
+      "label": "CD8 T cells",
+      "topMarkers": [
+        "CCL5",
+        "NKG7",
+        "GZMA",
+        "B2M",
+        "IL32"
+      ]
+    },
+    {
+      "cluster": 5,
+      "cells": 231,
+      "label": "FCGR3A+ monocytes",
+      "topMarkers": [
+        "AIF1",
+        "FTL",
+        "FCER1G",
+        "CST3",
+        "LST1"
+      ]
+    },
+    {
+      "cluster": 6,
+      "cells": 141,
+      "label": "NK cells",
+      "topMarkers": [
+        "NKG7",
+        "GZMB",
+        "PRF1",
+        "CTSW",
+        "B2M"
+      ]
+    },
+    {
+      "cluster": 7,
+      "cells": 34,
+      "label": "Dendritic cells",
+      "topMarkers": [
+        "CST3",
+        "HLA-DRA",
+        "CD74",
+        "HLA-DPA1",
+        "HLA-DPB1"
+      ]
+    },
+    {
+      "cluster": 8,
+      "cells": 15,
+      "label": "Platelets",
+      "topMarkers": [
+        "GPX1",
+        "NRGN",
+        "PPBP",
+        "CALM3",
+        "RGS10"
+      ]
+    },
+    {
+      "cluster": 9,
+      "cells": 8,
+      "label": "CD8 T cells",
+      "topMarkers": [
+        "DUT",
+        "PSME2",
+        "GAPDH",
+        "CFL1",
+        "ITGB1BP1"
+      ]
+    }
+  ],
+  "annotation": {
+    "cellsCompared": 2638,
+    "accuracy": 0.925,
+    "ariClustersVsPublished": 0.608,
+    "perType": [
+      {
+        "published": "CD4 T cells",
+        "workbenchLabel": "T cells",
+        "cells": 1144,
+        "correct": 0.958
+      },
+      {
+        "published": "CD8 T cells",
+        "workbenchLabel": "CD8 T cells",
+        "cells": 316,
+        "correct": 0.842
+      },
+      {
+        "published": "NK cells",
+        "workbenchLabel": "NK cells",
+        "cells": 154,
+        "correct": 0.89
+      },
+      {
+        "published": "B cells",
+        "workbenchLabel": "B cells",
+        "cells": 342,
+        "correct": 0.994
+      },
+      {
+        "published": "CD14+ Monocytes",
+        "workbenchLabel": "CD14+ monocytes",
+        "cells": 480,
+        "correct": 0.84
+      },
+      {
+        "published": "FCGR3A+ Monocytes",
+        "workbenchLabel": "FCGR3A+ monocytes",
+        "cells": 150,
+        "correct": 1
+      },
+      {
+        "published": "Dendritic cells",
+        "workbenchLabel": "Dendritic cells",
+        "cells": 37,
+        "correct": 0.892
+      },
+      {
+        "published": "Megakaryocytes",
+        "workbenchLabel": "Platelets",
+        "cells": 15,
+        "correct": 0.933
+      }
+    ]
+  },
+  "runtimeSeconds": 10.2
+}

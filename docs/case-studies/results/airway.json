@@ -1,0 +1,273 @@
+{
+  "data": {
+    "samples": 8,
+    "genesIn": 33469,
+    "genesTested": 15041,
+    "design": "~ cell + dex",
+    "contrast": "trt vs untrt"
+  },
+  "de": {
+    "significant": 5003,
+    "up": 2545,
+    "down": 2458,
+    "upLfc1": 503,
+    "downLfc1": 454,
+    "priorDf": 5.54
+  },
+  "knownGlucocorticoidGenes": [
+    {
+      "gene": "CRISPLD2",
+      "ensembl": "ENSG00000103196",
+      "log2FC": 2.62,
+      "fdr": 0.000023958035211321038,
+      "rank": 119,
+      "deseq2Log2FC": 2.63,
+      "deseq2Padj": 4.69270573541946e-46
+    },
+    {
+      "gene": "DUSP1",
+      "ensembl": "ENSG00000120129",
+      "log2FC": 2.93,
+      "fdr": 0.0000031838653476594993,
+      "rank": 2,
+      "deseq2Log2FC": 2.95,
+      "deseq2Padj": 2.18767853304877e-126
+    },
+    {
+      "gene": "KLF15",
+      "ensembl": "ENSG00000163884",
+      "log2FC": 4.5,
+      "fdr": 0.000007673268008869737,
+      "rank": 31,
+      "deseq2Log2FC": 4.46,
+      "deseq2Padj": 2.48931613357041e-77
+    },
+    {
+      "gene": "PER1",
+      "ensembl": "ENSG00000179094",
+      "log2FC": 3.16,
+      "fdr": 0.000005892138613391125,
+      "rank": 24,
+      "deseq2Log2FC": 3.19,
+      "deseq2Padj": 2.71136073377964e-81
+    },
+    {
+      "gene": "TSC22D3",
+      "ensembl": "ENSG00000157514",
+      "log2FC": 3.22,
+      "fdr": 0.000021470436446833504,
+      "rank": 102,
+      "deseq2Log2FC": 3.19,
+      "deseq2Padj": 3.4471660383746e-19
+    },
+    {
+      "gene": "FKBP5",
+      "ensembl": "ENSG00000096060",
+      "log2FC": 3.98,
+      "fdr": 0.000016090477555721788,
+      "rank": 73,
+      "deseq2Log2FC": 4.05,
+      "deseq2Padj": 8.9257488944308e-26
+    },
+    {
+      "gene": "ZBTB16",
+      "ensembl": "ENSG00000109906",
+      "log2FC": 7.14,
+      "fdr": 0.000006495168792824729,
+      "rank": 26,
+      "deseq2Log2FC": 7.35,
+      "deseq2Padj": 2.24116450393789e-40
+    }
+  ],
+  "gseaReactome": [
+    {
+      "name": "Neutrophil degranulation",
+      "fdr": 0.01942961027156005,
+      "nes": 1.58,
+      "size": 341
+    },
+    {
+      "name": "Muscle contraction",
+      "fdr": 0.01942961027156005,
+      "nes": 1.89,
+      "size": 119
+    },
+    {
+      "name": "Smooth Muscle Contraction",
+      "fdr": 0.01942961027156005,
+      "nes": 1.97,
+      "size": 36
+    },
+    {
+      "name": "Downstream signal transduction",
+      "fdr": 0.01942961027156005,
+      "nes": 2.13,
+      "size": 26
+    },
+    {
+      "name": "Signaling by Leptin",
+      "fdr": 0.01942961027156005,
+      "nes": 2.01,
+      "size": 11
+    },
+    {
+      "name": "Signaling by PDGFRA extracellular domain mutants",
+      "fdr": 0.01942961027156005,
+      "nes": 1.9,
+      "size": 11
+    },
+    {
+      "name": "Signaling by PDGFRA transmembrane, juxtamembrane and kinase domain mutants",
+      "fdr": 0.01942961027156005,
+      "nes": 1.9,
+      "size": 11
+    },
+    {
+      "name": "Cytosolic tRNA aminoacylation",
+      "fdr": 0.01942961027156005,
+      "nes": -2.14,
+      "size": 24
+    },
+    {
+      "name": "tRNA Aminoacylation",
+      "fdr": 0.01942961027156005,
+      "nes": -1.9,
+      "size": 41
+    },
+    {
+      "name": "Phospholipid metabolism",
+      "fdr": 0.0241109196302679,
+      "nes": 1.71,
+      "size": 165
+    }
+  ],
+  "oraUpReactome": [
+    {
+      "name": "Response to metal ions",
+      "fdr": 0.010150624882949526,
+      "overlap": 4,
+      "setSize": 6
+    },
+    {
+      "name": "Muscle contraction",
+      "fdr": 0.02086621082127871,
+      "overlap": 14,
+      "setSize": 119
+    },
+    {
+      "name": "Cardiac conduction",
+      "fdr": 0.02185930494062246,
+      "overlap": 10,
+      "setSize": 73
+    },
+    {
+      "name": "Degradation of the extracellular matrix",
+      "fdr": 0.02185930494062246,
+      "overlap": 11,
+      "setSize": 89
+    },
+    {
+      "name": "Laminin interactions",
+      "fdr": 0.02185930494062246,
+      "overlap": 6,
+      "setSize": 28
+    },
+    {
+      "name": "Regulation of Insulin-like Growth Factor (IGF) transport and uptake by Insulin-like Growth Factor Binding Proteins (IGFBPs)",
+      "fdr": 0.02185930494062246,
+      "overlap": 10,
+      "setSize": 77
+    },
+    {
+      "name": "FOXO-mediated transcription",
+      "fdr": 0.02185930494062246,
+      "overlap": 8,
+      "setSize": 51
+    },
+    {
+      "name": "Ethanol oxidation",
+      "fdr": 0.02185930494062246,
+      "overlap": 4,
+      "setSize": 11
+    },
+    {
+      "name": "FOXO-mediated transcription of oxidative stress, metabolic and neuronal genes",
+      "fdr": 0.02185930494062246,
+      "overlap": 5,
+      "setSize": 19
+    },
+    {
+      "name": "Anchoring fibril formation",
+      "fdr": 0.028138090958440515,
+      "overlap": 4,
+      "setSize": 12
+    }
+  ],
+  "oraDownReactome": [
+    {
+      "name": "GPCR ligand binding",
+      "fdr": 0.000031013261845121794,
+      "overlap": 18,
+      "setSize": 119
+    },
+    {
+      "name": "Signaling by GPCR",
+      "fdr": 0.000031013261845121794,
+      "overlap": 30,
+      "setSize": 300
+    },
+    {
+      "name": "Class A/1 (Rhodopsin-like receptors)",
+      "fdr": 0.0005705775423174442,
+      "overlap": 13,
+      "setSize": 81
+    },
+    {
+      "name": "GPCR downstream signalling",
+      "fdr": 0.002323781840286859,
+      "overlap": 24,
+      "setSize": 270
+    },
+    {
+      "name": "G alpha (i) signalling events",
+      "fdr": 0.004211385912716992,
+      "overlap": 15,
+      "setSize": 131
+    },
+    {
+      "name": "G alpha (z) signalling events",
+      "fdr": 0.008882495818791762,
+      "overlap": 7,
+      "setSize": 33
+    },
+    {
+      "name": "Peptide ligand-binding receptors",
+      "fdr": 0.01265867048270398,
+      "overlap": 8,
+      "setSize": 47
+    },
+    {
+      "name": "Interleukin-4 and Interleukin-13 signaling",
+      "fdr": 0.039108114124769014,
+      "overlap": 9,
+      "setSize": 70
+    },
+    {
+      "name": "Ca-dependent events",
+      "fdr": 0.04316221298383676,
+      "overlap": 6,
+      "setSize": 33
+    },
+    {
+      "name": "Hemostasis",
+      "fdr": 0.04316221298383676,
+      "overlap": 27,
+      "setSize": 409
+    }
+  ],
+  "runtimeSeconds": {
+    "differentialExpression": 1.1,
+    "gsea": 9.6,
+    "gseaPermutations": 20000
+  }
+}
