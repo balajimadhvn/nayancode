@@ -17,7 +17,6 @@ npm run bench              # all benchmarks; the expression ones need no downloa
 | Maximum-likelihood phylogenetics | woodmouse (15 taxa), Laurasiatherian (47), chloroplast protein (19), yeast (8 taxa × 127k sites) | IQ-TREE 3.1.4 (bioconda; CI-only, never shipped) | `iqtree/` |
 | CRISPR off-targets | 8 bundled RefSeq genomes (phage, bacteria, yeast), 4 to 24 guides each | Cas-OFFinder 2.4.1 | `genome-tools/crispr.bench.test.ts` |
 | Primer specificity | E. coli, B. subtilis, yeast, lambda | exhaustive window scan (two independent implementations) | `genome-tools/primers.bench.test.ts` |
-
 | Molecular docking (redocking) | 48 public complexes from the PDBbind/CASF-2016 core set (RCSB PDB) | AutoDock Vina 1.2.7 native CLI built from the same source | `docking/` |
 | limma internals | simulated 3-group + batch and paired designs | limma 3.66.0, edgeR 4.8.2 | `limma/` → `src/studios/expression/linear.test.ts` |
 
