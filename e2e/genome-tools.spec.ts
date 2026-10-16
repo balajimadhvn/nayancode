@@ -40,7 +40,7 @@ test('genome: viewer opens a bundled genome, loads a local BED track and exports
   await expect(page.getByText('e2e_peaks.bed').first()).toBeVisible();
   await page.getByLabel('Locus search').fill('NC_000913.3:1-6000'); await page.getByRole('button', { name: 'Go', exact: true }).click();
   const dl = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export SVG' }).click();
-  expect((await dl).suggestedFilename()).toMatch(/^vivofold-nayancode_genome_view_\d{4}-\d{2}-\d{2}\.svg$/);
+  expect((await dl).suggestedFilename()).toMatch(/^solagene-nayancode_genome_view_\d{4}-\d{2}-\d{2}\.svg$/);
   expect(errs.filter((e) => !/Failed to load resource/.test(e))).toEqual([]);
 });
 
