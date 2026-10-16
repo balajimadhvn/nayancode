@@ -236,3 +236,41 @@ enumeration, and for 8 primer pairs designed by Sequence Studio on random 900-bp
 was found at its exact coordinates 8 of 8 times, each as the single perfect product in the genome. There is no comparison
 with Primer-BLAST (a remote NCBI service, not run here), so the product list is validated against the stated rule, not
 against NCBI's thermodynamic filtering.
+
+
+## Molecular docking (Docking Studio): redocking and agreement with native Vina
+48 public X-ray complexes (resolution ≤ 2.6 Å, one or two polymer entities, one drug-like ligand of 14–38 heavy atoms, C/H/N/O/S/F/Cl/Br only)
+taken in order from a list of PDBbind/CASF-2016 core-set IDs; the list and SHA-256 sums of the PDB files are in
+`benchmarks/docking/complexes.tsv`. Full pipeline as in the browser: receptor prepared from the PDB file (protein only, pH 7.4, polar
+hydrogens, Gasteiger charges, cropped to 12 Å beyond the box), ligand built from its SMILES (rule-based pH 7.4 protonation, 3-D by
+distance geometry plus force-field refinement, Gasteiger charges, torsion tree), box = crystal-ligand bounding box + 6 Å (at least
+20 Å), Vina 1.2.7 exhaustiveness 8, 9 poses, seed 1, one thread. The same PDBQT files were docked with the WebAssembly build and with
+the native Vina 1.2.7 CLI built from the same source (`benchmarks/docking/build_native_vina.sh`). RMSD is heavy-atom, symmetry
+corrected, in the receptor frame against the crystal ligand. Raw numbers: `results/docking.json`; code `benchmarks/docking/`.
+
+6 of the 48 complexes were excluded before docking, and are listed in the JSON: 3 macrocycles (ring ≥ 9 atoms: Vina keeps ring
+conformations rigid, so only one conformer is docked) and 3 ligands whose stereochemistry the embedder did not reproduce in 3-D.
+That leaves 42 complexes.
+
+| | WebAssembly Vina (Workbench) | Native Vina 1.2.7 |
+|---|---|---|
+| **Top-ranked pose < 2 Å from the crystal pose** | **15 / 42 = 35.7 %** | 15 / 42 = 35.7 % |
+| Any of the 9 poses < 2 Å | 61.9 % | 66.7 % |
+| Top pose < 3 Å | 52.4 % | 54.8 % |
+| Median / mean RMSD of the top pose | 2.89 / 3.62 Å | 2.77 / 3.91 Å |
+| Median run time per complex (12 shards in parallel on 16 cores) | 54 s | 29 s |
+
+Agreement of the WebAssembly build with native Vina on identical inputs (n = 42):
+top-pose score Pearson r = 0.991; mean absolute difference 0.14 kcal/mol (maximum 1.04); 85.7 % within 0.3 kcal/mol;
+the two top poses lie within 2 Å of each other in 81 % of complexes (median 0.25 Å) and both programs agree on whether the top pose
+is a success in 95 % of complexes. Differences come from floating-point differences between the builds feeding a stochastic search,
+not from the preparation, which is shared. WebAssembly Vina is about 1.6× slower than native.
+
+Reading: the top-1 success rate of 36 % is lower than the 55–60 % usually quoted for Vina on CASF-2016, which docks from the crystal
+ligand conformation with curated receptors and cofactors. Here the ligand starts from a SMILES-built conformer, ring conformations
+stay fixed at that conformer, waters, cofactors and ions are removed, and no tautomer or protonation-state search is made; all of
+these cost accuracy. When any of nine poses is counted, 62 % are within 2 Å, so scoring and ranking rather than sampling limit the
+result. The rigid, drug-like ligands dock well (estradiol 0.7 Å, several kinase and protease inhibitors below 1 Å); flexible
+ligands with more than 6 rotatable bonds and highly polar or charged ligands dock poorly. A first run before two preparation
+fixes (sulfonyl sulfur treated as linear, so sulfonamide bonds were not rotatable; no force-field refinement of conformers) gave
+23 % for both programs.
