@@ -51,7 +51,8 @@ Comparisons for variant calling (bcftools on the command line) and phylogenetics
 
 ## Cite
 Madhavan B. *Nayancode Workbench: open-source bioinformatics and cheminformatics in the web browser.* Solagene, 2026.
-DOI: [10.5281/zenodo.23393495](https://doi.org/10.5281/zenodo.23393495) (all versions; version 1.0.0 is
+DOI: [10.5281/zenodo.23393495](https://doi.org/10.5281/zenodo.23393495) (all versions; version 1.1.0 is
+[10.5281/zenodo.23418144](https://doi.org/10.5281/zenodo.23418144), version 1.0.0 is
 [10.5281/zenodo.23393496](https://doi.org/10.5281/zenodo.23393496)). GitHub's "Cite this repository" button gives the same
 reference from `CITATION.cff`. Please cite the version you used.
 
