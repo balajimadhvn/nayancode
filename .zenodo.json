@@ -1,7 +1,7 @@
 {
   "title": "Nayancode Workbench: open-source bioinformatics and cheminformatics in the web browser",
   "upload_type": "software",
-  "description": "Free, open-source analysis studios that run entirely in the web browser: sequence analysis and cloning, read mapping (minimap2 and samtools in WebAssembly), variant interpretation, RNA-seq differential expression for any experimental design (validated against edgeR and limma) and enrichment, single-cell clustering, microbiome diversity, cheminformatics and QSAR, structure analysis and maximum-likelihood phylogenetics. Files are analysed on the user's computer; every result records its provenance and methods text. Published by Solagene (https://solagene.com).",
+  "description": "Free, open-source analysis studios that run entirely in the web browser: molecular docking with AutoDock Vina 1.2.7 (WebAssembly) and small virtual screens, sequence analysis, cloning, primer design and CRISPR guides, read mapping and SNV/indel calling (minimap2, samtools and bcftools in WebAssembly), variant interpretation, RNA-seq differential expression for any experimental design (validated against edgeR and limma) and enrichment, single-cell clustering (validated against Scanpy), microbiome diversity, cheminformatics and QSAR, protein structure analysis, maximum-likelihood phylogenetics (compared with IQ-TREE), and lab calculators (qPCR, dose-response IC50, power and sample size) with publication-ready figures. Files are analysed on the user's computer; every result records its provenance and methods text. Published by Solagene (https://solagene.com); use it online at https://solagene.com/workbench/.",
   "creators": [
     {
       "name": "Madhavan, Balaji",
@@ -14,16 +14,36 @@
     "bioinformatics",
     "cheminformatics",
     "WebAssembly",
+    "molecular docking",
+    "AutoDock Vina",
+    "drug discovery",
+    "virtual screening",
+    "QSAR",
     "RNA-seq",
-    "single-cell",
+    "differential expression",
+    "single-cell RNA-seq",
+    "read mapping",
+    "variant calling",
+    "genome analysis",
+    "CRISPR guide design",
+    "primer design",
+    "qPCR",
+    "dose-response",
     "phylogenetics",
+    "microbiome",
+    "open science",
     "privacy",
     "reproducibility"
   ],
   "related_identifiers": [
     {
-      "identifier": "https://balajimadhvn.github.io/nayancode/",
+      "identifier": "https://solagene.com/nayancode/",
       "relation": "isDocumentedBy",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://solagene.com/workbench/",
+      "relation": "isSupplementedBy",
       "scheme": "url"
     },
     {
@@ -32,5 +52,5 @@
       "scheme": "url"
     }
   ],
-  "version": "1.0.0"
+  "version": "1.1.0"
 }
