@@ -22,8 +22,8 @@ Dependencies must carry a permissive licence (the build fails otherwise). Algori
 must be re-implemented from the paper, not copied.
 
 ## Support
-support@vivofold.in
+support@solagene.com
 
 ## Code of conduct
 Be respectful and constructive. Harassment or discrimination of any kind is not accepted. Report concerns to
-support@vivofold.in; the maintainers will respond in confidence.
+support@solagene.com; the maintainers will respond in confidence.

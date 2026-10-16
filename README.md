@@ -1,9 +1,11 @@
+<p align="center"><img src="public/brand/solagene-logo.svg" alt="Solagene: Research, Education, Innovation" width="420"></p>
+
 # Nayancode Workbench
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23393495.svg)](https://doi.org/10.5281/zenodo.23393495)
 
 **Free, open-source bioinformatics and cheminformatics that runs in your web browser.**
-By [Vivofold](https://vivofold.in) · Licence: [Apache-2.0](LICENSE) · Use it: **https://balajimadhvn.github.io/nayancode/**
+By [Solagene](https://solagene.com) · Licence: [Apache-2.0](LICENSE) · Use it: **https://balajimadhvn.github.io/nayancode/**
 
 Nayancode is a set of analysis studios that run entirely client-side, using Web Workers and WebAssembly. There is
 nothing to install and no account to create.
@@ -46,7 +48,7 @@ Benchmarks against reference tools on public data ([benchmarks/RESULTS.md](bench
 Comparisons for variant calling (bcftools on the command line) and phylogenetics (IQ-TREE) are planned.
 
 ## Cite
-Madhavan B. *Nayancode Workbench: open-source bioinformatics and cheminformatics in the web browser.* Vivofold, 2026.
+Madhavan B. *Nayancode Workbench: open-source bioinformatics and cheminformatics in the web browser.* Solagene, 2026.
 DOI: [10.5281/zenodo.23393495](https://doi.org/10.5281/zenodo.23393495) (all versions; version 1.0.0 is
 [10.5281/zenodo.23393496](https://doi.org/10.5281/zenodo.23393496)). GitHub's "Cite this repository" button gives the same
 reference from `CITATION.cff`. Please cite the version you used.
@@ -62,6 +64,6 @@ npm run e2e        # browser tests against dist/
 `BASE_PATH=/nayancode/ npm run build` builds for a sub-path (as on GitHub Pages).
 
 ## Contributing and support
-See [CONTRIBUTING.md](CONTRIBUTING.md). Questions: support@vivofold.in. Issues: https://github.com/balajimadhvn/nayancode/issues
+See [CONTRIBUTING.md](CONTRIBUTING.md). Questions: support@solagene.com. Issues: https://github.com/balajimadhvn/nayancode/issues
 
 Research and education use. Not a medical device; not for clinical decisions about individual patients.

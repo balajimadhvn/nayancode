@@ -1,12 +1,12 @@
 {
   "title": "Nayancode Workbench: open-source bioinformatics and cheminformatics in the web browser",
   "upload_type": "software",
-  "description": "Free, open-source analysis studios that run entirely in the web browser: sequence analysis and cloning, read mapping (minimap2 and samtools in WebAssembly), variant interpretation, RNA-seq differential expression for any experimental design (validated against edgeR and limma) and enrichment, single-cell clustering, microbiome diversity, cheminformatics and QSAR, structure analysis and maximum-likelihood phylogenetics. Files are analysed on the user's computer; every result records its provenance and methods text. Published by Vivofold (https://vivofold.in).",
+  "description": "Free, open-source analysis studios that run entirely in the web browser: sequence analysis and cloning, read mapping (minimap2 and samtools in WebAssembly), variant interpretation, RNA-seq differential expression for any experimental design (validated against edgeR and limma) and enrichment, single-cell clustering, microbiome diversity, cheminformatics and QSAR, structure analysis and maximum-likelihood phylogenetics. Files are analysed on the user's computer; every result records its provenance and methods text. Published by Solagene (https://solagene.com).",
   "creators": [
     {
       "name": "Madhavan, Balaji",
       "orcid": "0009-0007-8654-3864",
-      "affiliation": "Vivofold, India"
+      "affiliation": "Solagene, India"
     }
   ],
   "license": "Apache-2.0",

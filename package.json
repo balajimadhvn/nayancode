@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Nayancode Workbench: open-source bioinformatics and cheminformatics that runs entirely in the web browser",
   "license": "Apache-2.0",
-  "author": "Vivofold <support@vivofold.in>",
+  "author": "Solagene <support@solagene.com>",
   "homepage": "https://balajimadhvn.github.io/nayancode/",
   "repository": {
     "type": "git",

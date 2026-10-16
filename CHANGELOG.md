@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- The publisher is now **Solagene** (formerly Vivofold), https://solagene.com; new logo and icons.
 - Publication-ready figures: every chart exports to SVG (editable text, light or dark), PDF (vector) and PNG at 300 or
   600 dpi, with width and height in mm, font size, a colour-blind-safe palette (Okabe–Ito) and editable title and axis
   labels. Volcano and MA plots can label the top N genes with collision avoidance.
@@ -16,7 +17,7 @@
   frequencies are the empirical ones, as IQ-TREE's +F.
 - Genome: the mapping pipeline is shared between the browser and Node (src/studios/genome/pipeline.ts) and no longer
   runs a samtools text pileup when bcftools calls the variants.
-- Downloaded files are named `vivofold-nayancode_<name>_<date>.<ext>`.
+- Downloaded files are named `solagene-nayancode_<name>_<date>.<ext>`.
 - Expression Studio defaults to testing the treatment rather than a paired donor or batch column.
 - Usability-study kit in `docs/usability/` (protocol, consent form, tasks, SUS questionnaire, analysis script).
 - Benchmarks on public data (`benchmarks/`, `npm run bench`): Expression Studio vs DESeq2, limma-voom and edgeR on

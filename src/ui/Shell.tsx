@@ -19,7 +19,7 @@ function Sidebar() {
   const { set } = useUi();
   return (
     <aside className={`sidebar ${open ? 'open' : ''}`}>
-      <NavLink to="/" className="brand" onClick={() => set({ sidebar: false })} title={`${BRAND.name} home`}><img src={`${import.meta.env.BASE_URL}brand/vivofold-mark.svg`} width={26} height={27} alt="" /><span className="brand-t"><b>{BRAND.name}</b><small>Nayancode Workbench</small></span></NavLink>
+      <NavLink to="/" className="brand" onClick={() => set({ sidebar: false })} title={`${BRAND.name} home`}><img src={`${import.meta.env.BASE_URL}brand/solagene-mark.webp`} width={17} height={27} alt="" /><span className="brand-t"><b>{BRAND.name}</b><small>Nayancode Workbench</small></span></NavLink>
       <NavLink to={BRAND.workbenchHome} end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={() => set({ sidebar: false })}>
         {({ isActive }) => <>{isActive && <motion.i layoutId="nav-bg" className="nav-bg" />}<Icon.Home className="ico" /> Overview</>}
       </NavLink>
