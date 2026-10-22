@@ -205,6 +205,15 @@ test('lab: survival demo gives Kaplan–Meier medians, log-rank and a Cox hazard
   expect(errs).toEqual([]);
 });
 
+test('variants: association testing recovers planted variants and draws Manhattan and QQ plots', async ({ page }) => {
+  const errs = watch(page); await page.goto('/variants');
+  await page.getByRole('tab', { name: 'Association' }).click(); await page.getByRole('button', { name: /Demo: case\/control/ }).click(); await page.getByRole('button', { name: 'Run association' }).click();
+  await expect(page.getByText('Manhattan plot')).toBeVisible({ timeout: 60_000 }); await expect(page.getByText('Variants tested')).toBeVisible();
+  await expect(page.locator('.stat', { hasText: 'λ GC' }).locator('.v')).toContainText(/^\d\.\d+/);
+  expect(await page.getByRole('cell', { name: /★/ }).count()).toBeGreaterThanOrEqual(2);
+  expect(errs).toEqual([]);
+});
+
 test('docking: 1HSG + indinavir demo docks with Vina in WebAssembly and reports RMSD to the crystal pose', async ({ page }) => {
   test.setTimeout(8 * 60_000);
   const errs = watch(page); await page.goto('/docking');

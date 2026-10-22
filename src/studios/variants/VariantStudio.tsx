@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { createRemote } from '@/compute/rpc';
 import { useNavigate } from 'react-router-dom';
 import { clearHandoffSoon, useHandoff } from '@/core/handoff';
@@ -20,7 +20,8 @@ const TOOLS = {
   vep: { id: 'variants.vep', name: 'Ensembl VEP annotation', version: V, engine: 'Ensembl REST API (rest.ensembl.org)', citations: ['mclaren2016'], describe: (p) => `${p.n} variants were annotated with the Ensembl Variant Effect Predictor REST service (${p.assembly})` } as ToolInfo,
   gwas: { id: 'variants.gwas', name: 'GWAS summary statistics', version: V, engine: E, citations: [], describe: (p) => `GWAS summary statistics (${p.n} variants) were summarised: genomic inflation λGC from the median χ² (1 df), distance-based lead-variant clumping (500 kb, p < 5×10⁻⁸)` } as ToolInfo,
 };
-type Tab = 'table' | 'qc' | 'somatic' | 'signatures' | 'annotate' | 'evidence' | 'gwas';
+type Tab = 'table' | 'qc' | 'somatic' | 'signatures' | 'annotate' | 'evidence' | 'gwas' | 'assoc';
+const AssocPanel = lazy(() => import('./AssocPanel'));
 const FIELDS: RF[] = ['QUAL', 'DP', 'VAF', 'AF', 'FILTER', 'TYPE', 'CHROM', 'GT'];
 
 export default function VariantStudio() {
@@ -51,8 +52,8 @@ export default function VariantStudio() {
         <Callout kind="warn">Research use only. Not a clinical classifier: no ACMG/AMP calls are made.</Callout>
       </div>
       <div className="stack">
-        <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'table', label: 'Variants' }, { id: 'qc', label: 'QC' }, { id: 'somatic', label: 'Somatic' }, { id: 'signatures', label: 'Signatures' }, { id: 'annotate', label: 'Annotate' }, { id: 'evidence', label: 'Evidence' }, { id: 'gwas', label: 'GWAS' }]} />
-        {tab !== 'gwas' && tab !== 'evidence' && tab !== 'signatures' && !vcf && <Card><div className="faint" style={{ padding: '30px 6px', textAlign: 'center' }}>Load a VCF or the demo. For GWAS summary statistics use the GWAS tab.</div></Card>}
+        <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'table', label: 'Variants' }, { id: 'qc', label: 'QC' }, { id: 'somatic', label: 'Somatic' }, { id: 'signatures', label: 'Signatures' }, { id: 'annotate', label: 'Annotate' }, { id: 'evidence', label: 'Evidence' }, { id: 'gwas', label: 'GWAS' }, { id: 'assoc', label: 'Association' }]} />
+        {tab !== 'gwas' && tab !== 'assoc' && tab !== 'evidence' && tab !== 'signatures' && !vcf && <Card><div className="faint" style={{ padding: '30px 6px', textAlign: 'center' }}>Load a VCF or the demo. For GWAS summary statistics use the GWAS tab.</div></Card>}
         {tab === 'table' && vcf && <TableView kept={kept} samples={vcf.samples} />}
         {tab === 'qc' && vcf && <QcView vcf={vcf} kept={kept} />}
         {tab === 'somatic' && vcf && <Somatic vcf={vcf} kept={kept} />}
@@ -60,6 +61,7 @@ export default function VariantStudio() {
         {tab === 'annotate' && vcf && <Annotate kept={kept} />}
         {tab === 'evidence' && <Evidence kept={kept} />}
         {tab === 'gwas' && <Gwas />}
+        {tab === 'assoc' && <Suspense fallback={null}><AssocPanel /></Suspense>}
       </div></div>
     </div>
   );

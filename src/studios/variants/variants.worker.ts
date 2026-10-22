@@ -1,6 +1,7 @@
 import { exposeKernels, type Kernel } from '@/compute/rpc';
 import * as k from './kernels';
 import * as sg from './signatures';
+import * as ga from './assoc';
 
 async function readText(a: { file?: File; text?: string }, ctx: { progress(p: number, n?: string): void }): Promise<string> {
   if (a.text !== undefined) return a.text; const f = a.file!; const head = new Uint8Array(await f.slice(0, 2).arrayBuffer());
@@ -28,5 +29,17 @@ const sbs: Kernel<{ vcf: { file?: File; text?: string }; fasta: string; sampleId
   const idx = a.sampleIdx.length ? a.sampleIdx : v.samples.map((_, i) => i); if (!idx.length) idx.push(-1);
   return { rows: idx.map((i) => { const r = sg.sbs96Counts(v.variants, g, i); return { sample: i >= 0 ? v.samples[i] : 'all variants', counts: Array.from(r.counts), used: r.used, skipped: r.skipped, missingContig: r.missingContig }; }) };
 };
-export type VariantKernels = { vcf: typeof vcf; gwas: typeof gwas; sigSelect: typeof sigSelect; sigExtract: typeof sigExtract; sbs: typeof sbs };
-exposeKernels({ vcf, gwas, sigSelect, sigExtract, sbs } as Record<string, Kernel>);
+export interface AssocArgs { geno: { file?: File; text?: string }; vcf: boolean; pheno: { file?: File; text?: string }; opts: ga.AssocOptions }
+const assoc: Kernel<AssocArgs, { res: Omit<ga.AssocResult, 'rows'> & { nRows: number; top: ga.AssocRow[] }; summary: ReturnType<typeof k.gwasSummary> | null; csv: string }> = async (a, ctx) => {
+  ctx.progress(0.05, 'Reading genotypes'); const gt = await readText(a.geno, ctx), pt = await readText(a.pheno, ctx);
+  const geno = a.vcf ? ga.parseGenotypeVcf(gt) : ga.parseGenotypeTable(gt); const ph = ga.parsePhenotypes(pt, geno.samples);
+  const r = ga.runAssociation(geno, ph, a.opts, (f) => ctx.progress(0.15 + 0.7 * f, 'Testing variants'));
+  if (!r.rows.length) throw new Error('No variants passed the filters. Relax the MAF, call-rate or HWE thresholds.');
+  ctx.progress(0.9, 'Summarising'); const sorted = [...r.rows].sort((x, y) => x.p - y.p);
+  const summary = k.gwasSummary(r.rows.map((x) => ({ chrom: x.chrom, pos: x.pos, p: x.p, id: x.id })));
+  const csv = ['id,chrom,pos,maf,call_rate,hwe_p,n,beta,se,p', ...sorted.map((x) => [x.id, x.chrom, x.pos, x.maf.toFixed(4), x.callRate.toFixed(3), x.hwe.toExponential(2), x.n, x.beta.toFixed(5), Number.isFinite(x.se) ? x.se.toFixed(5) : '', x.p.toExponential(4)].join(','))].join('\n');
+  const { rows, ...rest } = r; return { res: { ...rest, nRows: rows.length, top: sorted.slice(0, 200) }, summary, csv };
+};
+
+export type VariantKernels = { vcf: typeof vcf; gwas: typeof gwas; assoc: typeof assoc; sigSelect: typeof sigSelect; sigExtract: typeof sigExtract; sbs: typeof sbs };
+exposeKernels({ vcf, gwas, assoc, sigSelect, sigExtract, sbs } as Record<string, Kernel>);
