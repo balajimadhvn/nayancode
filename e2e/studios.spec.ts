@@ -30,6 +30,16 @@ test('expression: demo → DE → enrichment validates the planted pathway', asy
   expect(errs).toEqual([]);
 });
 
+test('sequence: proteomics digest, isotope pattern and synthetic mzML run', async ({ page }) => {
+  const errs = watch(page); await page.goto('/sequence');
+  await page.getByRole('button', { name: 'Demo DNA' }).click(); await page.getByRole('tab', { name: 'Proteomics' }).click();
+  await page.getByRole('button', { name: 'Digest', exact: true }).click(); await expect(page.getByText('Residues covered')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('cell', { name: 'VGAHAGEYGAEALER', exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'Mass & isotopes' }).click(); await expect(page.getByText('Monoisotopic mass')).toBeVisible(); await expect(page.getByText('Isotope pattern')).toBeVisible();
+  await page.getByRole('tab', { name: 'mzML viewer' }).click(); await page.getByRole('button', { name: 'Load synthetic demo run' }).click(); await expect(page.getByText('Total ion chromatogram')).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
 test('sequence: primer design and Golden Gate demo work', async ({ page }) => {
   const errs = watch(page); await page.goto('/sequence');
   await page.getByRole('button', { name: 'Demo DNA' }).click(); await page.getByRole('tab', { name: 'Primer design' }).click(); await page.getByRole('button', { name: 'Design primers' }).click();

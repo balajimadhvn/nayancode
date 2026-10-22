@@ -1,5 +1,5 @@
 import { copyText } from '@/core/clipboard';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import type { ToolInfo } from '@/core/provenance';
 import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadText, fmt, toast } from '@/ui/kit';
 import { useRunner } from '@/ui/useRunner';
@@ -71,7 +71,8 @@ function DotplotView({ data }: { data: { cells: Uint8Array; rows: number; cols: 
   return <div><canvas ref={ref} style={{ borderRadius: 10 }} /><div className="legend" style={{ marginTop: 8 }}><span><i style={{ background: 'var(--chart-a)' }} />same strand</span><span><i style={{ background: 'var(--chart-b)' }} />reverse complement</span></div></div>;
 };
 
-type TabId = 'overview' | 'orfs' | 'digest' | 'design' | 'primers' | 'cloning' | 'crispr' | 'sanger' | 'protein' | 'motifs' | 'align' | 'dotplot';
+const Proteomics = lazy(() => import('./Proteomics'));
+type TabId = 'overview' | 'orfs' | 'digest' | 'design' | 'primers' | 'cloning' | 'crispr' | 'sanger' | 'protein' | 'motifs' | 'align' | 'dotplot' | 'proteomics';
 
 export default function SequenceStudio() {
   const [text, setText] = useState('');
@@ -102,7 +103,7 @@ export default function SequenceStudio() {
         </div>
         <div className="stack">
           {!rec ? <Card><div className="faint" style={{ padding: '30px 6px', textAlign: 'center' }}>Paste or drop a sequence, or load a demo, to begin.</div></Card> : <>
-            <Tabs value={tab} onChange={setTab} items={[{ id: 'overview', label: 'Overview' }, { id: 'orfs', label: 'ORFs' }, { id: 'digest', label: 'Restriction' }, { id: 'design', label: 'Primer design' }, { id: 'primers', label: 'Oligo Tm' }, { id: 'cloning', label: 'Cloning' }, { id: 'crispr', label: 'CRISPR' }, { id: 'sanger', label: 'Sanger' }, { id: 'protein', label: 'Protein' }, { id: 'motifs', label: 'Motifs' }, { id: 'align', label: 'Alignment' }, { id: 'dotplot', label: 'Dotplot' }]} />
+            <Tabs value={tab} onChange={setTab} items={[{ id: 'overview', label: 'Overview' }, { id: 'orfs', label: 'ORFs' }, { id: 'digest', label: 'Restriction' }, { id: 'design', label: 'Primer design' }, { id: 'primers', label: 'Oligo Tm' }, { id: 'cloning', label: 'Cloning' }, { id: 'crispr', label: 'CRISPR' }, { id: 'sanger', label: 'Sanger' }, { id: 'protein', label: 'Protein' }, { id: 'motifs', label: 'Motifs' }, { id: 'align', label: 'Alignment' }, { id: 'dotplot', label: 'Dotplot' }, { id: 'proteomics', label: 'Proteomics' }]} />
             {tab === 'overview' && <Overview rec={rec} alpha={alpha} dna={dna} />}
             {tab === 'orfs' && <Orfs rec={rec} dna={dna} />}
             {tab === 'digest' && <DigestPanel rec={rec} dna={dna} />}
@@ -113,6 +114,7 @@ export default function SequenceStudio() {
             {tab === 'sanger' && <SangerPanel records={records} />}
             {tab === 'protein' && <ProteinPanel rec={rec} dna={dna} isProtein={alpha === 'protein'} />}
             {tab === 'motifs' && <MotifPanel records={records} />}
+            {tab === 'proteomics' && <Suspense fallback={null}><Proteomics initial={alpha === 'protein' ? rec.seq : undefined} /></Suspense>}
             {tab === 'align' && <AlignPanel records={records} alpha={alpha} />}
             {tab === 'dotplot' && <DotplotPanel records={records} />}
           </>}
