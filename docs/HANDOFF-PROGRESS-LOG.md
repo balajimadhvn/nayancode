@@ -22,5 +22,39 @@ Format and rules: see `HANDOFF-REMAINING-WORKBENCH-TOOLS.md`, section 3. Append 
 - e2e fix: the pre-existing test looked for a button named /Load demo proteins/ that does not exist; changed to the real label 'Demo proteins' (label mismatch only, algorithm untouched, per handoff rule).
 - Owner decision to enable live inference later: install @huggingface/transformers (verify Apache-2.0 first), add plm.worker.ts loading Xenova/esm2_t6_8M_UR50D, and possibly a CSP connect-src entry for huggingface.co in public/_headers (not edited here — rule forbids it).
 
-## Remaining: section 5 (sync to Solagene website) and section 6 (final full-suite check)
-- Section 5 prep in nayancode: CHANGELOG 1.2.0, ROADMAP strikethrough, src/core/studios.ts capability lists; then sync into company-webpage via scripts/sync-workbench.mjs; then section 6 final vitest + build + targeted e2e.
+## Section 5 — DONE (2026-10-22, this session)
+- nayancode docs commit `d3f546e`: CHANGELOG 1.2.0 section, ROADMAP strikethroughs, src/core/studios.ts capability lists. tsc clean, src/core tests 8/8.
+- Synced into company-webpage via `node scripts/sync-workbench.mjs ../nayancode` (12 folders). Website tsc clean, src/site tests 36/36, production build OK, free-tool e2e 2/2. Website commit `1ede487` (Workbench 1.2.0 tools synced from Nayancode).
+- "eleven analysis studios" copy left unchanged (still 11 studios; only features were added). public/licenses.json left as-is (no new dependency).
+- SOLAGENE-PROGRESS.md: added dated section "Workbench 1.2.0 tools (2026-10-22/23)".
+
+## Section 6 — FINAL CHECK (2026-10-22, this session)
+- `npx tsc --noEmit` clean.
+- `npx vitest run` (full): 448 passed, 1 failed — `src/studios/docking/embed.test.ts` "reproduces stereochemistry and sane geometry" hit the 20 s timeout under parallel load. NOT touched by this work (Docking Studio is off-limits per rule 1). Re-run in isolation: 4/4 pass in 14.5 s (within timeout), confirming a load-related timeout, not a regression. Left as-is per the handoff rule.
+- `npm run build` OK.
+- Targeted studio e2e (lab, chemistry, sequence, variants, single-cell, expression, microbiome, genome, structure): 21/21 pass.
+
+## Final table: item, status, commit
+| # | Item | Status | Commit |
+|---|---|---|---|
+| 3 | Survival analysis (lab) | DONE | 4f842f2 |
+| 2 | ADMET (chemistry) | DONE | 6f9d977 |
+| 4 | Molecule tools (chemistry) | DONE | aec819e |
+| 6 | Proteomics (sequence) | DONE | 2121c21 |
+| 12 | GWAS-lite (variants) | DONE | db57274 |
+| 13 | Larger single-cell | DONE | 3fbfd2a |
+| 9 | Pseudoalignment (expression) | DONE | b240777 |
+| 10 | Reference screening (microbiome) | DONE | 8594aac |
+| 11 | Small-genome assembly (genome) | DONE (unpolished; polishing not shipped) | 555fa8d |
+| 5 | Structure analysis tools (structure) | DONE | 4650d3b |
+| 1 | Figures: box/MSA/tree | DONE | d19f1e7 |
+| 7 | Gene network (expression) | DONE | d776b61 |
+| 8 | Protein language-model (sequence) | DONE (maths tested; live ESM-2 inference deferred) | 0165fcb |
+| — | Docs: changelog/roadmap/studios.ts | DONE | d3f546e |
+| — | Website sync | DONE | company-webpage 1ede487 |
+
+## Section 7 — WHAT THE OWNER STILL HAS TO DO (not done here)
+- Review and merge branch `feature/more-tools` in `nayancode`, push, mint the new Zenodo version if desired.
+- Push the website repo and deploy (Cloudflare Worker builds from GitHub).
+- Submit the new tool URLs with `scripts/indexnow.mjs` after deploy.
+- Decide on a CSP `connect-src` change if/when item 8 live inference is enabled (needs `https://huggingface.co https://*.huggingface.co https://cdn-lfs.huggingface.co`).
