@@ -575,3 +575,68 @@ export async function sceneToPng(sc: Scene, dpi: number): Promise<Blob> {
   drawScene(cv.getContext('2d')!, sc, scale);
   return new Promise((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error('PNG encoding failed'))), 'image/png'));
 }
+
+// ---------------------------------------------------------------- meta-analysis figures
+export interface ForestSpec {
+  labels: string[]; est: number[]; lo: number[]; hi: number[]; weight: number[];
+  pooled: { est: number; lo: number; hi: number; label: string };
+  xLabel: string; logScale?: boolean;
+}
+
+/** Forest plot: one CI row per study (square sized by weight) and a diamond for the pooled effect. */
+export function buildForest(s: ForestSpec, o: FigureOptions): Scene {
+  const p = baseScene(o), fs = p.fs, th = p.th, k = s.labels.length;
+  if (!k) return p.scene(o.title);
+  const tr = (v: number) => (s.logScale ? Math.log10(Math.max(v, 1e-12)) : v);
+  const vals = [...s.lo, ...s.hi, s.pooled.lo, s.pooled.hi].map(tr);
+  const nullV = tr(s.logScale ? 1 : 0);
+  let x0 = Math.min(...vals, nullV), x1 = Math.max(...vals, nullV);
+  const pad = (x1 - x0) * 0.06 || 0.1; x0 -= pad; x1 += pad;
+  const labelW = Math.max(0, ...s.labels.map((l) => textWidth(l, fs))) + 8;
+  const left = 6 + labelW + 8, right = 10;
+  const top = 6 + (o.title ? fs * 1.6 + 4 : 0), bottom = fs * 3.4 + 6;
+  const rowH = (p.h - top - bottom) / (k + 1);
+  const sx = (v: number) => left + ((tr(v) - x0) / (x1 - x0 || 1)) * (p.w - left - right);
+  const cy = (i: number) => top + rowH * (i + 0.5);
+  // axes
+  p.line(left, p.h - bottom, p.w - right, p.h - bottom, th.axis, 0.7);
+  for (const t of nice(x0, x1, 5)) {
+    const actual = s.logScale ? 10 ** t : t, label = fmtTick(actual);
+    p.line(sx(actual), p.h - bottom, sx(actual), p.h - bottom + 2.5, th.axis, 0.5);
+    p.text(sx(actual), p.h - bottom + fs * 1.4, label, fs, th.dim, 'middle');
+  }
+  const midX = (left + p.w - right) / 2;
+  p.text(midX, p.h - 4, o.xLabel || s.xLabel, fs, th.text, 'middle', true, 0, 'x-label');
+  // null line
+  p.line(sx(s.logScale ? 1 : 0), top, sx(s.logScale ? 1 : 0), p.h - bottom, th.dim, 0.6, [3, 3]);
+  const wMax = Math.max(...s.weight, 1e-12);
+  s.labels.forEach((label, i) => {
+    const y = cy(i), r = 1.6 + 3.2 * Math.sqrt(Math.max(s.weight[i], 0) / wMax);
+    p.text(left - 6, y + fs * 0.35, label, fs, th.text, 'end');
+    p.line(sx(s.lo[i]), y, sx(s.hi[i]), y, th.text, 0.8);
+    p.line(sx(s.lo[i]), y - fs * 0.25, sx(s.lo[i]), y + fs * 0.25, th.text, 0.7);
+    p.line(sx(s.hi[i]), y - fs * 0.25, sx(s.hi[i]), y + fs * 0.25, th.text, 0.7);
+    p.rect(sx(s.est[i]) - r, y - r, 2 * r, 2 * r, pickColor(o, OKABE[2], i, true), 0.95);
+  });
+  // pooled diamond
+  const yp = cy(k), hh = Math.min(rowH * 0.32, fs * 0.6), c = pickColor(o, OKABE[1], k, true);
+  p.text(left - 6, yp + fs * 0.35, s.pooled.label, fs, th.text, 'end', true);
+  p.poly([[sx(s.pooled.est), yp - hh], [sx(s.pooled.lo), yp], [sx(s.pooled.est), yp + hh], [sx(s.pooled.hi), yp]], { fill: c, op: 0.9, close: true });
+  return p.scene(o.title);
+}
+
+export interface FunnelSpec { yi: number[]; se: number[]; centre: number; xLabel: string }
+
+/** Funnel plot: effect size against standard error, precise studies at the top, pseudo-95 % limits. */
+export function buildFunnel(s: FunnelSpec, o: FigureOptions): Scene {
+  const p = baseScene(o), th = p.th, maxSe = Math.max(...s.se, 1e-9);
+  const ext = 1.96 * maxSe;
+  const x0 = Math.min(...s.yi, s.centre - ext), x1 = Math.max(...s.yi, s.centre + ext);
+  const xp = (x1 - x0) * 0.05 || 0.1;
+  const f = drawFrame(p, { x0: x0 - xp, x1: x1 + xp, y0: maxSe, y1: 0 }, { title: o.title, x: o.xLabel || s.xLabel, y: o.yLabel || 'Standard error' });
+  f.p.line(f.sx(s.centre), f.sy(0), f.sx(s.centre), f.sy(maxSe), th.dim, 0.7, [4, 3]);
+  const line = (sign: number) => { const pts: [number, number][] = []; for (let i = 0; i <= 40; i++) { const se = (maxSe * i) / 40; pts.push([f.sx(s.centre + sign * 1.96 * se), f.sy(se)]); } f.p.poly(pts, { stroke: th.dim, sw: 0.6, op: 0.8 }); };
+  line(-1); line(1);
+  s.yi.forEach((y, i) => { const r = Math.max(1, 2.2 - 1.2 * (s.se[i] / maxSe)); f.p.circle(f.sx(y), f.sy(s.se[i]), r, pickColor(o, OKABE[2], i, true), 0.9); });
+  return f.p.scene(o.title);
+}

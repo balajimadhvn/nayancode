@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_OPTIONS, OKABE, buildBars, buildBoxPlot, buildCurves, buildHeatmap, buildMsa, buildScatter, buildTree, parseColor, placeLabels, sceneToPdf, sceneToSvg, textWidth, treeLayout, tukeyQuartiles, type FigureOptions } from './figure';
+import { DEFAULT_OPTIONS, OKABE, buildBars, buildBoxPlot, buildCurves, buildForest, buildFunnel, buildHeatmap, buildMsa, buildScatter, buildTree, parseColor, placeLabels, sceneToPdf, sceneToSvg, textWidth, treeLayout, tukeyQuartiles, type FigureOptions } from './figure';
 
 const opt = (o: Partial<FigureOptions> = {}): FigureOptions => ({ ...DEFAULT_OPTIONS, ...o });
 const pts = Array.from({ length: 200 }, (_, i) => ({ x: Math.sin(i) * 3, y: (i % 17) + Math.cos(i), cat: i % 10 === 0 ? 1 : i % 10 === 5 ? 2 : 0, label: `GENE${i}` }));
@@ -180,5 +180,48 @@ describe('helpers', () => {
     const c = Array.from({ length: 30 }, (_, i) => ({ x: 100 + (i % 3), y: 100 + (i % 2), text: `G${i}`, score: i }));
     const out = placeLabels(c, 10, 7, { x0: 0, y0: 0, x1: 200, y1: 200 });
     expect(out.length).toBeLessThanOrEqual(10); for (const l of out) { expect(l.x).toBeGreaterThan(-1); expect(l.y).toBeLessThan(200); }
+  });
+});
+
+describe('meta-analysis figures', () => {
+  const labels = ['Study A', 'Study B', 'Study C', 'Study D'];
+  const forestSpec = {
+    labels, est: [-0.8, -0.4, -1.1, -0.2], lo: [-1.4, -0.9, -1.9, -0.6], hi: [-0.2, 0.1, -0.3, 0.2],
+    weight: [10, 30, 5, 55], pooled: { est: -0.52, lo: -0.85, hi: -0.19, label: 'Pooled' }, xLabel: 'log risk ratio',
+  };
+
+  it('forest plot draws one label per study and a diamond for the pooled effect', () => {
+    const sc = buildForest(forestSpec, opt({ widthMm: 120, heightMm: 80 }));
+    const texts = sc.items.filter((i) => i.k === 'text').map((i) => (i as { t: string }).t);
+    for (const l of labels) expect(texts).toContain(l);
+    expect(texts).toContain('Pooled');
+    const polys = sc.items.filter((i) => i.k === 'poly') as { pts: [number, number][] }[];
+    expect(polys).toHaveLength(1);
+    expect(polys[0].pts).toHaveLength(4);
+  });
+
+  it('forest plot works on a log scale and its SVG contains every study label', () => {
+    const sc = buildForest({ ...forestSpec, logScale: true }, opt());
+    const svg = sceneToSvg(sc);
+    for (const l of labels) expect(svg).toContain(l.replace(/&/g, '&amp;'));
+    expect(svg).toMatch(/^<\?xml/);
+  });
+
+  it('funnel plot puts precise studies on top (y increases with the standard error)', () => {
+    const se = [0.05, 0.1, 0.2, 0.4, 0.8];
+    const sc = buildFunnel({ yi: [-0.6, -0.5, -0.3, -0.7, -0.1], se, centre: -0.45, xLabel: 'log RR' }, opt());
+    const circles = sc.items.filter((i) => i.k === 'circle') as { cx: number; cy: number }[];
+    expect(circles).toHaveLength(se.length);
+    for (let i = 1; i < circles.length; i++) expect(circles[i].cy).toBeGreaterThan(circles[i - 1].cy);
+    // plot-space y = −se decreases as se increases (inverted axis)
+    expect(-se[se.length - 1]).toBeLessThan(-se[0]);
+  });
+
+  it('both figures export to SVG and PDF', () => {
+    for (const sc of [buildForest(forestSpec, opt()), buildFunnel({ yi: [-0.6, -0.3, -0.7, -0.1], se: [0.1, 0.2, 0.4, 0.8], centre: -0.45, xLabel: 'log RR' }, opt())]) {
+      const svg = sceneToSvg(sc);
+      expect(() => parseXml(svg)).not.toThrow();
+      expect(sceneToPdf(sc).startsWith('%PDF-1.4')).toBe(true);
+    }
   });
 });

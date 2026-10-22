@@ -127,6 +127,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Equal-sized groups in the power tools; dose–response assumes independent replicates and constant variance',
     cloudLater: '',
   },
+  {
+    id: 'stats', path: '/statistics', name: 'Statistics Studio', short: 'Statistics',
+    blurb: 'Classical tests, effect sizes, multiple-testing correction and meta-analysis with forest and funnel plots.',
+    status: 'live', milestone: 'M1', accent: 190,
+    inputs: ['Grouped values (long or wide)', 'Two numeric columns', 'Contingency table', 'List of p-values', 'Study-level effects'],
+    analyses: ['Welch / Student / paired / one-sample t-tests', 'One-way ANOVA and Brown–Forsythe', 'Mann–Whitney, Wilcoxon signed rank, Kruskal–Wallis', 'Chi-square, Fisher exact and odds ratios', 'Pearson, Spearman and linear regression', 'Holm, Bonferroni and Benjamini–Hochberg', 'Meta-analysis (FE, DerSimonian–Laird, REML, Paule–Mandel), Egger test, leave-one-out', 'Forest and funnel plots'],
+    engines: 'TypeScript kernels in a Web Worker',
+    limits: 'No mixed models, no survival or multivariate models; the meta-analysis assumes independent studies and known variances',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);

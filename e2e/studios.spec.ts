@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -344,5 +344,19 @@ test('lab: enzyme kinetics, plate reader and growth-curve demos all compute a re
   await page.getByRole('tab', { name: 'Growth curves' }).click();
   await page.getByRole('button', { name: /Load demo \(two strains\)/ }).click();
   await expect(page.getByText(/Doubling time ·/).first()).toBeVisible({ timeout: 20_000 });
+  expect(errs).toEqual([]);
+});
+
+test('statistics: meta-analysis demo pools the BCG trials and draws a forest plot', async ({ page }) => {
+  const errs = watch(page); await page.goto('/statistics');
+  await page.getByRole('tab', { name: 'Meta-analysis' }).click();
+  await page.getByRole('button', { name: /Load demo \(BCG/ }).click();
+  await expect(page.getByText('Forest plot')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('Pooled effect')).toBeVisible();
+  await expect(page.getByText('0.71', { exact: false }).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Compare groups' }).click();
+  await page.getByRole('button', { name: /Load demo \(two groups\)/ }).click();
+  await page.getByRole('button', { name: 'Run tests' }).click();
+  await expect(page.getByText('Welch t p')).toBeVisible({ timeout: 20_000 });
   expect(errs).toEqual([]);
 });

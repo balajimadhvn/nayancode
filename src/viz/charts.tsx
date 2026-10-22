@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ExportBar } from './FigureExport';
-import { buildBars, buildBoxPlot, buildCurves, buildHeatmap, buildHistogram, buildLine, buildScatter, drawScene, tukeyQuartiles, type CurveSpec, type FigureOptions } from './figure';
+import { DEFAULT_OPTIONS, buildBars, buildBoxPlot, buildCurves, buildHeatmap, buildHistogram, buildLine, buildScatter, drawScene, tukeyQuartiles, type CurveSpec, type FigureOptions, type Scene } from './figure';
 
 export const cssVar = (n: string) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -188,4 +188,14 @@ export function CurvePlot({ spec, height = 320, exportName = 'curves' }: { spec:
     sc.bg = null; drawScene(g, sc, 1);
   }, [spec]);
   return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name={exportName} defaults={{ xLabel: spec.xLabel, yLabel: spec.yLabel }} build={(o) => buildCurves(spec, o)} /></div>;
+}
+
+/** Renders any Scene (forest, funnel, custom figure) on a canvas with the standard ExportBar. */
+export function ScenePlot({ scene, build, height = 360, name = 'figure', defaults = {} }: { scene: Scene; build: (o: FigureOptions) => Scene; height?: number; name?: string; defaults?: { title?: string; xLabel?: string; yLabel?: string } }) {
+  const pt = 72 / 25.4;
+  const ref = useCanvas(height, (g, w, h) => {
+    const sc = build({ ...DEFAULT_OPTIONS, widthMm: w / pt, heightMm: h / pt, fontPt: 10.5, theme: 'page' });
+    sc.bg = null; drawScene(g, sc, 1);
+  }, [scene]);
+  return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name={name} defaults={defaults} build={build} /></div>;
 }
