@@ -1,9 +1,9 @@
 import { assetUrl } from '@/core/asset';
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { clearHandoffSoon, useHandoff } from '@/core/handoff';
 import { createRemote } from '@/compute/rpc';
 import type { ToolInfo } from '@/core/provenance';
-import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadText, fmt, sci, toCsv } from '@/ui/kit';
+import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadText, fmt, sci, toast, toCsv } from '@/ui/kit';
 import { useRunner } from '@/ui/useRunner';
 import { BarChart, Heatmap, Scatter, cssVar, type Pt } from '@/viz/charts';
 import type { Analysed, ExpressionKernels } from './expression.worker';
@@ -11,6 +11,7 @@ import { syntheticBatchExperiment, syntheticExperiment, type DeRow } from './ker
 import { checkDesign, defaultTest, formula, guessSpecs, levelsOf, parseSheet, syntheticPairedExperiment, testLabel, type TestSpec, type VarSpec } from './design';
 import type { GeneSetPack, GseaRow, OraRow } from './enrichment';
 
+const QuantifyCard = lazy(() => import('./QuantifyCard'));
 const remote = createRemote<ExpressionKernels>(() => new Worker(new URL('./expression.worker.ts', import.meta.url), { type: 'module' }));
 
 const TOOL: ToolInfo = {
@@ -86,6 +87,7 @@ export default function ExpressionStudio() {
               {truth && <Callout>Synthetic counts{planted ? ` with real gene symbols; the “${planted}” pathway genes are planted as up-regulated` : ` with ${truth.genes.size} planted DE genes (${truth.label})`}. Results of that comparison are checked against the planted truth.</Callout>}
             </div>
           </Card>
+          <Suspense fallback={null}><QuantifyCard onUse={(c, sh, note) => { setCounts(c); if (sh) setSheet(sh); setTruth(null); setPlanted(null); setRes(null); toast(note); }} /></Suspense>
           <Card title="2 · Design">
             <div className="stack" style={{ gap: 10 }}>
               {!specs.length ? <div className="faint">Load a sample sheet: the first column names the samples, each further column is a variable (group, batch, donor, age…).</div> : <>

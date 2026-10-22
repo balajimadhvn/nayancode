@@ -224,6 +224,17 @@ test('single-cell: two-batch demo integrates batches and scores planted doublets
   expect(errs).toEqual([]);
 });
 
+test('expression: pseudoalignment demo quantifies six synthetic samples and hands the counts to the DE workflow', async ({ page }) => {
+  test.setTimeout(180_000);
+  const errs = watch(page); await page.goto('/expression');
+  await page.getByRole('button', { name: /Demo: 6 synthetic samples/ }).click();
+  await expect(page.getByText(/Index: 60 transcripts/)).toBeVisible({ timeout: 150_000 });
+  await expect(page.getByRole('cell', { name: 'ctrl1' })).toBeVisible();
+  await page.getByRole('button', { name: 'Use as count matrix below' }).click();
+  await expect(page.getByText(/Counts loaded \(60 genes\)/)).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
 test('docking: 1HSG + indinavir demo docks with Vina in WebAssembly and reports RMSD to the crystal pose', async ({ page }) => {
   test.setTimeout(8 * 60_000);
   const errs = watch(page); await page.goto('/docking');
