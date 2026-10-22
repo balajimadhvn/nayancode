@@ -75,6 +75,21 @@ test('phylogenetics: maximum likelihood with parallel bootstrap support', async 
   expect(errs).toEqual([]);
 });
 
+test('figures: a phylogenetic tree exports to SVG with its tip labels', async ({ page }) => {
+  const errs = watch(page); await page.goto('/phylogenetics');
+  await page.getByRole('button', { name: /Demo: 12-protein family/ }).click(); await page.getByRole('button', { name: 'Run progressive alignment' }).click();
+  await page.getByRole('button', { name: 'Build tree' }).click();
+  await expect(page.getByText(/12 tips/)).toBeVisible({ timeout: 60_000 });
+  await page.getByRole('button', { name: 'Export figure tree' }).click();
+  const panel = page.getByRole('group', { name: 'Figure export options' });
+  const [dl] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'SVG', exact: true }).click()]);
+  expect(dl.suggestedFilename()).toMatch(/^solagene-nayancode_tree_\d{4}-\d{2}-\d{2}\.svg$/);
+  const svg = (await import('node:fs')).readFileSync((await dl.path())!, 'utf8');
+  expect(svg).toContain('<svg'); expect(svg).toContain('<text');
+  expect((svg.match(/id="tip-/g) ?? []).length).toBe(12);
+  expect(errs).toEqual([]);
+});
+
 test('structure: 1HSG interaction profile reproduces Asp25 hydrogen bonds', async ({ page }) => {
   await page.goto('/structure'); await expect(page.getByRole('button', { name: 'Load structure' })).toBeEnabled({ timeout: 40_000 });
   await page.getByRole('button', { name: 'Load structure' }).click(); await expect(page.getByText(/Structure analysis/)).toBeVisible({ timeout: 40_000 });

@@ -1,3 +1,4 @@
+import { parseNewick, type TreeNode } from '../studios/phylo/kernels';
 /**
  * Publication-figure engine. A chart is described once as a Scene (rects, lines, circles, polygons, text, all in
  * points, 1 pt = 1/72 in) and rendered to SVG (editable <text>, no CSS variables), PDF (minimal vector writer with
@@ -8,7 +9,7 @@
 export type Anchor = 'start' | 'middle' | 'end';
 export type Item =
   | { k: 'rect'; x: number; y: number; w: number; h: number; fill?: string; stroke?: string; sw?: number; op?: number; id?: string }
-  | { k: 'line'; x1: number; y1: number; x2: number; y2: number; stroke: string; sw: number; dash?: number[]; op?: number }
+  | { k: 'line'; x1: number; y1: number; x2: number; y2: number; stroke: string; sw: number; dash?: number[]; op?: number; id?: string }
   | { k: 'circle'; cx: number; cy: number; r: number; fill?: string; stroke?: string; sw?: number; op?: number }
   | { k: 'poly'; pts: [number, number][]; fill?: string; stroke?: string; sw?: number; op?: number; close?: boolean }
   | { k: 'text'; x: number; y: number; t: string; size: number; fill: string; anchor?: Anchor; bold?: boolean; rot?: number; id?: string };
@@ -87,7 +88,7 @@ export class Painter {
   items: Item[] = [];
   constructor(public w: number, public h: number, public th: Theme, public o: FigureOptions) {}
   rect(x: number, y: number, w: number, h: number, fill?: string, op?: number, stroke?: string, sw?: number, id?: string) { this.items.push({ k: 'rect', x, y, w, h, fill, stroke, sw, op, id }); }
-  line(x1: number, y1: number, x2: number, y2: number, stroke: string, sw = 0.5, dash?: number[], op?: number) { this.items.push({ k: 'line', x1, y1, x2, y2, stroke, sw, dash, op }); }
+  line(x1: number, y1: number, x2: number, y2: number, stroke: string, sw = 0.5, dash?: number[], op?: number, id?: string) { this.items.push({ k: 'line', x1, y1, x2, y2, stroke, sw, dash, op, id }); }
   circle(cx: number, cy: number, r: number, fill?: string, op?: number, stroke?: string, sw?: number) { this.items.push({ k: 'circle', cx, cy, r, fill, op, stroke, sw }); }
   poly(pts: [number, number][], o: { fill?: string; stroke?: string; sw?: number; op?: number; close?: boolean }) { this.items.push({ k: 'poly', pts, ...o }); }
   text(x: number, y: number, t: string, size: number, fill: string, anchor: Anchor = 'start', bold = false, rot = 0, id?: string) { if (t !== '') this.items.push({ k: 'text', x, y, t, size, fill, anchor, bold, rot, id }); }
@@ -294,6 +295,160 @@ export function buildCurves(s: CurveSpec, o: FigureOptions): Scene {
 const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 const sup = (e: number) => (e < 0 ? '⁻' : '') + String(Math.abs(Math.round(e))).replace(/\d/g, (d) => SUP[+d]);
 
+
+// ---------------------------------------------------------------- box plots
+/** Tukey quartiles with linear interpolation (the default of numpy.percentile / R quantile type 7). */
+export function tukeyQuartiles(values: number[]): { q1: number; median: number; q3: number; iqr: number; whiskerLo: number; whiskerHi: number; outliers: number[] } {
+  const v = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!v.length) throw new Error('A box plot needs at least one value.');
+  const pct = (p: number) => { const k = (p / 100) * (v.length - 1), f = Math.floor(k), c = Math.min(v.length - 1, f + 1); return v[f] + (k - f) * (v[c] - v[f]); };
+  const q1 = pct(25), median = pct(50), q3 = pct(75), iqr = q3 - q1;
+  const lo = q1 - 1.5 * iqr, hi = q3 + 1.5 * iqr;
+  const inside = v.filter((x) => x >= lo && x <= hi);
+  return { q1, median, q3, iqr, whiskerLo: inside.length ? inside[0] : q1, whiskerHi: inside.length ? inside[inside.length - 1] : q3, outliers: v.filter((x) => x < lo || x > hi) };
+}
+
+export interface BoxGroup { name: string; values: number[]; color: string }
+export interface BoxSpec { groups: BoxGroup[]; xLabel: string; yLabel: string }
+/** Box-and-whisker plot: Q1–Q3 box, median, 1.5×IQR whiskers, outliers as circles and jittered individual points. */
+export function buildBoxPlot(s: BoxSpec, o: FigureOptions): Scene {
+  const p = baseScene(o), th = p.th, n = s.groups.length;
+  const stats = s.groups.map((g) => tukeyQuartiles(g.values));
+  const all = s.groups.flatMap((g) => g.values);
+  const lo = Math.min(...all), hi = Math.max(...all);
+  const pad = (hi - lo) * 0.06 || 1, ticks = nice(lo - pad, hi + pad, 5);
+  const f = drawFrame(p, { x0: 0, x1: n, y0: Math.min(lo - pad, ticks[0]), y1: Math.max(hi + pad, ticks[ticks.length - 1]), xTicks: s.groups.map((g, i) => ({ x: i + 0.5, label: g.name })), xRot: s.groups.some((g) => textWidth(g.name, o.fontPt) > ((p.w / Math.max(n, 1)) * 0.9)) }, { title: o.title, x: orDefault(o.xLabel, s.xLabel), y: orDefault(o.yLabel, s.yLabel) });
+  const bw = (f.sx(1) - f.sx(0)) * 0.55;
+  s.groups.forEach((g, i) => {
+    const st = stats[i], cx = f.sx(i + 0.5), c = pickColor(o, g.color, i, true);
+    p.rect(cx - bw / 2, f.sy(st.q3), bw, Math.max(0.4, f.sy(st.q1) - f.sy(st.q3)), c, 0.55, th.text, 0.5, `box-${i}`);
+    p.line(cx - bw / 2, f.sy(st.median), cx + bw / 2, f.sy(st.median), th.text, 0.9, undefined, undefined, `median-${i}`);
+    if (st.whiskerHi > st.q3) p.line(cx, f.sy(st.q3), cx, f.sy(st.whiskerHi), th.text, 0.6);
+    if (st.whiskerLo < st.q1) p.line(cx, f.sy(st.q1), cx, f.sy(st.whiskerLo), th.text, 0.6);
+    p.line(cx - bw * 0.18, f.sy(st.whiskerHi), cx + bw * 0.18, f.sy(st.whiskerHi), th.text, 0.6, undefined, undefined, `whisker-hi-${i}`);
+    p.line(cx - bw * 0.18, f.sy(st.whiskerLo), cx + bw * 0.18, f.sy(st.whiskerLo), th.text, 0.6, undefined, undefined, `whisker-lo-${i}`);
+    st.outliers.forEach((v) => p.circle(cx, f.sy(v), Math.max(0.8, o.fontPt * 0.18), undefined, 1, th.text, 0.5));
+    // Jittered observations (deterministic, so the same figure is reproducible).
+    g.values.forEach((v, k) => { const j = ((Math.imul(k + 1 + i * 7919, 2654435761) >>> 8) / 16777216 - 0.5) * bw * 0.5; p.circle(cx + j, f.sy(v), Math.max(0.55, o.fontPt * 0.11), th.text, 0.55); });
+  });
+  return p.scene(o.title);
+}
+
+// ---------------------------------------------------------------- multiple sequence alignment
+const AA_GROUP: [RegExp, string][] = [[/[AVILMFWY]/, '#4c72b0'], [/[KR]/, '#c44e52'], [/[DE]/, '#8c5a9a'], [/[STNQ]/, '#2f8f5b'], [/C/, '#d1607f'], [/[GP]/, '#d08a26'], [/H/, '#2a9d8f']];
+const NT: Record<string, string> = { A: '#2f8f5b', C: '#4c72b0', G: '#d08a26', T: '#c44e52', U: '#c44e52', N: '#8a93a3' };
+const residueColor = (ch: string, type: 'dna' | 'protein') => (type === 'dna' ? NT[ch.toUpperCase()] ?? '#8a93a3' : AA_GROUP.find(([re]) => re.test(ch.toUpperCase()))?.[1] ?? '#8a93a3');
+
+export interface MsaSpec { names: string[]; seqs: string[]; type: 'dna' | 'protein'; blockWidth?: number }
+/** Multiple-sequence-alignment figure: one coloured cell per residue, names on the left, wrapped into blocks with a ruler. */
+export function buildMsa(s: MsaSpec, o: FigureOptions): Scene {
+  const p = baseScene(o), th = p.th, cols = Math.max(...s.seqs.map((q) => q.length)), blockWidth = s.blockWidth ?? 60;
+  if (!s.seqs.length || !cols) throw new Error('An alignment figure needs at least one non-empty sequence.');
+  const left = Math.max(0, ...s.names.map((n) => textWidth(n, o.fontPt * 0.95))) + 8;
+  const width = p.w - left - 10, nb = Math.ceil(cols / blockWidth), perBlock = Math.min(blockWidth, cols);
+  const cw = width / perBlock, rows = s.seqs.length, blocks = Math.max(1, nb);
+  const rulerH = o.fontPt * 1.5, gapH = o.fontPt * 0.9;
+  const avail = p.h - 8 - rulerH * blocks - gapH * (blocks - 1);
+  const rh = Math.max(o.fontPt * 0.6, Math.min(o.fontPt * 1.05, avail / rows));
+  const fs = Math.min(o.fontPt * 0.95, cw * 1.1, rh * 0.95);
+  if (o.title) p.text(6, 6 + o.fontPt * 1.1, o.title, o.fontPt * 1.15, th.text, 'start', true, 0, 'title');
+  let y = 6 + (o.title ? o.fontPt * 1.6 : 0);
+  s.names.forEach((n, i) => p.text(left - 4, y + i * rh + rh * 0.75, n, Math.min(fs, o.fontPt * 0.95), th.dim, 'end', false, 0, `msa-name-${i}`));
+  for (let b = 0; b < blocks; b++) {
+    const start = b * blockWidth;
+    // Position ruler.
+    const nums: number[] = [];
+    for (let c = 0; c < perBlock; c++) { const col = start + c + 1; if (col === 1 || col % 10 === 0) nums.push(c); }
+    if (!nums.length) nums.push(0);
+    for (const c of nums) p.text(left + c * cw + cw / 2, y + rulerH * 0.72, String(start + c + 1), Math.min(fs * 0.85, o.fontPt * 0.85), th.dim, 'middle');
+    const top = y + rulerH;
+    s.seqs.forEach((seq, r) => {
+      for (let c = 0; c < perBlock; c++) {
+        const col = start + c; if (col >= cols) break;
+        const ch = (seq[col] ?? '-').toUpperCase(), x = left + c * cw, yy = top + r * rh;
+        p.rect(x, yy, cw - 0.2, rh - 0.2, residueColor(ch, s.type), 0.16);
+        p.text(x + cw / 2, yy + rh * 0.76, ch, fs, residueColor(ch, s.type), 'middle', false, 0, `res-${r}-${col}`);
+      }
+    });
+    y = top + rows * rh + gapH;
+  }
+  return p.scene(o.title);
+}
+
+// ---------------------------------------------------------------- phylogenetic trees
+export interface TreeTip { name: string; depth: number; x: number; y: number }
+export interface TreeLayout { tips: TreeTip[]; maxDepth: number; left: number; right: number; pxPerUnit: number }
+export interface TreeSpec { newick: string; showSupport?: boolean; showScale?: boolean }
+
+/** Tip positions of a rectangular phylogram: x is the cumulative branch length, tips are spread evenly down the page. */
+export function treeLayout(newick: string, o: FigureOptions): TreeLayout {
+  const tree = parseNewick(newick);
+  const tips: { node: TreeNode; name: string; depth: number }[] = [];
+  const walk = (node: TreeNode, depth: number) => {
+    if (!node.children.length) { tips.push({ node, name: node.name ?? '', depth }); return; }
+    for (const c of node.children) walk(c, depth + (c.length || 0));
+  };
+  walk(tree, tree.length || 0);
+  const maxDepth = Math.max(1e-12, ...tips.map((t) => t.depth));
+  const labelW = Math.max(0, ...tips.map((t) => textWidth(t.name, o.fontPt)));
+  const left = 8, right = 12 + labelW;
+  const plotW = o.widthMm * MM - left - right;
+  const pxPerUnit = plotW / maxDepth;
+  const top = 6 + (o.title ? o.fontPt * 1.6 : 0), bottom = p2Height(o) - (6 + 8);
+  const step = (bottom - top) / Math.max(1, tips.length - 1 || 1);
+  return { tips: tips.map((t, i) => ({ name: t.name, depth: t.depth, x: left + t.depth * pxPerUnit, y: tips.length === 1 ? (top + bottom) / 2 : top + i * step })), maxDepth, left, right, pxPerUnit };
+}
+const p2Height = (o: FigureOptions) => o.heightMm * MM;
+
+/** Rectangular phylogram with tip labels, optional support values and a branch-length scale bar. */
+export function buildTree(s: TreeSpec, o: FigureOptions): Scene {
+  const p = baseScene(o), th = p.th, lay = treeLayout(s.newick, o);
+  if (o.title) p.text(6, 6 + o.fontPt * 1.1, o.title, o.fontPt * 1.15, th.text, 'start', true, 0, 'title');
+  const tree = parseNewick(s.newick);
+  const ys = new Map<TreeNode, number>();
+  lay.tips.forEach((t) => {
+    const leaf = findLeaf(tree, t.name);
+    if (leaf) ys.set(leaf, t.y);
+  });
+  const settle = (node: TreeNode): number => {
+    if (!node.children.length) return ys.get(node) ?? 0;
+    const cy = node.children.map(settle), v = (Math.min(...cy) + Math.max(...cy)) / 2;
+    ys.set(node, v); return v;
+  };
+  const rootY = settle(tree);
+  const xOf = new Map<TreeNode, number>();
+  const place = (node: TreeNode, x: number) => {
+    xOf.set(node, x);
+    for (const c of node.children) place(c, x + (c.length || 0) * lay.pxPerUnit);
+  };
+  place(tree, lay.left);
+  const draw = (node: TreeNode) => {
+    const nx = xOf.get(node)!, ny = ys.get(node) ?? rootY;
+    if (node.children.length) {
+      const cy = node.children.map((c) => ys.get(c) ?? ny);
+      p.line(nx, Math.min(...cy), nx, Math.max(...cy), th.dim, 0.7);
+      for (const c of node.children) { const cx = xOf.get(c)!, ccy = ys.get(c) ?? ny; p.line(nx, ccy, cx, ccy, th.axis, 0.7); draw(c); }
+      if (s.showSupport && node.support !== undefined) p.text(nx + 1, ny - o.fontPt * 0.45, String(Math.round(node.support)), o.fontPt * 0.8, th.dim, 'start', false, 0, `support-${Math.round(ny)}`);
+    } else {
+      p.circle(nx, ny, Math.max(0.6, o.fontPt * 0.13), th.dim, 1);
+      p.text(nx + 3, ny + o.fontPt * 0.35, node.name ?? '', o.fontPt, th.text, 'start', false, 0, `tip-${node.name ?? ''}`);
+    }
+  };
+  draw(tree);
+  if (s.showScale !== false) {
+    const unit = 10 ** Math.floor(Math.log10(lay.maxDepth / 4 || 1e-3)), len = unit * lay.pxPerUnit;
+    const y = p.h - 6;
+    p.line(lay.left, y, lay.left + len, y, th.axis, 0.8, undefined, undefined, 'scale-bar');
+    p.text(lay.left, y - o.fontPt * 0.5, fmtTick(unit), o.fontPt * 0.85, th.dim, 'middle');
+  }
+  return p.scene(o.title);
+}
+function findLeaf(node: TreeNode, name: string): TreeNode | null {
+  if (!node.children.length) return node.name === name ? node : null;
+  for (const c of node.children) { const f = findLeaf(c, name); if (f) return f; }
+  return null;
+}
+
 // ---------------------------------------------------------------- SVG
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const n2 = (v: number) => String(+v.toFixed(2));
@@ -309,7 +464,7 @@ export function sceneToSvg(sc: Scene): string {
   };
   for (const it of sc.items) {
     if (it.k === 'rect') out.push(`<rect${it.id ? ` id="${it.id}"` : ''} x="${n2(it.x)}" y="${n2(it.y)}" width="${n2(it.w)}" height="${n2(it.h)}" ${paint(it.fill, it.stroke, it.sw, it.op)}/>`);
-    else if (it.k === 'line') { const s = norm(it.stroke)!; out.push(`<line x1="${n2(it.x1)}" y1="${n2(it.y1)}" x2="${n2(it.x2)}" y2="${n2(it.y2)}" stroke="${s.hex}" stroke-width="${n2(it.sw)}"${it.dash ? ` stroke-dasharray="${it.dash.join(' ')}"` : ''}${(it.op ?? 1) * s.a < 1 ? ` opacity="${+((it.op ?? 1) * s.a).toFixed(3)}"` : ''}/>`); }
+    else if (it.k === 'line') { const s = norm(it.stroke)!; out.push(`<line${it.id ? ` id="${it.id}"` : ''} x1="${n2(it.x1)}" y1="${n2(it.y1)}" x2="${n2(it.x2)}" y2="${n2(it.y2)}" stroke="${s.hex}" stroke-width="${n2(it.sw)}"${it.dash ? ` stroke-dasharray="${it.dash.join(' ')}"` : ''}${(it.op ?? 1) * s.a < 1 ? ` opacity="${+((it.op ?? 1) * s.a).toFixed(3)}"` : ''}/>`); }
     else if (it.k === 'circle') out.push(`<circle cx="${n2(it.cx)}" cy="${n2(it.cy)}" r="${n2(it.r)}" ${paint(it.fill, it.stroke, it.sw, it.op)}/>`);
     else if (it.k === 'poly') { if (it.pts.length < 2) continue; out.push(`<${it.close ? 'polygon' : 'polyline'} points="${it.pts.map(([x, y]) => `${n2(x)},${n2(y)}`).join(' ')}" ${paint(it.fill, it.stroke, it.sw, it.op)} stroke-linejoin="round"/>`); }
     else { const c = norm(it.fill)!; out.push(`<text${it.id ? ` id="${it.id}"` : ''} x="${n2(it.x)}" y="${n2(it.y)}" font-size="${n2(it.size)}" fill="${c.hex}"${it.anchor && it.anchor !== 'start' ? ` text-anchor="${it.anchor}"` : ''}${it.bold ? ' font-weight="bold"' : ''}${it.rot ? ` transform="rotate(${it.rot} ${n2(it.x)} ${n2(it.y)})"` : ''}>${esc(it.t)}</text>`); }

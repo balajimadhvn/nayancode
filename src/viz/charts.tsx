@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ExportBar } from './FigureExport';
-import { buildBars, buildCurves, buildHeatmap, buildHistogram, buildLine, buildScatter, drawScene, type CurveSpec, type FigureOptions } from './figure';
+import { buildBars, buildBoxPlot, buildCurves, buildHeatmap, buildHistogram, buildLine, buildScatter, drawScene, tukeyQuartiles, type CurveSpec, type FigureOptions } from './figure';
 
 export const cssVar = (n: string) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -120,6 +120,32 @@ export function Histogram({ values, bins = 30, label, height = 170, color = '--c
     g.fillStyle = cssVar('--text-dim'); g.font = '600 11.5px ' + cssVar('--font'); g.textAlign = 'center'; g.textBaseline = 'bottom'; g.fillText(label, (w + m.l) / 2, h - 1);
   }, [values, bins, label, marker]);
   return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name="histogram" defaults={{ xLabel: label, yLabel: 'Count' }} build={(o) => buildHistogram({ values, bins, label, marker }, o)} /></div>;
+}
+
+/** Box-and-whisker plot of one or more groups: Q1–Q3 box, median, 1.5×IQR whiskers, outliers and jittered points. */
+export function BoxPlot({ groups, yLabel, height = 240, exportName = 'box-plot' }: { groups: { name: string; values: number[]; color: string }[]; yLabel: string; height?: number; exportName?: string }) {
+  const ref = useCanvas(height, (g, w, h) => {
+    const all = groups.flatMap((q) => q.values).filter(Number.isFinite);
+    if (!all.length) return;
+    const lo = Math.min(...all), hi = Math.max(...all), m = { l: 48, r: 10, t: 10, b: 34 };
+    const ticks = nice(lo, hi, 5), y0 = Math.min(lo, ticks[0]), y1 = Math.max(hi, ticks[ticks.length - 1]);
+    const sy = (v: number) => h - m.b - ((v - y0) / (y1 - y0 || 1)) * (h - m.t - m.b);
+    const bw = ((w - m.l - m.r) / groups.length) * 0.55;
+    g.font = '11px ' + cssVar('--mono'); g.fillStyle = cssVar('--text-faint'); g.textAlign = 'right'; g.textBaseline = 'middle';
+    for (const t of ticks) { const y = sy(t); g.strokeStyle = cssVar('--border'); g.beginPath(); g.moveTo(m.l, y); g.lineTo(w - m.r, y); g.stroke(); g.fillText(String(t), m.l - 5, y); }
+    groups.forEach((q, i) => {
+      const st = tukeyQuartiles(q.values), cx = m.l + ((i + 0.5) / groups.length) * (w - m.l - m.r), c = cssVar(q.color);
+      g.globalAlpha = 0.35; g.fillStyle = c; g.fillRect(cx - bw / 2, sy(st.q3), bw, Math.max(1, sy(st.q1) - sy(st.q3)));
+      g.globalAlpha = 1; g.strokeStyle = cssVar('--text-dim'); g.lineWidth = 1;
+      g.beginPath(); g.moveTo(cx - bw / 2, sy(st.median)); g.lineTo(cx + bw / 2, sy(st.median)); g.stroke();
+      g.beginPath(); g.moveTo(cx, sy(st.q3)); g.lineTo(cx, sy(st.whiskerHi)); g.moveTo(cx, sy(st.q1)); g.lineTo(cx, sy(st.whiskerLo)); g.stroke();
+      for (const v of st.outliers) { g.beginPath(); g.arc(cx, sy(v), 2.2, 0, Math.PI * 2); g.stroke(); }
+      q.values.forEach((v, k) => { const j = ((Math.imul(k + 1 + i * 7919, 2654435761) >>> 8) / 16777216 - 0.5) * bw * 0.5; g.globalAlpha = 0.55; g.fillStyle = cssVar('--text-dim'); g.beginPath(); g.arc(cx + j, sy(v), 1.4, 0, Math.PI * 2); g.fill(); });
+      g.globalAlpha = 1; g.fillStyle = cssVar('--text-faint'); g.textAlign = 'center'; g.textBaseline = 'top'; g.fillText(q.name, cx, h - m.b + 6);
+    });
+    g.fillStyle = cssVar('--text-dim'); g.font = '600 11.5px ' + cssVar('--font'); g.textBaseline = 'bottom'; g.textAlign = 'center'; g.fillText(yLabel, (w + m.l) / 2, h - 1);
+  }, [groups, yLabel]);
+  return <div className="chart"><canvas ref={ref} style={{ height }} /><ExportBar name={exportName} defaults={{ yLabel }} build={(o) => buildBoxPlot({ groups, xLabel: '', yLabel }, o)} /></div>;
 }
 
 export function BarChart({ labels, values, colors, yLabel, height = 220, fmt = (v: number) => String(Math.round(v)), errors, errorsLo, dots, exportName = 'bar-chart' }: { labels: string[]; values: number[]; colors: string[]; yLabel: string; height?: number; fmt?: (v: number) => string; errors?: number[]; errorsLo?: number[]; dots?: number[][]; exportName?: string }) {

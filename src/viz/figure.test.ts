@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_OPTIONS, OKABE, buildBars, buildCurves, buildHeatmap, buildScatter, parseColor, placeLabels, sceneToPdf, sceneToSvg, textWidth, type FigureOptions } from './figure';
+import { DEFAULT_OPTIONS, OKABE, buildBars, buildBoxPlot, buildCurves, buildHeatmap, buildMsa, buildScatter, buildTree, parseColor, placeLabels, sceneToPdf, sceneToSvg, textWidth, treeLayout, tukeyQuartiles, type FigureOptions } from './figure';
 
 const opt = (o: Partial<FigureOptions> = {}): FigureOptions => ({ ...DEFAULT_OPTIONS, ...o });
 const pts = Array.from({ length: 200 }, (_, i) => ({ x: Math.sin(i) * 3, y: (i % 17) + Math.cos(i), cat: i % 10 === 0 ? 1 : i % 10 === 5 ? 2 : 0, label: `GENE${i}` }));
@@ -87,6 +87,87 @@ describe('PDF export', () => {
   });
   it('contains the expected marks and text', () => {
     expect((pdf.match(/ c h/g) ?? []).length).toBe(200); expect(pdf).toContain('(log2FC) Tj'); expect(pdf).toContain('/F3'); expect(pdf).toContain('/ca ');
+  });
+});
+
+
+describe('box plots', () => {
+  const spec = { groups: [{ name: 'all', values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 100], color: '#4c72b0' }], xLabel: '', yLabel: 'value' };
+  it('uses Tukey quartiles with linear interpolation', () => {
+    const q = tukeyQuartiles(spec.groups[0].values);
+    expect(q.median).toBe(5.5); expect(q.q1).toBe(3.25); expect(q.q3).toBe(7.75);
+    expect(q.whiskerHi).toBe(9); expect(q.outliers).toEqual([100]);
+  });
+  it('draws the box, the whiskers and the outlier circle at the right heights', () => {
+    const sc = buildBoxPlot(spec, opt({ widthMm: 90, heightMm: 70 }));
+    const box = sc.items.find((i) => i.k === 'rect' && i.id === 'box-0');
+    expect(box).toBeTruthy();
+    // Calibrate the value axis from the y-axis tick labels and their gridlines (labels sit a constant offset below the line).
+    const ticks = sc.items.filter((i) => i.k === 'text' && i.anchor === 'end' && Number.isFinite(Number((i as { t: string }).t))) as { y: number; t: string }[];
+    expect(ticks.length).toBeGreaterThanOrEqual(2);
+    const grid = sc.items.filter((i) => i.k === 'line' && (i as { op?: number }).op === 0.8) as { y1: number; x1: number; x2: number }[];
+    expect(grid.length).toBe(ticks.length);
+    const atTick = ticks.map((tk) => {
+      const line = grid.reduce((a, b) => (Math.abs(b.y1 - tk.y) < Math.abs(a.y1 - tk.y) ? b : a));
+      expect(Math.abs(line.y1 - tk.y)).toBeLessThan(6);
+      return { value: Number(tk.t), y: line.y1 };
+    });
+    const t0 = atTick.reduce((a, b) => (a.value < b.value ? a : b)), t1 = atTick.reduce((a, b) => (a.value > b.value ? a : b));
+    const v = (y: number) => t0.value + ((t1.value - t0.value) * (y - t0.y)) / ((t1.y - t0.y) || 1);
+    const b = box as { y: number; h: number };
+    expect(v(b.y)).toBeCloseTo(7.75, 6); // top of the box = Q3
+    expect(v(b.y + b.h)).toBeCloseTo(3.25, 6); // bottom = Q1
+    const median = sc.items.find((i) => i.k === 'line' && i.id === 'median-0') as { y1: number };
+    expect(v(median.y1)).toBeCloseTo(5.5, 6);
+    const hi = sc.items.find((i) => i.k === 'line' && i.id === 'whisker-hi-0') as { y1: number };
+    expect(v(hi.y1)).toBeCloseTo(9, 6); // upper whisker ends at the largest value inside 1.5 × IQR
+    // One outlier circle above the whisker, plus the jittered points.
+    const circles = sc.items.filter((i) => i.k === 'circle') as { cy: number; r: number }[];
+    expect(circles.length).toBeGreaterThan(spec.groups[0].values.length);
+    expect(circles.some((c) => Math.abs(v(c.cy) - 100) < 1e-6)).toBe(true);
+  });
+});
+
+describe('alignment figures', () => {
+  const spec = { names: ['a', 'b', 'c'], seqs: ['ACGTACGTAC', 'ACGTACGTAT', 'ACGAACGTAC'], type: 'dna' as const };
+  it('renders one text item per residue, the names, and a finite size', () => {
+    const sc = buildMsa(spec, opt({ widthMm: 100, heightMm: 60 }));
+    const residues = sc.items.filter((i) => i.k === 'text' && i.id?.startsWith('res-'));
+    expect(residues.length).toBe(30);
+    for (const n of spec.names) expect(sc.items.some((i) => i.k === 'text' && i.t === n)).toBe(true);
+    expect(Number.isFinite(sc.w) && sc.w > 0).toBe(true); expect(Number.isFinite(sc.h) && sc.h > 0).toBe(true);
+  });
+  it('wraps into blocks with a position ruler', () => {
+    const sc = buildMsa({ ...spec, blockWidth: 4 }, opt({ widthMm: 100, heightMm: 60 }));
+    expect(sc.items.filter((i) => i.k === 'text' && i.id?.startsWith('res-')).length).toBe(30);
+    expect(sc.items.some((i) => i.k === 'text' && i.t === '5')).toBe(true); // second block starts at column 5
+  });
+});
+
+describe('tree figures', () => {
+  const newick = '((A:1,B:2)90:1,C:3);';
+  it('places tips at their cumulative branch length', () => {
+    const o = opt({ widthMm: 90, heightMm: 60 });
+    const lay = treeLayout(newick, o);
+    const depth = Object.fromEntries(lay.tips.map((t) => [t.name, t.depth]));
+    expect(depth).toMatchObject({ A: 2, B: 3, C: 3 });
+    for (const t of lay.tips) expect(t.x).toBeCloseTo(lay.left + t.depth * lay.pxPerUnit, 9);
+    const sc = buildTree({ newick, showSupport: true, showScale: true }, o);
+    const labels = sc.items.filter((i) => i.k === 'text' && i.id?.startsWith('tip-')) as { x: number; t: string }[];
+    expect(labels.map((l) => l.t).sort()).toEqual(['A', 'B', 'C']);
+    for (const t of lay.tips) expect(labels.find((l) => l.t === t.name)!.x).toBeCloseTo(t.x + 3, 9);
+    const svg = sceneToSvg(sc);
+    for (const n of ['A', 'B', 'C']) expect(svg).toContain(`>${n}</text>`);
+    expect(svg).toContain('<text');
+    expect(sc.items.some((i) => i.k === 'text' && i.t === '90')).toBe(true); // support value
+    expect(sc.items.some((i) => i.k === 'line' && i.id === 'scale-bar')).toBe(true);
+  });
+  it('exports to SVG and PDF', () => {
+    const sc = buildTree({ newick }, opt({ widthMm: 90, heightMm: 60 }));
+    expect(sceneToSvg(sc).length).toBeGreaterThan(0);
+    const pdf = sceneToPdf(sc);
+    expect(pdf.length).toBeGreaterThan(0);
+    expect(pdf.startsWith('%PDF-1.4')).toBe(true);
   });
 });
 

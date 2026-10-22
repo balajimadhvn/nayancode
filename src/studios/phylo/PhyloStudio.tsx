@@ -4,6 +4,8 @@ import type { ToolInfo } from '@/core/provenance';
 import { Busy, Callout, Card, Field, FileDrop, Stat, Tabs, downloadText, fmt } from '@/ui/kit';
 import { useRunner } from '@/ui/useRunner';
 import { Histogram, cssVar } from '@/viz/charts';
+import { buildMsa, buildTree } from '@/viz/figure';
+import { ExportBar } from '@/viz/FigureExport';
 import { MatrixHeat, MsaView, TreeView } from '@/viz/more';
 import { detectAlphabet, parseFasta, toDNA } from '../sequence/kernels';
 import { parseNewick, supportFromTrees, syntheticFamily, toNewick, type DistModel, type TreeNode } from './kernels';
@@ -96,12 +98,12 @@ export default function PhyloStudio() {
             {tab === 'input' && <Card title="Records" pad={false}><div className="table-wrap" tabIndex={0} role="region" aria-label="Table (scrolls sideways on small screens)"><table className="t"><thead><tr><th>ID</th><th className="num">Length</th><th>Start</th></tr></thead><tbody>{recs.map((r) => <tr key={r.id}><td>{r.id}</td><td className="num">{r.seq.length}</td><td><code>{r.seq.slice(0, 40)}…</code></td></tr>)}</tbody></table></div></Card>}
             {tab === 'msa' && (alns ? <>
               {msa && <div className="cols-4"><Stat label="Sequences" value={names.length} /><Stat label="Columns" value={msa.columns} /><Stat label="Mean identity" value={`${fmt(msa.cons.meanIdentity * 100, 1)}%`} /><Stat label="Fully conserved" value={msa.cons.identity.filter((v) => v >= 0.999).length} /></div>}
-              <Card title="Alignment" sub="bars = conservation (1 − normalised entropy)" actions={<button className="btn sm" onClick={() => downloadText('alignment.fasta', names.map((n, i) => `>${n}\n${alns[i]}`).join('\n') + '\n')}>Export FASTA</button>}>
+              <Card title="Alignment" sub="bars = conservation (1 − normalised entropy)" actions={<><button className="btn sm" onClick={() => downloadText('alignment.fasta', names.map((n, i) => `>${n}\n${alns[i]}`).join('\n') + '\n')}>Export FASTA</button><ExportBar name="alignment" defaults={{ xLabel: '', yLabel: '' }} build={(o) => buildMsa({ names, seqs: alns, type: kind }, o)} /></>}>
                 <MsaView names={names} aln={alns} kind={kind} entropy={msa?.cons.entropy ?? alns[0].split('').map(() => 0.5)} consensus={msa?.cons.consensus ?? ''} /></Card>
               {msa && <Card title="Conservation profile"><Histogram values={msa.cons.entropy} bins={20} label="column conservation (0 = variable, 1 = invariant)" /></Card>}
             </> : <Callout>Run the alignment first.</Callout>)}
             {tab === 'tree' && (<>
-              <Card title="Tree" sub={tree ? `${names.length} tips${reps ? ` · bootstrap ${reps}` : ''}` : ''} actions={<><label className="row dim" style={{ fontSize: 12 }}><input type="checkbox" checked={phylogram} onChange={(e) => setPhylogram(e.target.checked)} /> branch lengths</label><label className="row dim" style={{ fontSize: 12 }}>min support <input type="range" min={0} max={100} step={10} value={minSup} onChange={(e) => setMinSup(+e.target.value)} /> {minSup}</label>{newick && <button className="btn sm" onClick={() => downloadText('tree.nwk', newick + '\n')}>Newick</button>}</>}>
+              <Card title="Tree" sub={tree ? `${names.length} tips${reps ? ` · bootstrap ${reps}` : ''}` : ''} actions={<><label className="row dim" style={{ fontSize: 12 }}><input type="checkbox" checked={phylogram} onChange={(e) => setPhylogram(e.target.checked)} /> branch lengths</label><label className="row dim" style={{ fontSize: 12 }}>min support <input type="range" min={0} max={100} step={10} value={minSup} onChange={(e) => setMinSup(+e.target.value)} /> {minSup}</label>{newick && <button className="btn sm" onClick={() => downloadText('tree.nwk', newick + '\n')}>Newick</button>}{tree && <ExportBar name="tree" defaults={{ xLabel: '', yLabel: '' }} build={(o) => buildTree({ newick: toNewick(tree), showSupport: minSup < 100, showScale: true }, o)} />}</>}>
                 {ml && <div className="cols-4" style={{ marginBottom: 12 }}><Stat label="Model" value={<span style={{ fontSize: 15 }}>{ml.model}</span>} /><Stat label="log-likelihood" value={fmt(ml.logL, 1)} /><Stat label="AIC" value={fmt(ml.aic, 1)} hint={`${ml.k} free parameters`} /><Stat label="BIC" value={fmt(ml.bic, 1)} /></div>}
                 {tree ? <TreeView tree={tree} phylogram={phylogram} minSupport={minSup} /> : <div className="faint">Build a tree, or paste Newick below.</div>}
                 <div className="row" style={{ marginTop: 10 }}><span className="legend"><span style={{ color: cssVar('--accent-3') }}>● ≥90</span><span style={{ color: cssVar('--warn') }}>● 70–89</span><span>● &lt;70 bootstrap %</span></span></div>
