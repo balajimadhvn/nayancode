@@ -10,6 +10,7 @@ import type { Analysed, ExpressionKernels } from './expression.worker';
 import { syntheticBatchExperiment, syntheticExperiment, type DeRow } from './kernels';
 import { checkDesign, defaultTest, formula, guessSpecs, levelsOf, parseSheet, syntheticPairedExperiment, testLabel, type TestSpec, type VarSpec } from './design';
 import type { GeneSetPack, GseaRow, OraRow } from './enrichment';
+import NetworkView from './NetworkView';
 
 const QuantifyCard = lazy(() => import('./QuantifyCard'));
 const remote = createRemote<ExpressionKernels>(() => new Worker(new URL('./expression.worker.ts', import.meta.url), { type: 'module' }));
@@ -136,7 +137,7 @@ export default function ExpressionStudio() {
   );
 }
 
-type ResTab = 'qc' | 'pca' | 'de' | 'enrich' | 'heat';
+type ResTab = 'qc' | 'pca' | 'de' | 'enrich' | 'network' | 'heat';
 function Results({ res, tab, setTab, truth, planted }: { res: Analysed; tab: ResTab; setTab(t: ResTab): void; truth: { genes: Set<string>; label: string } | null; planted: string | null }) {
   const [pcX, setPcX] = useState(0), [pcY, setPcY] = useState(1), [pcView, setPcView] = useState<'corrected' | 'raw'>('corrected'), [pcBy, setPcBy] = useState<'group' | 'batch'>('group');
   const { de, qc, heat, batch } = res;
@@ -162,7 +163,7 @@ function Results({ res, tab, setTab, truth, planted }: { res: Analysed; tab: Res
         <Stat label="Genes tested" value={de.tested.toLocaleString()} hint={`${de.filteredOut} removed by expression filter`} /><Stat label="Up" value={<span style={{ color: cols[1] }}>{de.nUp.toLocaleString()}</span>} /><Stat label="Down" value={<span style={{ color: cols[0] }}>{de.nDown.toLocaleString()}</span>} /><Stat label="Prior df (EB)" value={Number.isFinite(de.priorDf) ? fmt(de.priorDf, 1) : '∞'} hint="Estimated df of the variance prior; larger = more shrinkage" />
       </div>
       {eval_ && <Callout><b style={{ color: 'var(--text)' }}>Validation against planted truth:</b>&nbsp;sensitivity {fmt(eval_.sens * 100, 0)}% ({eval_.tp}/{truth!.genes.size}) · empirical FDR {fmt(eval_.fdr * 100, 1)}% (nominal {fmt(de.params.fdr * 100, 0)}%)</Callout>}
-      <Tabs value={tab} onChange={setTab} items={[{ id: 'de', label: 'Differential expression' }, { id: 'enrich', label: 'Enrichment' }, { id: 'pca', label: 'PCA' }, { id: 'qc', label: 'QC' }, { id: 'heat', label: 'Top genes' }]} />
+      <Tabs value={tab} onChange={setTab} items={[{ id: 'de', label: 'Differential expression' }, { id: 'enrich', label: 'Enrichment' }, { id: 'network', label: 'Network' }, { id: 'pca', label: 'PCA' }, { id: 'qc', label: 'QC' }, { id: 'heat', label: 'Top genes' }]} />
       {tab === 'de' && <>
         <div className="cols-2">
           <Card title="Volcano" sub={`${de.label} · ${de.formula}`}><Scatter points={volcano} colors={dcols} names={['not significant', 'up', 'down']} xLabel={lfcLabel} yLabel="-log10 p" labelScore={(q) => Math.abs(q.x) * q.y} labelDefault={10} exportName="volcano" vlines={de.params.lfcThreshold ? [-de.params.lfcThreshold, de.params.lfcThreshold] : []} height={360} /></Card>
@@ -178,6 +179,7 @@ function Results({ res, tab, setTab, truth, planted }: { res: Analysed; tab: Res
         </Card>
       </>}
       {tab === 'enrich' && <Enrichment de={de} planted={planted} />}
+      {tab === 'network' && <NetworkView de={de} />}
       {tab === 'pca' && <Card title="Principal components" sub={`top ${pca.nGenes} variable genes · log2 size-factor-normalised${batch ? (pcView === 'raw' ? ' · before ComBat' : ' · after ComBat') : ''}`} actions={<>{batch && <><select className="select" style={{ width: 140 }} value={pcView} onChange={(e) => setPcView(e.target.value as typeof pcView)}><option value="corrected">ComBat-corrected</option><option value="raw">Uncorrected</option></select><select className="select" style={{ width: 110 }} value={pcBy} onChange={(e) => setPcBy(e.target.value as typeof pcBy)}><option value="group">colour: {qc.colourBy || 'group'}</option><option value="batch">colour: batch</option></select></>}<select className="select" style={{ width: 80 }} value={pcX} onChange={(e) => setPcX(+e.target.value)}>{pca.varExplained.map((_, i) => <option key={i} value={i}>PC{i + 1}</option>)}</select><select className="select" style={{ width: 80 }} value={pcY} onChange={(e) => setPcY(+e.target.value)}>{pca.varExplained.map((_, i) => <option key={i} value={i}>PC{i + 1}</option>)}</select></>}>
         <Scatter points={pca.scores.map((s, i) => ({ x: s[pcX] ?? 0, y: s[pcY] ?? 0, cat: batch && pcBy === 'batch' ? bnames.indexOf(batch.labels[i]) : gnames.indexOf(qc.groups[i]), label: `${qc.samples[i]} (${qc.groups[i]}${batch ? `, batch ${batch.labels[i]}` : ''})` }))} colors={cols} names={batch && pcBy === 'batch' ? bnames : gnames} xLabel={`PC${pcX + 1} (${fmt(pca.varExplained[pcX] * 100, 1)}%)`} yLabel={`PC${pcY + 1} (${fmt(pca.varExplained[pcY] * 100, 1)}%)`} radius={7} height={400} />
       {batch && <Callout>{batch.nBatches} batches detected in the sample sheet. ComBat removes batch location/scale per gene while protecting the group contrast. ComBat is used for these plots only: differential expression uses the uncorrected counts{de.formula.includes(batch.column) ? `, with “${batch.column}” as a term in the model` : ''} (testing on ComBat-corrected values understates variance). <button className="btn" onClick={() => downloadText('combat_corrected_log2.csv', batch.correctedCsv, 'text/csv')}>Download corrected matrix</button></Callout>}</Card>}

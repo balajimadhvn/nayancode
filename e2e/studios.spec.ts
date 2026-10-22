@@ -251,6 +251,18 @@ test('lab: survival demo gives Kaplan–Meier medians, log-rank and a Cox hazard
   expect(errs).toEqual([]);
 });
 
+test('expression: the network tab draws pathway co-membership hubs for the real-gene demo', async ({ page }) => {
+  const errs = watch(page); await page.goto('/expression');
+  await page.getByRole('button', { name: /Load real-gene demo/ }).click(); await page.getByRole('button', { name: 'Run analysis' }).click();
+  await expect(page.getByText('Genes tested')).toBeVisible({ timeout: 40_000 });
+  await page.getByRole('tab', { name: 'Network' }).click();
+  await expect(page.getByText('Hubs')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('img', { name: /Gene network of \d+ genes and \d+ edges/ })).toBeVisible();
+  await expect(page.getByText(/colour = Louvain community/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Fetch STRING interactions' })).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
 test('variants: association testing recovers planted variants and draws Manhattan and QQ plots', async ({ page }) => {
   const errs = watch(page); await page.goto('/variants');
   await page.getByRole('tab', { name: 'Association' }).click(); await page.getByRole('button', { name: /Demo: case\/control/ }).click(); await page.getByRole('button', { name: 'Run association' }).click();
