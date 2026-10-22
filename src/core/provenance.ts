@@ -26,6 +26,7 @@ export const CITATIONS: Record<string, string> = {
   hedges1981: 'Hedges LV (1981) Distribution theory for Glass’s estimator of effect size and related estimators. J Educ Stat 6:107–128.',
   colditz1994: 'Colditz GA, Brewer TF, Berkey CS, et al. (1994) Efficacy of BCG vaccine in the prevention of tuberculosis: meta-analysis of the published literature. JAMA 271:698–702.',
   yanisch1985: 'Yanisch-Perron C, Vieira J, Messing J (1985) Improved M13 phage cloning vectors and host strains: nucleotide sequences of the M13mp18 and pUC19 vectors. Gene 33:103–119.',
+  raybould2019: 'Raybould MIJ, Marks C, Krawczyk K, et al. (2019) Five computational developability guidelines for therapeutic antibody profiling. Proc Natl Acad Sci USA 116:4025–4030.',
   holm1979: 'Holm S (1979) A simple sequentially rejective multiple test procedure. Scand J Stat 6:65–70.',
   ritz2015: 'Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-response analysis using R. PLoS ONE 10:e0146021.',
   gottschalk2005: 'Gottschalk PG, Dunn JR (2005) The five-parameter logistic: a characterization and comparison with the four-parameter logistic. Anal Biochem 343:54–65.',

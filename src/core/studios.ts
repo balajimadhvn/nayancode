@@ -138,6 +138,16 @@ export const STUDIOS: StudioDef[] = [
     cloudLater: '',
   },
   {
+    id: 'biologics', path: '/biologics', name: 'Biologics Studio', short: 'Biologics',
+    blurb: 'Heuristic Kabat CDR identification and a sequence-liability developability screen for antibodies.',
+    status: 'live', milestone: 'M1', accent: 330,
+    inputs: ['VH / VL amino-acid sequence', 'scFv sequence'],
+    analyses: ['Heuristic Kabat CDR identification', 'Sequence liabilities (deamidation, isomerisation, glycosylation, oxidation, free cysteine)', 'pI, charge at pH 7.4, GRAVY, CDR composition', 'Rule-of-thumb developability flags', 'Comparison of up to twelve chains'],
+    engines: 'TypeScript',
+    limits: 'No numbering database, no structure; the flags are published rules of thumb, not validated cut-offs',
+    cloudLater: '',
+  },
+  {
     id: 'stats', path: '/statistics', name: 'Statistics Studio', short: 'Statistics',
     blurb: 'Classical tests, effect sizes, multiple-testing correction and meta-analysis with forest and funnel plots.',
     status: 'live', milestone: 'M1', accent: 190,

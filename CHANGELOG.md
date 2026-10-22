@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+Phase 2 studios (nayancode branch `feature/phase2-studios`).
+- Lab Studio (`/lab`): enzyme kinetics (Michaelis–Menten and substrate inhibition by Levenberg–Marquardt), plate reader / ELISA (4PL standard curve, LOD/LOQ, Z′), growth curves (logistic fit, doubling time), dose–response, and survival analysis (Kaplan–Meier, log-rank, Cox with Efron ties).
+- Statistics Studio (`/statistics`): t-tests, one-way ANOVA with Welch correction, Mann–Whitney, Wilcoxon, Kruskal–Wallis, chi-square and Fisher tests, correlation and regression, multiplicity correction (Holm, Bonferroni, BH), and meta-analysis (fixed effect, DerSimonian–Laird, REML, Paule–Mandel) with forest and funnel plots.
+- Plasmid Studio (`/plasmid`): GenBank/FASTA import and export, annotation against a library of standard elements, restriction map with fragment sizes, primer binding and checks, and a circular map figure exported to SVG, PDF and PNG.
+- Biologics Studio (`/biologics`): heuristic Kabat CDR identification for VH, VL and scFv, a sequence-liability screen (deamidation, isomerisation, N-glycosylation, oxidation, free cysteine, acid-labile DP, RGD), pI, charge at pH 7.4, GRAVY and CDR composition with rule-of-thumb developability flags, and side-by-side comparison with CSV export.
+
 ## 1.2.0 (2026-10-22)
 New tools added to existing studios (no new studio). Everything runs in the browser.
 - Lab Studio: survival analysis (Kaplan–Meier, log-rank, Cox with Efron ties), validated against R `aml`.

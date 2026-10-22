@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -371,5 +371,20 @@ test('plasmid: pUC19 demo annotates AmpR and draws the circular map', async ({ p
   await page.getByRole('tab', { name: 'Primers & checks' }).click();
   await page.getByRole('button', { name: 'Find binding sites' }).click();
   await expect(page.getByText('Binding sites').first()).toBeVisible({ timeout: 20_000 });
+  expect(errs).toEqual([]);
+});
+
+test('biologics: trastuzumab demo finds the CDRs and screens liabilities', async ({ page }) => {
+  const errs = watch(page); await page.goto('/biologics');
+  await page.getByRole('button', { name: 'Load trastuzumab' }).click();
+  await expect(page.getByText('CDR1').first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('DTYIH').first()).toBeVisible();
+  await expect(page.getByText(/VH ·/).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Developability' }).click();
+  await expect(page.getByText('Theoretical pI')).toBeVisible();
+  await expect(page.getByText('Sequence liabilities').first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Compare' }).click();
+  await page.getByRole('button', { name: 'Demo (two VH)' }).click();
+  await expect(page.getByText('trastuzumab').first()).toBeVisible();
   expect(errs).toEqual([]);
 });
