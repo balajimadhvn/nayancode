@@ -181,6 +181,14 @@ test('lab: Livak 2001 example, dose–response fit and a power calculation', asy
   expect(errs).toEqual([]);
 });
 
+test('lab: survival demo gives Kaplan–Meier medians, log-rank and a Cox hazard ratio', async ({ page }) => {
+  const errs = watch(page); await page.goto('/lab');
+  await page.getByRole('tab', { name: 'Survival' }).click(); await page.getByRole('button', { name: /Load demo/ }).click(); await page.getByRole('button', { name: 'Analyse' }).click();
+  await expect(page.getByText('Cox proportional hazards')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/Log-rank χ² = 3\.396/)).toBeVisible(); await expect(page.getByRole('cell', { name: '2.498' })).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
 test('docking: 1HSG + indinavir demo docks with Vina in WebAssembly and reports RMSD to the crystal pose', async ({ page }) => {
   test.setTimeout(8 * 60_000);
   const errs = watch(page); await page.goto('/docking');
