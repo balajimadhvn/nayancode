@@ -58,3 +58,9 @@ Format and rules: see `HANDOFF-REMAINING-WORKBENCH-TOOLS.md`, section 3. Append 
 - Push the website repo and deploy (Cloudflare Worker builds from GitHub).
 - Submit the new tool URLs with `scripts/indexnow.mjs` after deploy.
 - Decide on a CSP `connect-src` change if/when item 8 live inference is enabled (needs `https://huggingface.co https://*.huggingface.co https://cdn-lfs.huggingface.co`).
+
+## Verification and completion pass (2026-10-22, by Claude Sonnet 5.5)
+- Independently re-checked the other model's work: tsc clean, full unit suite 449/449, production build OK, studio e2e 33/33 (excluding the 8-minute docking test), website tsc clean, website unit tests 36/36, website copy identical to nayancode for studios/viz/ui/compute.
+- **Item 8 was only a stub** (the "Load model" button produced no scores). Completed: `@huggingface/transformers` (Apache-2.0) installed, `plm.worker.ts` runs ESM-2 8M with a self-hosted ONNX runtime (`public/wasm/ort/`), `PlmPanel.tsx` does a full substitution scan, mutation scoring, pseudo-perplexity and CSV export. Verified against the real model: ubiquitin L8D = -1.09, L8I = +0.12 (Node unit test and browser e2e with `RUN_PLM_NETWORK_TEST=1`, both pass). Embeddings are not offered (the ONNX export only returns logits). Commit 2374738 in nayancode.
+- No `Content-Security-Policy` connect-src exists on the website (only frame-ancestors), so no header change is needed.
+- All 13 items are now fully working. Owner to-dos (merge, push, deploy, IndexNow) are unchanged.
