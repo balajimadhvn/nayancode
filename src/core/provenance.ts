@@ -50,6 +50,7 @@ export const CITATIONS: Record<string, string> = {
   ondov2016: 'Ondov BD, et al. (2016) Mash: fast genome and metagenome distance estimation using MinHash. Genome Biol 17:132.',
   irber2022: 'Irber L, et al. (2022) Lightweight compositional analysis of metagenomes with FracMinHash and minimum metagenome covers. bioRxiv 2022.01.11.475838.',
   li2016miniasm: 'Li H (2016) Minimap and miniasm: fast mapping and de novo assembly for noisy long sequences. Bioinformatics 32:2103–2110.',
+  atilgan2001: 'Atilgan AR, et al. (2001) Anisotropy of fluctuation dynamics of proteins with an elastic network model. Biophys J 80:505–515.',
   myers2005: 'Myers EW (2005) The fragment assembly string graph. Bioinformatics 21(Suppl 2):ii79–ii85.',
   mclaren2016: 'McLaren W, et al. (2016) The Ensembl Variant Effect Predictor. Genome Biol 17:122.',
   butler2015: 'Butler A, et al. (2015) Spatial reconstruction of single-cell gene expression data. Nat Biotechnol 33:495–502 (HVG dispersion binning).',

@@ -6,6 +6,7 @@ import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadTe
 import { useRunner } from '@/ui/useRunner';
 import { BarChart, Histogram, LineChart, cssVar } from '@/viz/charts';
 import type { StructureKernels } from './structure.worker';
+import { StructureUtils } from './StructureUtils';
 
 const remote = createRemote<StructureKernels>(() => new Worker(new URL('./structure.worker.ts', import.meta.url), { type: 'module' }));
 export interface Src { text: string; label: string }
@@ -18,7 +19,7 @@ const TOOLS = {
   sasa: T('structure.sasa', 'Solvent accessible surface area', () => 'Solvent-accessible surface area was calculated with the Shrake–Rupley algorithm (1.4 Å probe, Bondi radii, 128 points per atom); relative accessibility used Miller et al. (1987) maximum values', ['shrake1973']),
   compare: T('structure.compare', 'Structure superposition', (p) => `Chains were paired by local sequence alignment (BLOSUM62) and superposed on Cα atoms with the Kabsch/Horn method with 3σ outlier rejection (${p.paired} residues); TM-score used d0 = 1.24(L−15)^(1/3) − 1.8`, ['kabsch1976', 'horn1987', 'zhang2004']),
 };
-type Tab = 'interactions' | 'pockets' | 'sasa' | 'compare';
+type Tab = 'interactions' | 'pockets' | 'sasa' | 'compare' | 'tools';
 const TYPE_COLOR: Record<string, string> = { 'hydrogen bond': 'live', hydrophobic: 'planned', 'salt bridge': 'building', 'pi-stacking': 'live', 'pi-cation': 'building', 'halogen bond': 'live', 'metal coordination': 'building', 'water bridge': 'planned' };
 
 export function StructureAnalysis({ src, onFocus, onShowSuperposition }: { src: Src | null; onFocus(list: ResRef[]): void; onShowSuperposition(a: string, bPdb: string): void }) {
@@ -30,11 +31,12 @@ export function StructureAnalysis({ src, onFocus, onShowSuperposition }: { src: 
     <Card title="Structure analysis" sub={info ? `${info.atoms.toLocaleString()} atoms · ${info.chains.length} protein chain(s) · ${info.ligands.length} ligand(s)` : 'parsing…'}>
       {meta.error && <Callout kind="err">{meta.error}</Callout>}
       <div className="stack" style={{ gap: 14 }}>
-        <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'interactions', label: 'Interactions' }, { id: 'pockets', label: 'Pockets' }, { id: 'sasa', label: 'Solvent accessibility' }, { id: 'compare', label: 'Compare / superpose' }]} />
+        <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'interactions', label: 'Interactions' }, { id: 'pockets', label: 'Pockets' }, { id: 'sasa', label: 'Solvent accessibility' }, { id: 'compare', label: 'Compare / superpose' }, { id: 'tools', label: 'Analysis tools' }]} />
         {info && tab === 'interactions' && <Interactions src={src} info={info} lig={lig} setLig={setLig} onFocus={onFocus} />}
         {info && tab === 'pockets' && <Pockets src={src} lig={lig} info={info} onFocus={onFocus} />}
         {info && tab === 'sasa' && <Sasa src={src} />}
         {info && tab === 'compare' && <Compare src={src} info={info} onShow={onShowSuperposition} />}
+        {info && tab === 'tools' && <StructureUtils src={src} />}
       </div>
     </Card>
   );

@@ -82,6 +82,17 @@ test('structure: 1HSG interaction profile reproduces Asp25 hydrogen bonds', asyn
   await expect(page.locator('table.t tbody tr', { hasText: 'ASP 25' }).first()).toBeVisible({ timeout: 20_000 }); await expect(page.getByText(/hydrogen bond · \d+/)).toBeVisible();
 });
 
+test('structure: analysis tools show a contact map and normal modes for 1HSG', async ({ page }) => {
+  test.setTimeout(180_000);
+  const errs = watch(page); await page.goto('/structure'); await expect(page.getByRole('button', { name: 'Load structure' })).toBeEnabled({ timeout: 40_000 });
+  await page.getByRole('button', { name: 'Load structure' }).click(); await expect(page.getByText(/Structure analysis/)).toBeVisible({ timeout: 40_000 });
+  await page.getByRole('tab', { name: 'Analysis tools' }).click();
+  await expect(page.getByText(/Contact map · Cα/)).toBeVisible();
+  await page.getByRole('tab', { name: 'Modes' }).click();
+  await expect(page.getByText(/Slowest non-zero modes ·/)).toBeVisible({ timeout: 120_000 });
+  expect(errs).toEqual([]);
+});
+
 test('chemistry: worker processes the example library; QSAR tab renders', async ({ page }) => {
   const errs = watch(page); await page.goto('/chemistry'); await expect(page.getByRole('button', { name: /Load example/ })).toBeEnabled({ timeout: 40_000 });
   await page.getByRole('button', { name: /Load example/ }).click(); await expect(page.locator('.mol-card').first()).toBeVisible({ timeout: 20_000 });
