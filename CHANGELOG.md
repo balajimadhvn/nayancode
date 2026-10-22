@@ -13,7 +13,7 @@ New tools added to existing studios (no new studio). Everything runs in the brow
 - Microbiome Studio: reference screening by FracMinHash containment and sourmash-style gather.
 - Genome Studio: small-genome overlap assembler (minimizers, string graph, unitigs; unpolished).
 - Structure Studio: analysis tools (contact map, B-factor profile, RMSD matrix, elastic-network normal modes).
-- Sequence Studio: experimental protein language-model tab (ESM-2 8M scoring maths; live model not bundled in this build).
+- Sequence Studio: experimental protein language-model tab: ESM-2 8M runs in the browser (ONNX Runtime Web, self-hosted; ~30 MB weights downloaded from huggingface.co on request), full substitution scan, masked-marginal mutation scores and pseudo-perplexity; checked live against ubiquitin L8I vs L8D.
 - Figures: box plots, multiple-sequence alignments and phylogenetic trees now export to SVG, PDF and PNG.
 
 ## 1.1.0 (2026-10-16)

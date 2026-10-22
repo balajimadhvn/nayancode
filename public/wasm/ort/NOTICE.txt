@@ -1,0 +1,2 @@
+ONNX Runtime Web (WebAssembly build), MIT licence, Copyright (c) Microsoft Corporation.
+Self-hosted so that model inference runs without a third-party script CDN. Version: onnxruntime-web (dependency of @huggingface/transformers).

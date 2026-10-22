@@ -69,3 +69,26 @@ export function parseMutation(mutation: string, seq: string): { pos: number; wt:
   if (seq[pos] !== wt) throw new Error(`Wild-type mismatch: position ${pos + 1} expects "${wt}" but sequence has "${seq[pos]}".`);
   return { pos, wt, mut };
 }
+// ---------------------------------------------------------------- full-sequence scans
+export const AMINO_ACIDS = 'ACDEFGHIKLMNPQRSTVWY';
+export interface ScanResult {
+  /** logP[pos][a]: log-probability of amino acid AMINO_ACIDS[a] at residue pos when that position is masked */
+  logP: Float32Array[];
+  wtLogP: number[];
+  /** exp(−mean log p(wild type)) over all positions (pseudo-perplexity, Salazar et al. 2020) */
+  pseudoPerplexity: number;
+}
+/** Masks every residue in turn. `logitsAt(pos)` must return the model's logits for the masked position; `vocab` maps a residue letter to its logit index. */
+export async function scanProfile(seq: string, logitsAt: (pos: number) => Promise<Float32Array> | Float32Array, vocab: Record<string, number>, onProgress?: (f: number) => void): Promise<ScanResult> {
+  const logP: Float32Array[] = [], wt: number[] = [];
+  for (let i = 0; i < seq.length; i++) {
+    const lp = logSoftmax(await logitsAt(i));
+    logP.push(Float32Array.from(AMINO_ACIDS, (a) => lp[vocab[a]])); wt.push(lp[vocab[seq[i]]] ?? NaN);
+    onProgress?.((i + 1) / seq.length);
+  }
+  return { logP, wtLogP: wt, pseudoPerplexity: pseudoPerplexity(wt.filter(Number.isFinite)) };
+}
+/** log p(mutant) − log p(wild type) at one position of a scan. */
+export const effectFromScan = (s: ScanResult, seq: string, pos: number, mut: string) => s.logP[pos][AMINO_ACIDS.indexOf(mut)] - s.logP[pos][AMINO_ACIDS.indexOf(seq[pos])];
+/** Mean masked-marginal effect of all 19 substitutions at each position (more negative = the model finds the position constrained). */
+export const positionConstraint = (s: ScanResult, seq: string) => s.logP.map((_, i) => { let t = 0, n = 0; for (const a of AMINO_ACIDS) if (a !== seq[i]) { t += effectFromScan(s, seq, i, a); n++; } return n ? t / n : NaN; });

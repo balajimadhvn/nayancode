@@ -99,6 +99,19 @@ test('sequence: protein language model tab opens with warning and load button', 
   expect(errs).toEqual([]);
 });
 
+test('sequence: protein language model scores ubiquitin L8I above L8D in the browser (live model, needs network)', async ({ page }) => {
+  test.skip(!process.env.RUN_PLM_NETWORK_TEST, 'downloads ~30 MB from huggingface.co; run with RUN_PLM_NETWORK_TEST=1');
+  test.setTimeout(240_000);
+  const errs = watch(page); await page.goto('/sequence');
+  await page.getByRole('button', { name: 'Demo proteins' }).click(); await page.getByRole('tab', { name: 'Protein language model' }).click();
+  await page.getByRole('button', { name: 'Example: ubiquitin' }).click(); await page.getByRole('button', { name: 'Load model (~30 MB)' }).click();
+  await expect(page.getByRole('button', { name: 'Scan all substitutions' })).toBeEnabled({ timeout: 200_000 });
+  await page.getByRole('button', { name: 'Scan all substitutions' }).click(); await expect(page.getByText('Pseudo-perplexity')).toBeVisible({ timeout: 120_000 });
+  const rows = page.locator('table').first().locator('tbody tr'); const val = async (i: number) => Number((await rows.nth(i).locator('td').nth(1).innerText()).replace('−', '-'));
+  const d = await val(0), ile = await val(1); expect(ile).toBeGreaterThan(d);
+  expect(errs.filter((e) => !/huggingface|cdn-lfs|hf\.co/i.test(e))).toEqual([]);
+});
+
 test('structure: 1HSG interaction profile reproduces Asp25 hydrogen bonds', async ({ page }) => {
   await page.goto('/structure'); await expect(page.getByRole('button', { name: 'Load structure' })).toBeEnabled({ timeout: 40_000 });
   await page.getByRole('button', { name: 'Load structure' }).click(); await expect(page.getByText(/Structure analysis/)).toBeVisible({ timeout: 40_000 });

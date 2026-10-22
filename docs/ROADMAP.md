@@ -22,7 +22,7 @@ WebAssembly memory per tab, a few CPU threads, optional WebGPU, and static files
 |---|---|---|
 | ~~ADMET / property prediction~~ done | RDKit descriptors + small gradient-boosted or random-forest models trained offline on open data (ESOL, lipophilicity, BBBP, hERG, TDC under open licences), shipped as JSON | Validate with scaffold splits; state applicability domain |
 | ~~Molecule tools: MCS, scaffold analysis, R-group tables, reaction enumeration, pharmacophore and shape similarity~~ done | RDKit WebAssembly (BSD) | Mostly UI work |
-| Protein language-model features | ESM-2 small models (MIT) through ONNX Runtime Web or transformers.js with WebGPU; embeddings, masked-marginal variant scoring | Model files 30 to 150 MB: host on Hugging Face (free), not in the repository. Be explicit about accuracy |
+| ~~Protein language-model features~~ done (ESM-2 8M, substitution scan; embeddings not exposed by the ONNX export) | ESM-2 small models (MIT) through ONNX Runtime Web or transformers.js with WebGPU; embeddings, masked-marginal variant scoring | Model files 30 to 150 MB: host on Hugging Face (free), not in the repository. Be explicit about accuracy |
 | ~~Protein structure utilities~~ done | Superposition and RMSD, normal-mode analysis (elastic network), pocket detection (fpocket-style, clean-room), B-factor and contact maps | Pure TypeScript or small WebAssembly |
 | ~~Pseudoalignment for small transcriptomes~~ done | kallisto-style k-mer index in WebAssembly or TypeScript for bacteria and yeast | Human-scale indexes are too large; keep nf-core import for those |
 | ~~Metagenome profiling~~ done | Mash/sourmash-style sketches against a small bundled database (tens of MB) | Genus-level only; label as screening |

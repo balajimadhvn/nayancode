@@ -38,6 +38,8 @@ export const CITATIONS: Record<string, string> = {
   korsunsky2019: 'Korsunsky I, et al. (2019) Fast, sensitive and accurate integration of single-cell data with Harmony. Nat Methods 16:1289–1296.',
   wolock2019: 'Wolock SL, Lopez R, Klein AM (2019) Scrublet: computational identification of cell doublets in single-cell transcriptomic data. Cell Syst 8:281–291.',
   bray2016: 'Bray NL, Pimentel H, Melsted P, Pachter L (2016) Near-optimal probabilistic RNA-seq quantification. Nat Biotechnol 34:525–527.',
+  lin2023: 'Lin Z, et al. (2023) Evolutionary-scale prediction of atomic-level protein structure with a language model. Science 379:1123–1130.',
+  meier2021: 'Meier J, et al. (2021) Language models enable zero-shot prediction of the effects of mutations on protein function. NeurIPS 34.',
   nayancode: 'Madhavan B (2026) Nayancode Workbench: open-source bioinformatics and cheminformatics in the web browser. Zenodo. https://doi.org/10.5281/zenodo.23393495',
   law2014: 'Law CW, Chen Y, Shi W, Smyth GK (2014) voom: precision weights unlock linear model analysis tools for RNA-seq read counts. Genome Biol 15:R29.',
   smyth2004: 'Smyth GK (2004) Linear models and empirical Bayes methods for assessing differential expression in microarray experiments. Stat Appl Genet Mol Biol 3:Article3.',

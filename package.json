@@ -28,6 +28,7 @@
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@huggingface/transformers": "^4.3.1",
     "@rdkit/rdkit": "^2026.3.6",
     "igv": "^3.8.9",
     "molstar": "^5.12.0",
