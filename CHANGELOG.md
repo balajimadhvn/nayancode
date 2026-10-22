@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.0 (2026-10-22)
+New tools added to existing studios (no new studio). Everything runs in the browser.
+- Lab Studio: survival analysis (Kaplan–Meier, log-rank, Cox with Efron ties), validated against R `aml`.
+- Chemistry Studio: ADMET tab (solubility, logD, BBB models on open data; Lipinski/Veber/Egan/Ghose; BOILED-Egg).
+- Chemistry Studio: molecule tools (Murcko scaffolds, MCS, R-groups, reaction enumeration, pharmacophore and USR shape similarity).
+- Sequence Studio: proteomics basics (in-silico digestion, peptide masses, isotope patterns, mass matching, mzML viewer).
+- Variant Studio: GWAS-lite association testing (linear, logistic, trend; PCs, exact HWE, LD pruning, genomic control).
+- Single-Cell Studio: larger datasets (NN-descent kNN, Harmony-style batch integration, Scrublet-style doublet scoring).
+- Expression Studio: pseudoalignment (FASTQ/FASTA → counts via a k-mer index and EM for small transcriptomes).
+- Expression Studio: gene network view (Reactome pathway co-membership, force-directed layout, Louvain communities).
+- Microbiome Studio: reference screening by FracMinHash containment and sourmash-style gather.
+- Genome Studio: small-genome overlap assembler (minimizers, string graph, unitigs; unpolished).
+- Structure Studio: analysis tools (contact map, B-factor profile, RMSD matrix, elastic-network normal modes).
+- Sequence Studio: experimental protein language-model tab (ESM-2 8M scoring maths; live model not bundled in this build).
+- Figures: box plots, multiple-sequence alignments and phylogenetic trees now export to SVG, PDF and PNG.
+
 ## 1.1.0 (2026-10-16)
 - Docking Studio (`/docking`): AutoDock Vina 1.2.7 compiled to WebAssembly (Apache-2.0, built by `scripts/vendor_vina.sh`), clean-room receptor and ligand preparation (pH 7.4, Gasteiger charges, PDBQT, distance-geometry 3-D), box from a co-crystal ligand, residues or coordinates, pose viewer, interaction profile, small virtual screens, redocking benchmark (35.7 % of top poses < 2 Å on 42 complexes; identical scores to native Vina within 0.14 kcal/mol on average).
 - The publisher is now **Solagene** (formerly Vivofold), https://solagene.com; new logo and icons.
