@@ -22,6 +22,7 @@ const live: Record<string, ReturnType<typeof lazyRetry<() => React.JSX.Element>>
   microbiome: lazyRetry(() => import('@/studios/microbiome/MicrobiomeStudio')),
   lab: lazyRetry(() => import('@/studios/lab/LabStudio')),
   stats: lazyRetry(() => import('@/studios/stats/StatsStudio')),
+  plasmid: lazyRetry(() => import('@/studios/plasmid/PlasmidStudio')),
 };
 
 const Loading = () => <div style={{ display: 'grid', placeItems: 'center', minHeight: '60vh', color: 'var(--text-faint)' }}>Loading…</div>;

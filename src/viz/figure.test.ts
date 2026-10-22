@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_OPTIONS, OKABE, buildBars, buildBoxPlot, buildCurves, buildForest, buildFunnel, buildHeatmap, buildMsa, buildScatter, buildTree, parseColor, placeLabels, sceneToPdf, sceneToSvg, textWidth, treeLayout, tukeyQuartiles, type FigureOptions } from './figure';
+import { DEFAULT_OPTIONS, OKABE, buildBars, buildBoxPlot, buildCurves, buildForest, buildFunnel, buildPlasmidMap, buildHeatmap, buildMsa, buildScatter, buildTree, parseColor, placeLabels, sceneToPdf, sceneToSvg, textWidth, treeLayout, tukeyQuartiles, type FigureOptions } from './figure';
 
 const opt = (o: Partial<FigureOptions> = {}): FigureOptions => ({ ...DEFAULT_OPTIONS, ...o });
 const pts = Array.from({ length: 200 }, (_, i) => ({ x: Math.sin(i) * 3, y: (i % 17) + Math.cos(i), cat: i % 10 === 0 ? 1 : i % 10 === 5 ? 2 : 0, label: `GENE${i}` }));
@@ -223,5 +223,40 @@ describe('meta-analysis figures', () => {
       expect(() => parseXml(svg)).not.toThrow();
       expect(sceneToPdf(sc).startsWith('%PDF-1.4')).toBe(true);
     }
+  });
+});
+
+describe('plasmid map', () => {
+  const spec = {
+    name: 'pUC19', length: 2686,
+    features: [
+      { start: 1626, end: 2486, strand: -1 as const, label: 'AmpR', color: '#D55E00' },
+      { start: 146, end: 469, strand: -1 as const, label: 'lacZ-alpha', color: '#0072B2' },
+      { start: 400, end: 900, strand: 1 as const, label: 'Test feature', color: '#009E73' },
+    ],
+    sites: [{ pos: 396, label: 'EcoRI' }, { pos: 447, label: 'HindIII' }],
+  };
+
+  it('draws one arrow polygon per feature and puts the name and length in the centre', () => {
+    const sc = buildPlasmidMap(spec, opt({ widthMm: 130, heightMm: 110 }));
+    const polys = sc.items.filter((i) => i.k === 'poly');
+    // one backbone circle + one ribbon per feature
+    expect(polys).toHaveLength(spec.features.length + 1);
+    const texts = sc.items.filter((i) => i.k === 'text').map((i) => (i as { t: string }).t);
+    expect(texts.some((t) => t.includes('2,686 bp'))).toBe(true);
+    const svg = sceneToSvg(sc);
+    for (const f of spec.features) expect(svg).toContain(f.label);
+    expect(svg).toContain('EcoRI');
+  });
+
+  it('draws a feature that crosses the origin as one arc', () => {
+    const sc = buildPlasmidMap({ ...spec, features: [{ start: 2400, end: 3200, strand: 1 as const, label: 'Wrapping', color: '#CC79A7' }] }, opt());
+    const polys = sc.items.filter((i) => i.k === 'poly');
+    expect(polys).toHaveLength(2);
+    expect(sceneToSvg(sc)).toContain('Wrapping');
+  });
+
+  it('exports to PDF', () => {
+    expect(sceneToPdf(buildPlasmidMap(spec, opt())).startsWith('%PDF-1.4')).toBe(true);
   });
 });

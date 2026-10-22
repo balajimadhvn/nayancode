@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -358,5 +358,18 @@ test('statistics: meta-analysis demo pools the BCG trials and draws a forest plo
   await page.getByRole('button', { name: /Load demo \(two groups\)/ }).click();
   await page.getByRole('button', { name: 'Run tests' }).click();
   await expect(page.getByText('Welch t p')).toBeVisible({ timeout: 20_000 });
+  expect(errs).toEqual([]);
+});
+
+test('plasmid: pUC19 demo annotates AmpR and draws the circular map', async ({ page }) => {
+  const errs = watch(page); await page.goto('/plasmid');
+  await page.getByRole('button', { name: /Load pUC19 demo/ }).click();
+  await expect(page.getByText('2,686 bp').first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('AmpR').first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Restriction map' }).click();
+  await expect(page.getByText(/Fragments \(bp, largest first\)/)).toBeVisible();
+  await page.getByRole('tab', { name: 'Primers & checks' }).click();
+  await page.getByRole('button', { name: 'Find binding sites' }).click();
+  await expect(page.getByText('Binding sites').first()).toBeVisible({ timeout: 20_000 });
   expect(errs).toEqual([]);
 });

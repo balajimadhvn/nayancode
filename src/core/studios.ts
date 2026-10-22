@@ -128,6 +128,16 @@ export const STUDIOS: StudioDef[] = [
     cloudLater: '',
   },
   {
+    id: 'plasmid', path: '/plasmid', name: 'Plasmid Studio', short: 'Plasmid',
+    blurb: 'GenBank import, automatic annotation of standard elements, restriction mapping and a circular map figure.',
+    status: 'live', milestone: 'M1', accent: 20,
+    inputs: ['GenBank flat file', 'FASTA sequence'],
+    analyses: ['GenBank parse and write (join, complement, partial locations)', 'Library annotation of promoters, tags, origins and resistance genes', 'Restriction map and fragment sizes', 'Primer binding sites and Tm', 'Circular map figure (SVG/PDF/PNG)'],
+    engines: 'TypeScript kernels in a Web Worker',
+    limits: 'The built-in element library is small (13 elements); annotation is nucleotide identity, not a gene model',
+    cloudLater: '',
+  },
+  {
     id: 'stats', path: '/statistics', name: 'Statistics Studio', short: 'Statistics',
     blurb: 'Classical tests, effect sizes, multiple-testing correction and meta-analysis with forest and funnel plots.',
     status: 'live', milestone: 'M1', accent: 190,

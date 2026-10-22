@@ -640,3 +640,75 @@ export function buildFunnel(s: FunnelSpec, o: FigureOptions): Scene {
   s.yi.forEach((y, i) => { const r = Math.max(1, 2.2 - 1.2 * (s.se[i] / maxSe)); f.p.circle(f.sx(y), f.sy(s.se[i]), r, pickColor(o, OKABE[2], i, true), 0.9); });
   return f.p.scene(o.title);
 }
+
+// ---------------------------------------------------------------- plasmid map
+export interface PlasmidMapSpec {
+  name: string; length: number;
+  features: { start: number; end: number; strand: 1 | -1; label: string; color: string }[];
+  sites: { pos: number; label: string }[];
+}
+
+/**
+ * Circular plasmid map: 12 o'clock is position 1 and positions increase
+ * clockwise. Features are arrows (arrowhead in the strand direction) with a
+ * leader line to an outside label; unique restriction sites sit on an outer
+ * ring; the name and length are in the centre. A feature that crosses the
+ * origin is drawn as one arc.
+ */
+export function buildPlasmidMap(s: PlasmidMapSpec, o: FigureOptions): Scene {
+  const p = baseScene(o), fs = p.fs, th = p.th, n = Math.max(1, s.length);
+  const cx = p.w / 2, cy = p.h / 2 + (o.title ? fs : 0);
+  const R = Math.min(p.w, p.h) * 0.27, rIn = R - 3, rOut = R + 5, rMid = R + 1;
+  const angle = (pos: number) => -Math.PI / 2 + (2 * Math.PI * ((pos - 1) % n)) / n;
+  const at = (a: number, r: number): [number, number] => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  const arc = (a0: number, a1: number, r: number, segs: number) => {
+    const out: [number, number][] = [];
+    for (let i = 0; i <= segs; i++) out.push(at(a0 + ((a1 - a0) * i) / segs, r));
+    return out;
+  };
+  // backbone
+  p.poly(arc(-Math.PI / 2, -Math.PI / 2 + Math.PI * 2 - 1e-4, R, 180), { stroke: th.axis, sw: 0.8 });
+  // ticks every 500 bp
+  const step = n >= 5000 ? 1000 : n >= 1000 ? 500 : 100;
+  for (let pos = 0; pos < n; pos += step) {
+    const a = angle(pos + 1 === 1 ? 1 : pos + 1);
+    const [x1, y1] = at(a, R);
+    const [x2, y2] = at(a, R - 4);
+    p.line(x1, y1, x2, y2, th.dim, 0.6);
+    const [tx, ty] = at(a, R - 10);
+    p.text(tx, ty, pos === 0 ? '1' : String(pos.toLocaleString()), fs * 0.85, th.dim, Math.abs(Math.cos(a)) < 0.3 ? 'middle' : Math.cos(a) > 0 ? 'start' : 'end');
+  }
+  // features
+  s.features.forEach((f, i) => {
+    const endPos = f.end > n || f.end < f.start ? f.end + n : f.end;
+    const a0 = angle(f.start), swept = (2 * Math.PI * (endPos + 1 - f.start)) / n;
+    const a1 = a0 + (f.strand === 1 ? swept : -swept);
+    const lo = Math.min(a0, a1), hi = Math.max(a0, a1);
+    const segs = Math.max(4, Math.round(((hi - lo) / (2 * Math.PI)) * 180));
+    const from = f.strand === 1 ? a0 : a1, to = f.strand === 1 ? a1 : a0;
+    const outer = arc(from, to, rOut, segs);
+    const inner = arc(to, from, rIn, segs);
+    const tip = at(to, rMid);
+    const pts: [number, number][] = [...outer, tip, ...inner.slice(1)];
+    p.poly(pts, { fill: f.color, op: 0.85, close: true });
+    // leader + label outside
+    const mid = (a0 + a1) / 2;
+    const [lx1, ly1] = at(mid, rOut + 3);
+    const [lx2, ly2] = at(mid, rOut + 9);
+    p.line(lx1, ly1, lx2, ly2, th.dim, 0.4);
+    const [tx, ty] = at(mid, rOut + 12);
+    p.text(tx, ty, f.label, fs * 0.9, th.text, Math.cos(mid) > 0.15 ? 'start' : Math.cos(mid) < -0.15 ? 'end' : 'middle');
+    void i;
+  });
+  // unique sites as outer ticks
+  for (const site of s.sites) {
+    const a = angle(site.pos);
+    const [x1, y1] = at(a, rOut + 8);
+    const [x2, y2] = at(a, rOut + 17);
+    p.line(x1, y1, x2, y2, th.dim, 0.6);
+    const [tx, ty] = at(a, rOut + 20);
+    p.text(tx, ty, site.label, fs * 0.8, th.dim, Math.cos(a) > 0.15 ? 'start' : Math.cos(a) < -0.15 ? 'end' : 'middle');
+  }
+  p.text(cx, cy - fs * 0.1, `${s.name} (${n.toLocaleString()} bp)`, fs, th.text, 'middle', true, 0, 'centre-label');
+  return p.scene(o.title);
+}
