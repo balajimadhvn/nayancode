@@ -102,6 +102,16 @@ test('microbiome: UniFrac with the demo tree finds the treatment effect', async 
   expect(errs).toEqual([]);
 });
 
+test('genome: assembly demo builds contigs from simulated lambda reads', async ({ page }) => {
+  test.setTimeout(180_000);
+  const errs = watch(page); await page.goto('/genome');
+  await page.getByRole('tab', { name: 'Assembly', exact: true }).click();
+  await page.getByRole('button', { name: /Demo: 60× simulated phage lambda/ }).click();
+  await expect(page.getByText('N50')).toBeVisible({ timeout: 150_000 });
+  await expect(page.locator('.stat', { hasText: 'Contigs' }).first()).not.toContainText('0');
+  expect(errs).toEqual([]);
+});
+
 test('microbiome: reference screening of the lambda + T7 demo reports both phages', async ({ page }) => {
   test.setTimeout(180_000);
   const errs = watch(page); await page.goto('/microbiome');

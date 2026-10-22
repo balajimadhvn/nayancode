@@ -13,6 +13,7 @@ import type { GenomeKernels } from './genome.worker';
 import { GenomeViewer } from './GenomeViewer';
 import { MappingPanel, type Mapped } from './MappingPanel';
 import { CrisprOffTargetPanel, PrimerSpecificityPanel } from './SpecificityPanels';
+import AssemblyPanel from './AssemblyPanel';
 
 const remote = createRemote<GenomeKernels>(() => new Worker(new URL('./genome.worker.ts', import.meta.url), { type: 'module' }));
 const V = '0.1.0', E = 'TypeScript worker kernels';
@@ -24,7 +25,7 @@ const TOOLS = {
   cmp: T('genome.mash', 'MinHash genome comparison', (p) => `Whole-genome similarity was estimated with MinHash bottom-${p.size} sketches of canonical ${p.k}-mers and the Mash distance transform (Ondov et al. 2016); ANI ≈ 1 − Mash distance; trees by UPGMA`, ['ondov2016']),
   gff: T('genome.gff', 'GFF/GTF summary', () => 'Annotation features were tallied from GFF/GTF'),
 };
-type Tab = 'reads' | 'mapping' | 'browser' | 'primers' | 'crispr' | 'assembly' | 'intervals' | 'compare';
+type Tab = 'reads' | 'mapping' | 'browser' | 'primers' | 'crispr' | 'assemble' | 'assembly' | 'intervals' | 'compare';
 const N_FILTER = new Set(['A', 'C', 'G', 'T']);
 void N_FILTER;
 
@@ -36,8 +37,8 @@ export default function GenomeStudio() {
   return (
     <div className="stack" style={{ gap: 18 }}>
       <div className="page-head"><div><h1>Genome Studio</h1><p>Streaming read QC, mapping with real minimap2, samtools and bcftools (WebAssembly), SNV and indel calling, an igv.js genome viewer with bundled RefSeq genomes, primer specificity and CRISPR off-target search, assembly metrics, interval algebra and MinHash genome comparison. Everything runs in your browser.</p></div></div>
-      <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'reads', label: 'Read QC' }, { id: 'mapping', label: 'Mapping & variants' }, { id: 'browser', label: 'Genome viewer' }, { id: 'primers', label: 'Primer specificity' }, { id: 'crispr', label: 'CRISPR off-targets' }, { id: 'assembly', label: 'Assembly' }, { id: 'intervals', label: 'Intervals & annotation' }, { id: 'compare', label: 'Genome comparison' }]} />
-      {tab === 'reads' && <ReadQc />}<div hidden={tab !== 'mapping'}><MappingPanel onMapped={setMapped} onBrowse={() => setTab('browser')} /></div>{tab === 'browser' && <GenomeViewer mapped={mapped} />}{tab === 'primers' && <PrimerSpecificityPanel />}{tab === 'crispr' && <CrisprOffTargetPanel />}{tab === 'assembly' && <Assembly />}{tab === 'intervals' && <Intervals />}{tab === 'compare' && <Compare />}
+      <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'reads', label: 'Read QC' }, { id: 'mapping', label: 'Mapping & variants' }, { id: 'browser', label: 'Genome viewer' }, { id: 'primers', label: 'Primer specificity' }, { id: 'crispr', label: 'CRISPR off-targets' }, { id: 'assemble', label: 'Assembly' }, { id: 'assembly', label: 'Assembly stats' }, { id: 'intervals', label: 'Intervals & annotation' }, { id: 'compare', label: 'Genome comparison' }]} />
+      {tab === 'reads' && <ReadQc />}<div hidden={tab !== 'mapping'}><MappingPanel onMapped={setMapped} onBrowse={() => setTab('browser')} /></div>{tab === 'browser' && <GenomeViewer mapped={mapped} />}{tab === 'primers' && <PrimerSpecificityPanel />}{tab === 'crispr' && <CrisprOffTargetPanel />}{tab === 'assemble' && <AssemblyPanel />}{tab === 'assembly' && <Assembly />}{tab === 'intervals' && <Intervals />}{tab === 'compare' && <Compare />}
     </div>
   );
 }
