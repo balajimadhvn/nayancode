@@ -75,6 +75,7 @@ test('structure: 1HSG interaction profile reproduces Asp25 hydrogen bonds', asyn
 test('chemistry: worker processes the example library; QSAR tab renders', async ({ page }) => {
   const errs = watch(page); await page.goto('/chemistry'); await expect(page.getByRole('button', { name: /Load example/ })).toBeEnabled({ timeout: 40_000 });
   await page.getByRole('button', { name: /Load example/ }).click(); await expect(page.locator('.mol-card').first()).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('tab', { name: 'ADMET' }).click(); await expect(page.getByText('Per-compound predictions')).toBeVisible({ timeout: 15_000 }); await expect(page.getByText(/Lipinski pass/)).toBeVisible();
   await page.getByRole('tab', { name: 'QSAR Lab' }).click(); await expect(page.getByText('1 · Dataset')).toBeVisible();
   expect(errs).toEqual([]);
 });

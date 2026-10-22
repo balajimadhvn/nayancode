@@ -1,0 +1,28 @@
+{
+ "solubility": {
+  "rmse": 0.8552497188181672,
+  "r2": 0.8364359763701469,
+  "base_rmse": 2.1147013732183697,
+  "n": 1128,
+  "n_train": 902,
+  "n_test": 114,
+  "split": "Bemis\u2013Murcko scaffold, 80/10/10"
+ },
+ "lipophilicity": {
+  "rmse": 0.8660104703510033,
+  "r2": 0.38462071392652797,
+  "base_rmse": 1.1039558520351394,
+  "n": 4200,
+  "n_train": 3360,
+  "n_test": 420,
+  "split": "Bemis\u2013Murcko scaffold, 80/10/10"
+ },
+ "bbb": {
+  "auc": 0.7042723631508678,
+  "base_rate": 0.5219512195121951,
+  "n": 2039,
+  "n_train": 1631,
+  "n_test": 205,
+  "split": "Bemis\u2013Murcko scaffold, 80/10/10"
+ }
+}
