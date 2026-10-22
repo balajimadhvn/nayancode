@@ -214,6 +214,16 @@ test('variants: association testing recovers planted variants and draws Manhatta
   expect(errs).toEqual([]);
 });
 
+test('single-cell: two-batch demo integrates batches and scores planted doublets', async ({ page }) => {
+  test.setTimeout(180_000);
+  const errs = watch(page); await page.goto('/single-cell');
+  await page.getByRole('button', { name: /Run demo: 2 batches/ }).click();
+  await expect(page.getByText(/UMAP embedding/)).toBeVisible({ timeout: 150_000 });
+  await page.getByRole('tab', { name: 'QC' }).click(); await expect(page.getByText('Doublet scores')).toBeVisible(); await expect(page.getByText(/neighbourhood batch mixing/)).toBeVisible();
+  await page.getByRole('tab', { name: 'Embedding' }).click(); await page.locator('select').filter({ hasText: 'colour: batch' }).selectOption('batch'); await expect(page.locator('canvas').first()).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
 test('docking: 1HSG + indinavir demo docks with Vina in WebAssembly and reports RMSD to the crystal pose', async ({ page }) => {
   test.setTimeout(8 * 60_000);
   const errs = watch(page); await page.goto('/docking');

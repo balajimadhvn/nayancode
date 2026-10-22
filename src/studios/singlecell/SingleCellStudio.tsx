@@ -6,13 +6,13 @@ import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadTe
 import { useRunner } from '@/ui/useRunner';
 import { Histogram, Scatter, type Pt } from '@/viz/charts';
 import { catColors } from '@/viz/more';
-import { SC_DEFAULTS, syntheticPbmcLike, type ScParams, type ScResult } from './kernels';
+import { SC_DEFAULTS, syntheticBatchDemo, syntheticPbmcLike, type ScParams, type ScResult } from './kernels';
 import type { ScKernels } from './singlecell.worker';
 
 const remote = createRemote<ScKernels>(() => new Worker(new URL('./singlecell.worker.ts', import.meta.url), { type: 'module' }));
-const ENGINE = 'TypeScript worker kernels (randomized PCA, SNN-Louvain, exact t-SNE)';
+const ENGINE = 'TypeScript worker kernels (randomized PCA, NN-descent kNN, SNN-Louvain, Harmony-style integration, Scrublet-style doublets, UMAP / t-SNE)';
 const TOOLS = {
-  run: { id: 'singlecell.pipeline', name: 'Single-cell RNA-seq pipeline', version: '0.1.0', engine: ENGINE, citations: ['butler2015', 'blondel2008', 'vandermaaten2008', 'mcinnes2018', 'halko2011'], describe: (p) => `Cells were filtered (≥${p.minGenes} genes, ≤${p.maxPctMito}% mitochondrial counts), counts were log-normalised to 10,000 per cell, ${p.nHvg} highly variable genes were selected (Seurat-style binned dispersion) and scaled, PCA used a randomized SVD (${p.nPcs} components), a shared-nearest-neighbour graph (k = ${p.k}) was clustered with the Louvain algorithm (resolution ${p.resolution}), and cells were embedded by ${p.embedMethod === 'tsne' ? 't-SNE (perplexity 30)' : `UMAP (${p.k} neighbours, min_dist 0.1)`}; markers were ranked by Welch t-test (BH-adjusted)` } as ToolInfo,
+  run: { id: 'singlecell.pipeline', name: 'Single-cell RNA-seq pipeline', version: '0.1.0', engine: ENGINE, citations: ['butler2015', 'blondel2008', 'vandermaaten2008', 'mcinnes2018', 'halko2011', 'dong2011', 'korsunsky2019', 'wolock2019'], describe: (p) => `Cells were filtered (≥${p.minGenes} genes, ≤${p.maxPctMito}% mitochondrial counts), counts were log-normalised to 10,000 per cell, ${p.nHvg} highly variable genes were selected (Seurat-style binned dispersion) and scaled, PCA used a randomized SVD (${p.nPcs} components), a shared-nearest-neighbour graph (k = ${p.k}) was clustered with the Louvain algorithm (resolution ${p.resolution}), and cells were embedded by ${p.embedMethod === 'tsne' ? 't-SNE (perplexity 30)' : `UMAP (${p.k} neighbours, min_dist 0.1)`}; markers were ranked by Welch t-test (BH-adjusted)` } as ToolInfo,
   spatial: { id: 'singlecell.spatial', name: 'Spatial autocorrelation (Moran I)', version: '0.1.0', engine: ENGINE, citations: ['moran1950'], describe: () => "Spatially variable genes were ranked by Moran's I on a 6-nearest-neighbour spatial graph, with permutation p-values (199 permutations) for the top genes" } as ToolInfo,
 };
 type Tab = 'qc' | 'embed' | 'clusters' | 'spatial';
@@ -22,12 +22,13 @@ export default function SingleCellStudio() {
   const [src, setSrc] = useState<{ dense?: string; mtx?: string; features?: string; barcodes?: string; label: string } | null>(null);
   const [coordsText, setCoordsText] = useState('');
   const [p, setP] = useState<ScParams>(SC_DEFAULTS); const [res, setRes] = useState<ScResult | null>(null); const [tab, setTab] = useState<Tab>('embed');
-  const [truth, setTruth] = useState<string[] | null>(null);
+  const [truth, setTruth] = useState<string[] | null>(null), [batches, setBatches] = useState('');
   const { run, busy, progress, note, error, cancel } = useRunner();
   const hand = useHandoff((s) => s.sc);
   useEffect(() => { if (hand) { setSrc({ mtx: hand.mtx, features: hand.features, barcodes: hand.barcodes, label: hand.label }); setTruth(null); setRes(null); clearHandoffSoon('sc'); } }, [hand]);
-  const go = (s = src) => s && void run({ label: `scRNA-seq · ${s.label}`, tool: TOOLS.run, params: { ...p }, inputs: [{ name: s.label, data: (s.dense ?? s.mtx ?? '').slice(0, 2_000_000) }], run: (h) => remote.run({ dense: s.dense, mtx: s.mtx, features: s.features, barcodes: s.barcodes, params: p }, h) }).then((r) => { if (r) { setRes(r); setTab('embed'); } });
+  const go = (s = src) => s && void run({ label: `scRNA-seq · ${s.label}`, tool: TOOLS.run, params: { ...p }, inputs: [{ name: s.label, data: (s.dense ?? s.mtx ?? '').slice(0, 2_000_000) }], run: (h) => remote.run({ dense: s.dense, mtx: s.mtx, features: s.features, barcodes: s.barcodes, batches: batches || undefined, params: p }, h) }).then((r) => { if (r) { setRes(r); setTab('embed'); } });
   const demo = () => { const d = syntheticPbmcLike(12, 900, 1500); const s = { dense: d.counts, label: 'synthetic_pbmc_like', features: undefined, barcodes: undefined, mtx: undefined }; setSrc(s); setCoordsText(d.coords); setTruth(d.truth); const pp = { ...p, minGenes: 50, nHvg: 500 }; setP(pp); void run({ label: 'scRNA-seq · synthetic demo', tool: TOOLS.run, params: { ...pp }, inputs: [{ name: 'demo', data: d.counts.slice(0, 200000) }], run: (h) => remote.run({ dense: d.counts, params: pp }, h) }).then((r) => { if (r) { setRes(r); setTab('embed'); } }); };
+  const demoBatch = () => { const d = syntheticBatchDemo(12); const s = { dense: d.counts, label: 'synthetic_two_batches', features: undefined, barcodes: undefined, mtx: undefined }; setSrc(s); setCoordsText(''); setTruth(null); setBatches(d.batches); const pp = { ...p, minGenes: 50, nHvg: 500, integrate: true, doublets: true }; setP(pp); void run({ label: 'scRNA-seq · two-batch demo', tool: TOOLS.run, params: { ...pp }, inputs: [{ name: 'demo', data: d.counts.slice(0, 200000) }], run: (h) => remote.run({ dense: d.counts, batches: d.batches, params: pp }, h) }).then((r) => { if (r) { setRes(r); setTab('embed'); } }); };
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return; const arr = [...files]; const byName = (re: RegExp) => arr.find((f) => re.test(f.name.toLowerCase()));
     const mtx = byName(/matrix\.mtx/), feat = byName(/(features|genes)\.tsv/), bc = byName(/barcodes\.tsv/);
@@ -42,22 +43,28 @@ export default function SingleCellStudio() {
           <div className="stack" style={{ gap: 10 }}>
             <label className="dropzone"><input type="file" multiple hidden onChange={(e) => void onFiles(e.target.files)} />{src ? `Loaded: ${src.label}` : 'Choose a genes × cells CSV/TSV, or the three 10x files'}<div className="faint" style={{ fontSize: 11.5, marginTop: 3 }}>10x: select matrix.mtx + features.tsv + barcodes.tsv together (uncompressed). Never uploaded.</div></label>
             <FileDrop accept=".csv,.tsv,.txt" onText={(t) => setCoordsText(t)} label={coordsText ? 'Spatial coordinates loaded' : 'Optional: spatial coordinates (barcode,x,y)'} />
+            <FileDrop accept=".csv,.tsv,.txt" onText={(t) => setBatches(t)} label={batches ? 'Batch labels loaded' : 'Optional: batch labels (barcode,batch)'} />
             <button className="btn" disabled={busy} onClick={demo}>Run synthetic PBMC-like demo (900 cells)</button>
+            <button className="btn" disabled={busy} onClick={demoBatch}>Run demo: 2 batches + planted doublets</button>
           </div>
         </Card>
         <Card title="2 · Parameters">
           <div className="cols-2" style={{ gap: 8 }}>
             {([['minGenes', 'Min genes / cell'], ['maxPctMito', 'Max % mito'], ['nHvg', 'HVGs'], ['nPcs', 'PCs'], ['k', 'Neighbours k'], ['resolution', 'Louvain resolution']] as const).map(([key, label]) => <Field key={key} label={label}><input className="input" type="number" step={key === 'resolution' ? 0.1 : 1} value={p[key]} onChange={(e) => setP({ ...p, [key]: +e.target.value })} /></Field>)}
+          <label className="row" style={{ gap: 6 }}><input type="checkbox" checked={p.integrate} onChange={(e) => setP({ ...p, integrate: e.target.checked })} />Integrate batches (Harmony-style)</label>
+          <label className="row" style={{ gap: 6 }}><input type="checkbox" checked={p.doublets} onChange={(e) => setP({ ...p, doublets: e.target.checked })} />Score doublets (Scrublet-style)</label>
           <Field label="Embedding"><select className="select" value={p.embedMethod} onChange={(e) => setP({ ...p, embedMethod: e.target.value as ScParams['embedMethod'] })}><option value="umap">UMAP</option><option value="tsne">t-SNE</option></select></Field>
           </div>
           <div className="row" style={{ marginTop: 12 }}><button className="btn primary" disabled={!src || busy} onClick={() => go()}>Run pipeline</button>{busy && <button className="btn" onClick={cancel}>Cancel</button>}</div>
           {busy && <div style={{ marginTop: 10 }}><Busy progress={progress} note={note} /></div>}{error && <div style={{ marginTop: 10 }}><Callout kind="err">{error}</Callout></div>}
         </Card>
-        <Callout>Browser budget: ~20k cells comfortably (memory-bound, sparse storage). The embedding covers up to {p.embedCap.toLocaleString()} cells (random subset above that; clustering uses all). Atlas-scale data belongs on a GPU backend.</Callout>
+        <Callout>Browser budget: about 20k cells (memory-bound, sparse storage). Above {p.approxAbove.toLocaleString()} cells neighbours are found approximately (NN-descent). The embedding covers up to {p.embedCap.toLocaleString()} cells (random subset above that; clustering uses all). Atlas-scale data belongs on a GPU backend.</Callout>
       </div>
       <div className="stack">{!res ? <Card><div className="faint" style={{ padding: '36px 6px', textAlign: 'center' }}>Load a matrix or run the demo.</div></Card> : <>
         <div className="cols-4"><Stat label="Cells kept" value={`${res.nCellsKept.toLocaleString()} / ${res.nCellsIn.toLocaleString()}`} /><Stat label="Genes used" value={res.nGenesKept.toLocaleString()} /><Stat label="Clusters" value={res.nClusters} /><Stat label="PC1–PC2 var." value={`${fmt((res.varExplained[0] + (res.varExplained[1] ?? 0)) * 100, 1)}%`} /></div>
         <Tabs<Tab> value={tab} onChange={setTab} items={[{ id: 'embed', label: 'Embedding' }, { id: 'clusters', label: 'Clusters & markers' }, { id: 'qc', label: 'QC' }, { id: 'spatial', label: 'Spatial' }]} />
+        {tab === 'qc' && res.doublet && <Card title="Doublet scores" sub={`${res.doublet.predicted} of ${res.nCellsKept.toLocaleString()} cells at or above ${res.doublet.threshold.toFixed(2)} (expected rate ${(res.doublet.expectedRate * 100).toFixed(0)} %, ${res.doublet.simulated.toLocaleString()} simulated doublets)`}><Histogram values={res.doublet.score} label="doublet score" bins={40} marker={res.doublet.threshold} color="--chart-b" /></Card>}
+        {tab === 'qc' && res.integration && <Callout>Batch integration ({res.integration.batches.join(', ')}): neighbourhood batch mixing (iLISI) rose from {fmt(res.integration.before, 2)} to {fmt(res.integration.after, 2)} (perfect mixing = {res.integration.batches.length}) in {res.integration.iterations} Harmony iterations{res.integration.converged ? '' : ' (not fully converged)'}. Clustering and the embedding use the corrected PCs.</Callout>}
         {tab === 'qc' && <div className="cols-3"><Card title="Counts per cell"><Histogram values={res.qc.nCounts.map((v) => Math.log10(v + 1))} label="log10 total counts" /></Card><Card title="Genes per cell"><Histogram values={res.qc.nGenes} label="genes detected" color="--chart-c" /></Card><Card title="% mitochondrial">{res.hasMito ? <Histogram values={res.qc.pctMito} label="% mito counts" color="--chart-b" /> : <div className="faint">No genes named MT-*. Mito filtering skipped.</div>}</Card></div>}
         {tab === 'embed' && <Embed res={res} truth={truth} />}
         {tab === 'clusters' && <Clusters res={res} />}
@@ -68,16 +75,18 @@ export default function SingleCellStudio() {
 }
 
 function Embed({ res, truth }: { res: ScResult; truth: string[] | null }) {
-  const [by, setBy] = useState<'cluster' | 'annotation' | 'gene'>('cluster'), genes = [...res.expr.keys()].sort(), [gene, setGene] = useState(genes.find((g) => ['CD3D', 'MS4A1', 'NKG7', 'LYZ'].includes(g)) ?? genes[0] ?? '');
+  const [by, setBy] = useState<'cluster' | 'annotation' | 'gene' | 'batch' | 'doublet'>('cluster'), genes = [...res.expr.keys()].sort(), [gene, setGene] = useState(genes.find((g) => ['CD3D', 'MS4A1', 'NKG7', 'LYZ'].includes(g)) ?? genes[0] ?? '');
   const labels = res.annotation.map((a) => `${a.cluster} · ${a.label}`), colors = catColors(res.nClusters);
   const { pts, cols, names } = useMemo(() => {
     const idx = res.embedIdx;
+    if (by === 'batch' && res.integration) { const I = res.integration; return { pts: res.embedIdx.map((i, k): Pt => ({ x: res.embed[k][0], y: res.embed[k][1], cat: I.cellBatch[i], label: `${res.cells[i]} · ${I.batches[I.cellBatch[i]]}` })), cols: colors, names: I.batches }; }
+    if (by === 'doublet' && res.doublet) { const D = res.doublet; return { pts: res.embedIdx.map((i, k): Pt => ({ x: res.embed[k][0], y: res.embed[k][1], cat: D.score[i] >= D.threshold ? 1 : 0, label: `${res.cells[i]} · doublet score ${D.score[i].toFixed(2)}` })), cols: [colors[0], '#e5484d'], names: ['singlet', 'predicted doublet'] }; }
     if (by === 'gene') { const e = res.expr.get(gene); const mx = e ? Math.max(...e) || 1 : 1; return { pts: idx.map((i, k): Pt => ({ x: res.embed[k][0], y: res.embed[k][1], cat: e && e[i] > 0 ? 1 + Math.min(6, Math.floor((e[i] / mx) * 6.999)) : 0, label: `${res.cells[i]} · ${gene} ${e ? e[i].toFixed(2) : 0}` })), cols: RAMP, names: undefined as string[] | undefined }; }
     return { pts: idx.map((i, k): Pt => ({ x: res.embed[k][0], y: res.embed[k][1], cat: res.clusters[i], label: `${res.cells[i]} · cluster ${res.clusters[i]}${by === 'annotation' ? ` (${res.annotation[res.clusters[i]].label})` : ''}` })), cols: colors, names: by === 'annotation' ? labels : Array.from({ length: res.nClusters }, (_, c) => `cluster ${c}`) };
   }, [res, by, gene, colors, labels]);
   const purity = truth ? (() => { const lab = new Map(res.annotation.map((a) => [a.cluster, a.label])); const ok = res.kept.filter((c, i) => lab.get(res.clusters[i]) === truth[c]).length; return ok / res.kept.length; })() : null;
   return (
-    <Card title={`${res.embedMethod === 'tsne' ? 't-SNE' : 'UMAP'} embedding`} sub={res.embedIdx.length < res.nCellsKept ? `${res.embedIdx.length.toLocaleString()} of ${res.nCellsKept.toLocaleString()} cells shown` : `${res.nCellsKept.toLocaleString()} cells`} actions={<><select className="select" style={{ width: 130 }} value={by} onChange={(e) => setBy(e.target.value as typeof by)}><option value="cluster">colour: cluster</option><option value="annotation">colour: annotation</option><option value="gene">colour: gene</option></select>{by === 'gene' && <select className="select" style={{ width: 130 }} value={gene} onChange={(e) => setGene(e.target.value)}>{genes.map((g) => <option key={g}>{g}</option>)}</select>}</>}>
+    <Card title={`${res.embedMethod === 'tsne' ? 't-SNE' : 'UMAP'} embedding`} sub={res.embedIdx.length < res.nCellsKept ? `${res.embedIdx.length.toLocaleString()} of ${res.nCellsKept.toLocaleString()} cells shown` : `${res.nCellsKept.toLocaleString()} cells`} actions={<><select className="select" style={{ width: 130 }} value={by} onChange={(e) => setBy(e.target.value as typeof by)}><option value="cluster">colour: cluster</option><option value="annotation">colour: annotation</option><option value="gene">colour: gene</option>{res.integration && <option value="batch">colour: batch</option>}{res.doublet && <option value="doublet">colour: doublets</option>}</select>{by === 'gene' && <select className="select" style={{ width: 130 }} value={gene} onChange={(e) => setGene(e.target.value)}>{genes.map((g) => <option key={g}>{g}</option>)}</select>}</>}>
       <Scatter points={pts} colors={cols} names={names} xLabel={`${res.embedMethod === 'tsne' ? 't-SNE' : 'UMAP'} 1`} yLabel={`${res.embedMethod === 'tsne' ? 't-SNE' : 'UMAP'} 2`} height={470} radius={2.8} />
       {purity !== null && <Callout>Synthetic data: marker-panel annotation matches the planted cell type for <b style={{ color: 'var(--text)' }}>{fmt(purity * 100, 1)}%</b> of cells.</Callout>}
     </Card>

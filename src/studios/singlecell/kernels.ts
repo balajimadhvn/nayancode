@@ -2,6 +2,7 @@
 import { bh, jacobiEigen, tTwoSided } from '../expression/kernels';
 import { umap } from './umap';
 
+import { batchMixing, doubletScores, harmony, knnApprox } from './scale';
 export interface Sparse { genes: string[]; cells: string[]; indptr: Uint32Array; indices: Uint32Array; data: Float32Array } // CSC: columns = cells
 
 const rngf = (seed: number) => { let s = seed >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); };
@@ -40,8 +41,8 @@ export function parseMtx(mtx: string, features: string, barcodes: string): Spars
   return fromTriplets(genes, cells, ti, tj, tv);
 }
 
-export interface ScParams { minGenes: number; maxPctMito: number; minCellsPerGene: number; nHvg: number; nPcs: number; k: number; resolution: number; embedCap: number; seed: number; embedMethod: 'umap' | 'tsne' }
-export const SC_DEFAULTS: ScParams = { minGenes: 200, maxPctMito: 20, minCellsPerGene: 3, nHvg: 2000, nPcs: 20, k: 15, resolution: 0.8, embedCap: 3000, seed: 1, embedMethod: 'umap' };
+export interface ScParams { minGenes: number; maxPctMito: number; minCellsPerGene: number; nHvg: number; nPcs: number; k: number; resolution: number; embedCap: number; seed: number; embedMethod: 'umap' | 'tsne'; /** Harmony-style batch correction of the PCs (needs batch labels) */ integrate: boolean; /** Scrublet-style doublet scores */ doublets: boolean; /** use approximate NN-descent neighbours above this many cells */ approxAbove: number }
+export const SC_DEFAULTS: ScParams = { minGenes: 200, maxPctMito: 20, minCellsPerGene: 3, nHvg: 2000, nPcs: 20, k: 15, resolution: 0.8, embedCap: 6000, seed: 1, embedMethod: 'umap', integrate: false, doublets: false, approxAbove: 4000 };
 
 export interface ScResult {
   nCellsIn: number; nCellsKept: number; nGenesIn: number; nGenesKept: number; hasMito: boolean;
@@ -51,6 +52,9 @@ export interface ScResult {
   markers: { cluster: number; gene: string; log2fc: number; pctIn: number; pctOut: number; t: number; fdr: number }[];
   annotation: { cluster: number; label: string; score: number; margin: number; n: number }[];
   expr: Map<string, Float32Array>; // log-normalised expression of every marker + panel gene (kept cells order)
+  doublet?: { score: number[]; threshold: number; predicted: number; expectedRate: number; simulated: number };
+  integration?: { batches: string[]; cellBatch: number[]; before: number; after: number; iterations: number; converged: boolean };
+  approxKnn: boolean;
 }
 
 export const MARKER_PANEL: Record<string, string[]> = {
@@ -59,7 +63,7 @@ export const MARKER_PANEL: Record<string, string[]> = {
   'Dendritic cells': ['FCER1A', 'CST3', 'CLEC10A'], Platelets: ['PPBP', 'PF4', 'GNG11'],
 };
 
-export function runSingleCell(m: Sparse, p: ScParams, progress: (f: number, note: string) => void): ScResult {
+export function runSingleCell(m: Sparse, p: ScParams, progress: (f: number, note: string) => void, batchAll?: string[]): ScResult {
   const nG = m.genes.length, nC = m.cells.length;
   // --- QC ---
   progress(0.02, 'QC');
@@ -91,7 +95,8 @@ export function runSingleCell(m: Sparse, p: ScParams, progress: (f: number, note
   const gi = new Int32Array(nG).fill(-1); hvg.forEach((g, i) => (gi[g] = i));
   const X = new Float32Array(n * nH);
   kept.forEach((c, r) => { for (let k = m.indptr[c]; k < m.indptr[c + 1]; k++) { const j = gi[m.indices[k]]; if (j >= 0) X[r * nH + j] = norm[k]; } });
-  for (let j = 0; j < nH; j++) { const g = hvg[j], mean = sum[g] / n, sd = Math.sqrt(Math.max(1e-12, (sum2[g] - n * mean * mean) / (n - 1))); for (let r = 0; r < n; r++) { const v = (X[r * nH + j] - mean) / sd; X[r * nH + j] = Math.min(10, v); /* upper side only, as Scanpy */ } }
+  const hvgMean = new Float64Array(nH), hvgSd = new Float64Array(nH);
+  for (let j = 0; j < nH; j++) { const g = hvg[j], mean = sum[g] / n, sd = Math.sqrt(Math.max(1e-12, (sum2[g] - n * mean * mean) / (n - 1))); hvgMean[j] = mean; hvgSd[j] = sd; for (let r = 0; r < n; r++) { const v = (X[r * nH + j] - mean) / sd; X[r * nH + j] = Math.min(10, v); /* upper side only, as Scanpy */ } }
   // --- randomized PCA ---
   progress(0.25, 'PCA');
   const kPc = Math.min(p.nPcs, nH - 1, n - 1), l = Math.min(kPc + 20, nH, n), rnd = rngf(p.seed);
@@ -106,10 +111,35 @@ export function runSingleCell(m: Sparse, p: ScParams, progress: (f: number, note
   const pcs: number[][] = Array.from({ length: n }, () => new Array(kPc).fill(0));
   ord.forEach(([lam, idx], c) => { const sigma = Math.sqrt(Math.max(0, lam)); for (let r = 0; r < n; r++) { let s = 0; for (let a = 0; a < l; a++) s += Q[a][r] * vectors[a][idx]; pcs[r][c] = s * sigma; } });
   const varExplained = ord.map(([lam]) => Math.max(0, lam) / (n - 1) / nH);
+  // Gene loadings V = Bᵀ U Σ⁻¹ (needed to project simulated doublets into the same PCA space)
+  const loadings = p.doublets ? Array.from({ length: nH }, (_, j) => { const row = new Float64Array(kPc); ord.forEach(([lam, idx], c) => { const sigma = Math.sqrt(Math.max(1e-12, lam)); let sm = 0; for (let a = 0; a < l; a++) sm += Bt[a][j] * vectors[a][idx]; row[c] = sm / sigma; }); return row; }) : null;
+  // --- doublets (Scrublet-style): simulate doublets from random cell pairs, project, count simulated neighbours ---
+  let doublet: ScResult['doublet'];
+  if (loadings) {
+    progress(0.33, 'Doublet simulation');
+    const rd = rngf(p.seed + 7), nSim = Math.min(2 * n, 20000), sim: number[][] = [], acc = new Float64Array(nH);
+    for (let s = 0; s < nSim; s++) {
+      const ia = Math.floor(rd() * n); let ib = Math.floor(rd() * n); if (ib === ia) ib = (ia + 1) % n; const a = kept[ia], b = kept[ib];
+      acc.fill(0); for (const c of [a, b]) for (let k = m.indptr[c]; k < m.indptr[c + 1]; k++) { const j = gi[m.indices[k]]; if (j >= 0) acc[j] += m.data[k]; }
+      const f = 1e4 / ((libSize[a] + libSize[b]) || 1), pc = new Array(kPc).fill(0);
+      for (let j = 0; j < nH; j++) { const z = Math.min(10, ((acc[j] ? Math.log1p(acc[j] * f) : 0) - hvgMean[j]) / hvgSd[j]); for (let c = 0; c < kPc; c++) pc[c] += z * loadings[j][c]; }
+      sim.push(pc);
+    }
+    const d = doubletScores(pcs, sim, 0.06, p.seed); doublet = { ...d, simulated: nSim };
+  }
+  // --- batch integration (Harmony-style) on the PCs ---
+  let integration: ScResult['integration'];
+  if (p.integrate && batchAll) {
+    const names = [...new Set(kept.map((c) => batchAll[c]))].sort(); if (names.length >= 2) {
+      progress(0.36, 'Batch integration'); const bi = kept.map((c) => names.indexOf(batchAll[c])), before = batchMixing(pcs, bi, 30), hr = harmony(pcs, bi, { seed: p.seed }, (f) => progress(0.36 + 0.03 * f, 'Batch integration'));
+      for (let i = 0; i < n; i++) pcs[i] = hr.Z[i]; integration = { batches: names, cellBatch: bi, before, after: batchMixing(pcs, bi, 30), iterations: hr.iterations, converged: hr.converged };
+    }
+  }
   // --- kNN + SNN ---
   progress(0.4, 'Neighbour graph');
-  const K = Math.min(p.k, n - 1), nn: Int32Array[] = [];
-  for (let i = 0; i < n; i++) { const d = new Float64Array(n); const pi = pcs[i]; for (let j = 0; j < n; j++) { let s = 0; const pj = pcs[j]; for (let c = 0; c < kPc; c++) { const t = pi[c] - pj[c]; s += t * t; } d[j] = s; } d[i] = Infinity; const idx = Int32Array.from({ length: n }, (_, j) => j); const part = Array.from(idx).sort((a, b) => d[a] - d[b]).slice(0, K); nn.push(Int32Array.from(part)); if (i % 200 === 0) progress(0.4 + 0.1 * (i / n), 'Neighbour graph'); }
+  const K = Math.min(p.k, n - 1), nn: Int32Array[] = [], approxKnn = n > p.approxAbove;
+  if (approxKnn) { const A = knnApprox(pcs.map((r) => r.slice(0, kPc)), K, p.seed); for (let i = 0; i < n; i++) nn.push(A.idx.slice(i * K, (i + 1) * K)); progress(0.5, 'Neighbour graph'); }
+  else for (let i = 0; i < n; i++) { const d = new Float64Array(n); const pi = pcs[i]; for (let j = 0; j < n; j++) { let s = 0; const pj = pcs[j]; for (let c = 0; c < kPc; c++) { const t = pi[c] - pj[c]; s += t * t; } d[j] = s; } d[i] = Infinity; const idx = Int32Array.from({ length: n }, (_, j) => j); const part = Array.from(idx).sort((a, b) => d[a] - d[b]).slice(0, K); nn.push(Int32Array.from(part)); if (i % 200 === 0) progress(0.4 + 0.1 * (i / n), 'Neighbour graph'); }
   const sets = nn.map((a, i) => new Set([i, ...a])); const edges2 = new Map<number, number>(); const adj: Map<number, number>[] = Array.from({ length: n }, () => new Map());
   for (let i = 0; i < n; i++) for (const j of nn[i]) { const key = i < j ? i * n + j : j * n + i; if (edges2.has(key)) continue; let inter = 0; for (const x of sets[i]) if (sets[j].has(x)) inter++; const w = inter / (sets[i].size + sets[j].size - inter); if (w >= 1 / 15) { edges2.set(key, w); adj[i].set(j, w); adj[j].set(i, w); } }
   // --- Louvain ---
@@ -144,7 +174,7 @@ export function runSingleCell(m: Sparse, p: ScParams, progress: (f: number, note
   const expr = new Map<string, Float32Array>(); for (const g of want) expr.set(m.genes[g], new Float32Array(n));
   const gw = new Map([...want].map((g) => [g, m.genes[g]])); kept.forEach((c, r) => { for (let k = m.indptr[c]; k < m.indptr[c + 1]; k++) { const nm = gw.get(m.indices[k]); if (nm) expr.get(nm)![r] = norm[k]; } });
   progress(1, 'Done');
-  return { embedMethod: p.embedMethod, nCellsIn: nC, nCellsKept: n, nGenesIn: nG, nGenesKept: cand.length, hasMito, cells: kept.map((c) => m.cells[c]), qc: { nCounts: Array.from(nCounts), nGenes: Array.from(nGenesDet), pctMito: Array.from(pctMito) }, hvg: hvg.map((g) => m.genes[g]), varExplained, pcs, clusters, nClusters, embedIdx, embed, kept, markers, annotation, expr };
+  return { embedMethod: p.embedMethod, nCellsIn: nC, nCellsKept: n, nGenesIn: nG, nGenesKept: cand.length, hasMito, cells: kept.map((c) => m.cells[c]), qc: { nCounts: Array.from(nCounts), nGenes: Array.from(nGenesDet), pctMito: Array.from(pctMito) }, hvg: hvg.map((g) => m.genes[g]), varExplained, pcs, clusters, nClusters, embedIdx, embed, kept, markers, annotation, expr, doublet, integration, approxKnn };
 }
 
 // ---------------- Louvain (Blondel et al. 2008) ----------------
@@ -224,4 +254,24 @@ export function syntheticPbmcLike(seed = 12, nCells = 900, nGenes = 1500): { cou
     genes.forEach((g, gi) => { let mu = base[gi] * depth; const mi = mk.findIndex((a) => a.includes(g)); if (mi >= 0) mu = mi === t ? 6 * depth : 0.08 * depth; if (g.startsWith('MT-')) mu = 2 * depth; rows[gi].push(pois(mu)); });
   }
   return { counts: 'gene,' + cells.join(',') + '\n' + genes.map((g, i) => g + ',' + rows[i].join(',')).join('\n'), coords: xy.join('\n'), truth };
+}
+
+/** Barcode → batch table (CSV/TSV, header optional). Cells missing from the table are an error, so that a typo cannot silently drop a batch. */
+export function parseBatches(text: string, cells: string[]): string[] {
+  const map = new Map<string, string>();
+  for (const l of text.split(/\r?\n/)) { const f = l.split(/[,\t]/).map((x) => x.trim().replace(/^"|"$/g, '')); if (f.length >= 2 && f[0]) map.set(f[0], f[1]); }
+  const out = cells.map((c) => map.get(c)); const miss = out.filter((x) => x === undefined).length;
+  if (miss) throw new Error(`${miss} of ${cells.length} cells have no batch label. The first column must hold the barcodes used in the matrix.`);
+  return out as string[];
+}
+/** Demo: the synthetic PBMC-like data split into two batches with gene-specific scaling, plus planted doublets (appended, named DBL*). */
+export function syntheticBatchDemo(seed = 12): { counts: string; batches: string; truth: string[]; nDoublets: number } {
+  const d = syntheticPbmcLike(seed, 900, 1500), m = parseDenseMatrix(d.counts), nG = m.genes.length, nC = m.cells.length, r = rngf(seed + 5);
+  const dense = Array.from({ length: nG }, () => new Float64Array(nC));
+  for (let c = 0; c < nC; c++) for (let k = m.indptr[c]; k < m.indptr[c + 1]; k++) dense[m.indices[k]][c] = m.data[k];
+  const f = Float64Array.from({ length: nG }, () => (r() < 0.4 ? Math.exp(gaussf(r) * 0.6) : 1)), batch = Array.from({ length: nC }, (_, c) => (c % 2 ? 'batch2' : 'batch1'));
+  for (let c = 0; c < nC; c++) if (c % 2) for (let g = 0; g < nG; g++) dense[g][c] = Math.round(dense[g][c] * f[g]);
+  const cells = [...m.cells], cols: Float64Array[] = [], truth = [...d.truth];
+  for (let t = 0; t < 54; t++) { const a = Math.floor(r() * nC), b = Math.floor(r() * nC); if (batch[a] !== batch[b]) continue; cols.push(Float64Array.from({ length: nG }, (_, g) => dense[g][a] + dense[g][b])); cells.push(`DBL${t}`); batch.push(batch[a]); truth.push('doublet'); }
+  return { counts: ['gene,' + cells.join(','), ...m.genes.map((g, i) => `${g},${[...dense[i], ...cols.map((c) => c[i])].join(',')}`)].join('\n'), batches: ['barcode,batch', ...cells.map((c, i) => `${c},${batch[i]}`)].join('\n'), truth, nDoublets: cols.length };
 }

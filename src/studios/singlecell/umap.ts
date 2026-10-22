@@ -1,4 +1,5 @@
 /** UMAP (McInnes, Healy & Melville 2018), clean-room TypeScript: exact kNN, fuzzy simplicial set, a/b curve fit, SGD layout with negative sampling. */
+import { knnApprox } from './scale';
 export interface UmapOpts { nNeighbors?: number; minDist?: number; spread?: number; epochs?: number; negativeRate?: number; seed?: number }
 
 const rngf = (seed: number) => { let s = seed >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); };
@@ -64,7 +65,7 @@ export function umap(X: number[][], opts: UmapOpts = {}, progress?: (f: number) 
   const k = Math.min(opts.nNeighbors ?? 15, n - 1), minDist = opts.minDist ?? 0.1, spread = opts.spread ?? 1, neg = opts.negativeRate ?? 5;
   const epochs = opts.epochs ?? (n <= 10000 ? 500 : 200), rnd = rngf(opts.seed ?? 1);
   const { a, b } = fitAB(minDist, spread);
-  const { idx, dist } = knn(X, k); progress?.(0.2);
+  const { idx, dist } = X.length > 4000 ? knnApprox(X, k, opts.seed ?? 1) : knn(X, k); progress?.(0.2);
   const g = fuzzyGraph(idx, dist, n, k), E = g.w.length;
   // init: first two input dimensions scaled to [0,10] with a little jitter (inputs are PCA scores)
   const Y = new Float64Array(n * 2);
