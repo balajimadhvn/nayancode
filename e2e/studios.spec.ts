@@ -90,6 +90,15 @@ test('figures: a phylogenetic tree exports to SVG with its tip labels', async ({
   expect(errs).toEqual([]);
 });
 
+test('sequence: protein language model tab opens with warning and load button', async ({ page }) => {
+  const errs = watch(page); await page.goto('/sequence');
+  await page.getByRole('button', { name: 'Demo proteins' }).click();
+  await page.getByRole('tab', { name: 'Protein language model' }).click();
+  await expect(page.getByText('Experimental. Uses an 8-million-parameter ESM-2 model')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Load model (~30 MB)' })).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
 test('structure: 1HSG interaction profile reproduces Asp25 hydrogen bonds', async ({ page }) => {
   await page.goto('/structure'); await expect(page.getByRole('button', { name: 'Load structure' })).toBeEnabled({ timeout: 40_000 });
   await page.getByRole('button', { name: 'Load structure' }).click(); await expect(page.getByText(/Structure analysis/)).toBeVisible({ timeout: 40_000 });
