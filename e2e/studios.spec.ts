@@ -330,3 +330,19 @@ test('docking: 1HSG + indinavir demo docks with Vina in WebAssembly and reports 
   await expect(page.getByText(/hydrogen bond/).first()).toBeVisible({ timeout: 30_000 });
   expect(errs).toEqual([]);
 });
+
+test('lab: enzyme kinetics, plate reader and growth-curve demos all compute a result', async ({ page }) => {
+  const errs = watch(page); await page.goto('/lab');
+  await page.getByRole('tab', { name: 'Enzyme kinetics' }).click();
+  await page.getByRole('button', { name: /Load demo \(Michaelis/ }).click();
+  await expect(page.getByText('Vmax').first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('Km').first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Plate reader' }).click();
+  await page.getByRole('button', { name: 'Load demo plate' }).click();
+  await expect(page.getByText('Standard curve').first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('LOD (concentration)')).toBeVisible();
+  await page.getByRole('tab', { name: 'Growth curves' }).click();
+  await page.getByRole('button', { name: /Load demo \(two strains\)/ }).click();
+  await expect(page.getByText(/Doubling time ·/).first()).toBeVisible({ timeout: 20_000 });
+  expect(errs).toEqual([]);
+});

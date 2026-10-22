@@ -12,8 +12,11 @@ const TOOL_Q: ToolInfo = { id: 'lab.qpcr', name: 'qPCR relative quantification',
 const TOOL_D: ToolInfo = { id: 'lab.doseresponse', name: 'Dose–response fitting', version: '0.1.0', engine: 'TypeScript (Levenberg–Marquardt)', citations: ['marquardt1963', 'ritz2015', 'gottschalk2005'], describe: (p) => `${p.model} logistic curves were fitted by Levenberg–Marquardt least squares` };
 const TOOL_P: ToolInfo = { id: 'lab.power', name: 'Power and sample size', version: '0.1.0', engine: 'TypeScript', citations: ['cohen1988', 'lenth1989', 'schoenfeld1981', 'hart2013'], describe: (p) => `Sample size / power was calculated for the ${p.test} design` };
 
-type Tab = 'qpcr' | 'dose' | 'power' | 'survival';
+type Tab = 'qpcr' | 'dose' | 'power' | 'survival' | 'kinetics' | 'plate' | 'growth';
 const Survival = lazy(() => import('./Survival'));
+const Kinetics = lazy(() => import('./Kinetics'));
+const Plate = lazy(() => import('./Plate'));
+const Growth = lazy(() => import('./Growth'));
 const num = (s: string, d = NaN) => { const v = Number(s); return s.trim() !== '' && Number.isFinite(v) ? v : d; };
 const palette = () => [cssVar('--chart-a'), cssVar('--chart-b'), cssVar('--chart-c'), cssVar('--chart-d'), '#3fb97a', '#b45fd1'];
 
@@ -44,9 +47,9 @@ export default function LabStudio() {
   const [tab, setTab] = useState<Tab>('qpcr');
   return (
     <div className="stack" style={{ gap: 18 }}>
-      <div className="page-head"><div><h1>Lab Studio</h1><p>Bench calculators that run in your browser: qPCR relative quantification, dose–response curves, power and sample size, and survival analysis. Every method is checked against published worked examples or R (see the benchmarks).</p></div></div>
-      <Tabs value={tab} onChange={setTab} items={[{ id: 'qpcr', label: 'qPCR' }, { id: 'dose', label: 'Dose–response' }, { id: 'power', label: 'Power & sample size' }, { id: 'survival', label: 'Survival' }]} />
-      {tab === 'qpcr' && <Qpcr />}{tab === 'dose' && <Dose />}{tab === 'power' && <Power />}{tab === 'survival' && <Suspense fallback={null}><Survival /></Suspense>}
+      <div className="page-head"><div><h1>Lab Studio</h1><p>Bench calculators that run in your browser: qPCR relative quantification, dose–response curves, power and sample size, survival analysis, enzyme kinetics, plate-reader / ELISA standard curves and growth curves. Every method is checked against published worked examples, R or scipy (see the benchmarks).</p></div></div>
+      <Tabs value={tab} onChange={setTab} items={[{ id: 'qpcr', label: 'qPCR' }, { id: 'dose', label: 'Dose–response' }, { id: 'power', label: 'Power & sample size' }, { id: 'survival', label: 'Survival' }, { id: 'kinetics', label: 'Enzyme kinetics' }, { id: 'plate', label: 'Plate reader' }, { id: 'growth', label: 'Growth curves' }]} />
+      {tab === 'qpcr' && <Qpcr />}{tab === 'dose' && <Dose />}{tab === 'power' && <Power />}{tab === 'survival' && <Suspense fallback={null}><Survival /></Suspense>}{tab === 'kinetics' && <Suspense fallback={null}><Kinetics /></Suspense>}{tab === 'plate' && <Suspense fallback={null}><Plate /></Suspense>}{tab === 'growth' && <Suspense fallback={null}><Growth /></Suspense>}
     </div>
   );
 }
