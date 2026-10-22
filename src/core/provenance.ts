@@ -48,6 +48,7 @@ export const CITATIONS: Record<string, string> = {
   saitou1987: 'Saitou N, Nei M (1987) The neighbor-joining method: a new method for reconstructing phylogenetic trees. Mol Biol Evol 4:406–425.',
   felsenstein1985: 'Felsenstein J (1985) Confidence limits on phylogenies: an approach using the bootstrap. Evolution 39:783–791.',
   ondov2016: 'Ondov BD, et al. (2016) Mash: fast genome and metagenome distance estimation using MinHash. Genome Biol 17:132.',
+  irber2022: 'Irber L, et al. (2022) Lightweight compositional analysis of metagenomes with FracMinHash and minimum metagenome covers. bioRxiv 2022.01.11.475838.',
   mclaren2016: 'McLaren W, et al. (2016) The Ensembl Variant Effect Predictor. Genome Biol 17:122.',
   butler2015: 'Butler A, et al. (2015) Spatial reconstruction of single-cell gene expression data. Nat Biotechnol 33:495–502 (HVG dispersion binning).',
   blondel2008: 'Blondel VD, et al. (2008) Fast unfolding of communities in large networks. J Stat Mech P10008.',

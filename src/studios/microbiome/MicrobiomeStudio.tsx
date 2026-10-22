@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { createRemote } from '@/compute/rpc';
 import type { ToolInfo } from '@/core/provenance';
 import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadText, fmt, sci, toCsv } from '@/ui/kit';
@@ -13,12 +13,14 @@ import type { MbKernels } from './microbiome.worker';
 const remote = createRemote<MbKernels>(() => new Worker(new URL('./microbiome.worker.ts', import.meta.url), { type: 'module' }));
 const TOOL: ToolInfo = { id: 'microbiome.analysis', name: 'Microbiome community analysis', version: '0.1.0', engine: 'TypeScript worker kernels', citations: ['anderson2001', 'lozupone2005', 'aitchison1982', 'gloor2017', 'hurlbert1971', 'benjamini1995', 'mann1947'], describe: (p) => `Community analysis of a feature table: alpha diversity (observed features, Shannon, Simpson, Chao1, Pielou) compared between groups by Mann–Whitney/Kruskal–Wallis tests; beta diversity by ${p.metric} dissimilarity with PCoA and PERMANOVA (${p.perms} permutations); differential abundance by CLR transformation (pseudocount 0.5) and Welch t-tests with Benjamini–Hochberg correction; rarefaction by analytic expected richness` };
 type Tab = 'comp' | 'alpha' | 'beta' | 'da' | 'rare';
+type View = 'community' | 'screen';
+const ScreenPanel = lazy(() => import('./ScreenPanel'));
 const ALPHAS = [['shannon', 'Shannon'], ['observed', 'Observed features'], ['simpson', 'Simpson (1−D)'], ['chao1', 'Chao1'], ['pielou', "Pielou's evenness"]] as const;
 
 export default function MicrobiomeStudio() {
   const [table, setTable] = useState(''), [meta, setMeta] = useState(''), [truth, setTruth] = useState<Set<string> | null>(null);
   const [tree, setTree] = useState(''), [groupCol, setGroupCol] = useState(''), [metric, setMetric] = useState<Metric>('bray'), [rank, setRank] = useState(5), [perms, setPerms] = useState(999), [minPrev, setMinPrev] = useState(0.2), [a, setA] = useState(''), [b, setB] = useState('');
-  const [res, setRes] = useState<Awaited<ReturnType<MbKernels['analyse']>> | null>(null), [tab, setTab] = useState<Tab>('comp');
+  const [res, setRes] = useState<Awaited<ReturnType<MbKernels['analyse']>> | null>(null), [tab, setTab] = useState<Tab>('comp'), [view, setView] = useState<View>('community');
   const { run, busy, progress, note, error } = useRunner();
   const parsed = useMemo(() => { try { if (!table || !meta) return null; const t = parseFeatureTable(table); const m = parseMetadata(meta, t.samples); return { t, m }; } catch (e) { return { err: (e as Error).message } as { err: string }; } }, [table, meta]);
   const ok = parsed && !('err' in parsed) ? parsed : null;
@@ -30,7 +32,9 @@ export default function MicrobiomeStudio() {
   return (
     <div className="stack" style={{ gap: 18 }}>
       <div className="page-head"><div><h1>Microbiome Studio</h1><p>Diversity, ordination, PERMANOVA and differential abundance for amplicon feature tables. Bring a table from QIIME 2, nf-core/ampliseq or DADA2; read-level classification stays on a server.</p></div></div>
-      <div className="split"><div className="stack">
+      <Tabs<View> value={view} onChange={setView} items={[{ id: 'community', label: 'Community analysis' }, { id: 'screen', label: 'Reference screening' }]} />
+      {view === 'screen' && <Suspense fallback={null}><ScreenPanel /></Suspense>}
+      {view === 'community' && <div className="split"><div className="stack">
         <Card title="1 · Data"><div className="stack" style={{ gap: 10 }}>
           <FileDrop accept=".csv,.tsv,.txt" onText={(t) => { setTable(t); setTruth(null); setRes(null); }} label={table ? 'Feature table loaded' : 'Feature table (features × samples, optional taxonomy column)'} />
           <FileDrop accept=".csv,.tsv,.txt" onText={(t) => { setMeta(t); setRes(null); }} label={meta ? 'Metadata loaded' : 'Sample metadata (sample, group, …)'} />
@@ -49,7 +53,7 @@ export default function MicrobiomeStudio() {
         </div></Card>}
         <Callout>UniFrac needs a tree whose tip names equal your feature IDs (build one in the Phylogenetics Studio, or export from QIIME 2 / ampliseq). Shotgun read classification needs reference databases of tens of gigabytes, too large for a browser; classify with nf-core/taxprofiler on your computer and import the abundance table here.</Callout>
       </div>
-      <div className="stack">{!res ? <Card><div className="faint" style={{ padding: '36px 6px', textAlign: 'center' }}>Load a feature table and metadata (or the demo), then run.</div></Card> : <Results res={res} tab={tab} setTab={setTab} rank={rank} truth={truth} ga={ga} gb={gb} />}</div></div>
+      <div className="stack">{!res ? <Card><div className="faint" style={{ padding: '36px 6px', textAlign: 'center' }}>Load a feature table and metadata (or the demo), then run.</div></Card> : <Results res={res} tab={tab} setTab={setTab} rank={rank} truth={truth} ga={ga} gb={gb} />}</div></div>}
     </div>
   );
 }

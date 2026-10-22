@@ -102,6 +102,16 @@ test('microbiome: UniFrac with the demo tree finds the treatment effect', async 
   expect(errs).toEqual([]);
 });
 
+test('microbiome: reference screening of the lambda + T7 demo reports both phages', async ({ page }) => {
+  test.setTimeout(180_000);
+  const errs = watch(page); await page.goto('/microbiome');
+  await page.getByRole('tab', { name: 'Reference screening' }).click();
+  await page.getByRole('button', { name: /Demo: 70 % lambda/ }).click();
+  await expect(page.getByRole('cell', { name: 'lambda', exact: true })).toBeVisible({ timeout: 150_000 });
+  await expect(page.getByRole('cell', { name: 't7', exact: true })).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
 test('single-cell: demo recovers four clusters', async ({ page }) => {
   const errs = watch(page); await page.goto('/single-cell'); await page.getByRole('button', { name: /Run synthetic PBMC-like demo/ }).click();
   await expect(page.getByText('Cells kept')).toBeVisible({ timeout: 60_000 }); await expect(page.locator('.stat', { hasText: 'Clusters' }).first()).toContainText('4');
