@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_OPTIONS, OKABE, buildBars, buildBoxPlot, buildCurves, buildForest, buildFunnel, buildPlasmidMap, buildHeatmap, buildMsa, buildScatter, buildTree, parseColor, placeLabels, sceneToPdf, sceneToSvg, textWidth, treeLayout, tukeyQuartiles, type FigureOptions } from './figure';
+import { DEFAULT_OPTIONS, OKABE, buildBars, buildBoxPlot, buildCurves, buildForest, buildFunnel, buildPlasmidMap, buildHeatmap, buildHelicalWheel, buildMsa, buildScatter, buildTree, parseColor, placeLabels, sceneToPdf, sceneToSvg, textWidth, treeLayout, tukeyQuartiles, type FigureOptions } from './figure';
 
 const opt = (o: Partial<FigureOptions> = {}): FigureOptions => ({ ...DEFAULT_OPTIONS, ...o });
 const pts = Array.from({ length: 200 }, (_, i) => ({ x: Math.sin(i) * 3, y: (i % 17) + Math.cos(i), cat: i % 10 === 0 ? 1 : i % 10 === 5 ? 2 : 0, label: `GENE${i}` }));
@@ -266,5 +266,23 @@ describe('buildCurves log axes', () => {
     const sc = buildCurves({ series: [{ name: 'a', color: '#0072B2', points: [{ x: 1, y: 1 }, { x: 2, y: 10 }] }], xLabel: 'x', yLabel: 'y', logY: true, yMin: 0 }, opt());
     expect(sc.items.length).toBeGreaterThan(0);
     expect(sceneToSvg(sc)).toContain('<svg');
+  });
+});
+
+describe('buildHelicalWheel', () => {
+  it('draws one labelled residue per position and a moment arrow', () => {
+    const seq = 'LKKLLKLLKKLLKLLKKL';
+    const sc = buildHelicalWheel({ seq, delta: 100 }, opt({ widthMm: 110, heightMm: 110 }));
+    const texts = sc.items.filter((i) => i.k === 'text').map((i) => (i as { t: string }).t);
+    expect(texts).toHaveLength(seq.length);
+    expect(texts.join('')).toBe(seq);
+    expect(sc.items.some((i) => i.k === 'line' && i.id === 'moment-arrow')).toBe(true);
+    const svg = sceneToSvg(sc);
+    expect(svg).toContain('moment-arrow');
+    expect(sceneToPdf(sc).startsWith('%PDF-1.4')).toBe(true);
+  });
+  it('beta-strand spacing uses delta = 160', () => {
+    const sc = buildHelicalWheel({ seq: 'AVIL', delta: 160 }, opt());
+    expect(sc.items.filter((i) => i.k === 'text')).toHaveLength(4);
   });
 });

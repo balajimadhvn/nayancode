@@ -1,4 +1,5 @@
 import { parseNewick, type TreeNode } from '../studios/phylo/kernels';
+import { helicalWheel } from '../studios/peptide/wheel';
 /**
  * Publication-figure engine. A chart is described once as a Scene (rects, lines, circles, polygons, text, all in
  * points, 1 pt = 1/72 in) and rendered to SVG (editable <text>, no CSS variables), PDF (minimal vector writer with
@@ -641,6 +642,35 @@ export function buildFunnel(s: FunnelSpec, o: FigureOptions): Scene {
   line(-1); line(1);
   s.yi.forEach((y, i) => { const r = Math.max(1, 2.2 - 1.2 * (s.se[i] / maxSe)); f.p.circle(f.sx(y), f.sy(s.se[i]), r, pickColor(o, OKABE[2], i, true), 0.9); });
   return f.p.scene(o.title);
+}
+
+// ---------------------------------------------------------------- helical wheel
+export interface HelicalWheelSpec { seq: string; delta: number }
+
+const WHEEL_COLOR: Record<string, string> = { hydrophobic: '#D55E00', positive: '#0072B2', negative: '#CC79A7', polar: '#009E73' };
+
+/**
+ * Helical-wheel projection. Residue n sits at angle n·δ (n from 0), coloured by
+ * class; the arrow from the centre shows the hydrophobic-moment direction and
+ * its length is ⟨μH⟩.
+ */
+export function buildHelicalWheel(s: HelicalWheelSpec, o: FigureOptions): Scene {
+  const p = baseScene(o), th = p.th, fs = p.fs;
+  const wheel = helicalWheel(s.seq, s.delta);
+  const cx = p.w / 2, cy = p.h / 2 + (o.title ? fs * 0.8 : 0);
+  const R = Math.min(p.w, p.h) * 0.32;
+  p.circle(cx, cy, R, undefined, 1, th.dim, 0.5);
+  const rad = Math.max(5, Math.min(R * 0.24, fs));
+  for (const r of wheel.residues) {
+    const x = cx + R * r.x, y = cy - R * r.y;
+    p.circle(x, y, rad, WHEEL_COLOR[r.residueClass], 0.95, th.bg ?? '#ffffff', 0.8);
+    p.text(x, y + fs * 0.34, r.residue, fs * 0.95, '#ffffff', 'middle', true);
+  }
+  const ex = cx + R * wheel.momentEnd.x, ey = cy - R * wheel.momentEnd.y;
+  p.line(cx, cy, ex, ey, th.axis, 1.2, undefined, 1, 'moment-arrow');
+  const ang = Math.atan2(ey - cy, ex - cx), hl = Math.max(4, fs * 0.8);
+  p.poly([[ex, ey], [ex - hl * Math.cos(ang - 0.4), ey - hl * Math.sin(ang - 0.4)], [ex - hl * Math.cos(ang + 0.4), ey - hl * Math.sin(ang + 0.4)]], { fill: th.axis, close: true });
+  return p.scene(o.title);
 }
 
 // ---------------------------------------------------------------- plasmid map

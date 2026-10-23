@@ -177,6 +177,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'No mixed models, no survival or multivariate models; the meta-analysis assumes independent studies and known variances',
     cloudLater: '',
   },
+  {
+    id: 'peptide', path: '/peptides', name: 'Peptide Studio', short: 'Peptide',
+    blurb: 'Analyze peptide properties, helical wheels, masses, cyclic structures and antimicrobial properties.',
+    status: 'live', milestone: 'M1', accent: 210,
+    inputs: ['Peptide sequence (1-100 residues)', 'CSV with sequences', 'pH for charge calculation'],
+    analyses: ['Monoisotopic and average mass', 'Net charge at given pH', 'pI (bisection)', 'GRAVY (Kyte-Doolittle)', 'Aliphatic index', 'Hydrophobic moment (Eisenberg)', 'Residue composition', 'Helical wheel projection', 'Cyclic peptide detection', 'Disulfide bond analysis', 'AMP screen (positively charged)'],
+    engines: 'TypeScript kernels',
+    limits: 'Peptides up to 100 residues; longer sequences error out',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);

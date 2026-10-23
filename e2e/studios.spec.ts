@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -409,5 +409,18 @@ test('trajectory: demo gives RMSD and PC1 and the landscape tab draws', async ({
   await expect(page.getByText(/PC1/).first()).toBeVisible();
   await page.getByRole('tab', { name: 'Energy landscape' }).click();
   await expect(page.getByText(/Free-energy landscape/).first()).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
+test('peptide: demo gives properties, a helical wheel and an AMP score', async ({ page }) => {
+  const errs = watch(page); await page.goto('/peptides');
+  await page.getByRole('button', { name: /Load demo/ }).click();
+  await expect(page.getByText(/Hydrophobic moment/).first()).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('tab', { name: 'Helical wheel' }).click();
+  await expect(page.getByText(/⟨μH⟩/).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Fragments & masses' }).click();
+  await expect(page.getByText(/Mass list/).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'AMP screen' }).click();
+  await expect(page.getByText(/not trained or validated/).first()).toBeVisible();
   expect(errs).toEqual([]);
 });

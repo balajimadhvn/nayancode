@@ -39,8 +39,9 @@ export const Icon = {
 };
 export const StudioIcon: Record<string, (p: SVGProps<SVGSVGElement>) => React.JSX.Element> = {
   sequence: Icon.Sequence, expression: Icon.Expression, chemistry: Icon.Chemistry, structure: Icon.Structure, docking: Icon.Docking,
-  phylo: Icon.Phylo, genome: Icon.Genome, variant: Icon.Variant, singlecell: Icon.SingleCell, microbiome: Icon.Microbiome, lab: Icon.Flask, stats: Icon.Doc, plasmid: Icon.Genome, biologics: Icon.Spark, pk: Icon.Cpu, trajectory: Icon.Cpu,
+  phylo: Icon.Phylo, genome: Icon.Genome, variant: Icon.Variant, singlecell: Icon.SingleCell, microbiome: Icon.Microbiome, lab: Icon.Flask, stats: Icon.Doc, plasmid: Icon.Genome, biologics: Icon.Spark, pk: Icon.Cpu, peptide: Icon.Cpu, trajectory: Icon.Cpu,
 };
+
 export const Logo = ({ size = 26 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden>
     {/* PLACEHOLDER mark, shared with the public site (src/site/icons.tsx): aligned reads with a shared variant column. */}

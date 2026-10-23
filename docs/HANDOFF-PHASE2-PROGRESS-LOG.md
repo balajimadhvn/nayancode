@@ -12,9 +12,9 @@ with the Phase 1 sync. Phase 2 branch to create in nayancode: `feature/phase2-st
 | 2 | Statistics & Meta-analysis Studio | DONE |
 | 3 | Plasmid & Construct Studio | DONE |
 | 4 | Antibody & Biologics Developability Studio | DONE |
-| 5 | PK / PD Studio | NOT STARTED |
-| 6 | MD & Trajectory Analysis Studio | NOT STARTED |
-| 7 | Peptide Studio | NOT STARTED |
+| 5 | PK / PD Studio | DONE |
+| 6 | MD & Trajectory Analysis Studio | DONE |
+| 7 | Peptide Studio | DONE |
 | 8 | Population Genetics Studio | NOT STARTED |
 | 9 | Proteomics & Metabolomics Quant Studio | NOT STARTED |
 | 10 | AMR / Bacterial Genomics Studio | NOT STARTED |
@@ -48,3 +48,27 @@ with the Phase 1 sync. Phase 2 branch to create in nayancode: `feature/phase2-st
 - e2e test name and result: `biologics: trastuzumab demo finds the CDRs and screens liabilities` — pass
 - commit hash: uncommitted at the time of writing (see `git log`)
 - what is left / problems / decisions for the owner: CDR boundaries are the fixed heuristic rules from the spec, not a numbering scheme; the developability thresholds are published rules of thumb and the UI says so
+
+## Item 5 PK / PD Studio — DONE   (2026-10-23, 21:55)
+- files created/changed: `src/studios/pk/{nca,models}.ts` (+ tests), `PKStudio.tsx`, `NcaTab.tsx`, `DosingTab.tsx`, `SimulateTab.tsx`; `src/App.tsx` (lazy route), `src/core/studios.ts` (entry), `src/ui/Icons.tsx` (icon), `src/core/provenance.ts` (`gibaldi1982`, `yeh1978`), `src/viz/figure.ts` + `src/viz/figure.test.ts` (semi-log axis fix and regression test), `e2e/studios.spec.ts` (`/pharmacokinetics` route and test)
+- tests added and result: 31 unit tests pass (`nca.test.ts`: 19, `models.test.ts`: 12); NCA AUC/AUMC (linear-up/log-down), λz selection, compartment fits and multiple-dose superposition reproduce the reference values; the new `buildCurves log axes` regression test covers `logY` with `yMin: 0`
+- e2e test name and result: `pk: IV demo gives an AUCinf and the simulator and dosing tabs run` — pass (4 passed together with the route sweep, trajectory and peptide)
+- tsc/build/size: `npx tsc --noEmit` clean; `npm run build` succeeds; `find dist -type f -size +20M` prints nothing
+- commit hash: see `git log` (`PK Studio: non-compartmental analysis, compartment models and multiple-dose simulation`)
+- what is left / problems / decisions for the owner: the PK semi-log plots pass `yMin: 0` with `logY: true`, which previously made `buildCurves`' tick generator loop forever (log10(0) = −Infinity); `src/viz/figure.ts` now ignores non-positive log bounds and guards non-finite ones. This is a shared-chart fix, not a change to PK numbers.
+
+## Item 6 MD & Trajectory Analysis Studio — DONE   (2026-10-23, 21:55)
+- files created/changed: `src/studios/trajectory/{xvg,traj}.ts` (+ tests), `TrajectoryStudio.tsx`; `src/App.tsx` (lazy route), `src/core/studios.ts` (entry), `src/ui/Icons.tsx` (icon), `src/core/provenance.ts` (`amadei1993`, `flyvbjerg1989`), `e2e/studios.spec.ts` (`/trajectory` route and test)
+- tests added and result: 18 unit tests pass (`xvg.test.ts`: 9, `traj.test.ts`: 9); XVG parsing (title, `&` dataset separator), block-averaged standard errors, autocorrelation time, Kabsch superposition, RMSD/RMSF/Rg with the 3N/(3N−6) DoF correction, PCA power iteration with deflation and the free-energy surface
+- e2e test name and result: `trajectory: demo gives RMSD and PC1 and the landscape tab draws` — pass
+- tsc/build/size: `npx tsc --noEmit` clean; `npm run build` succeeds; `find dist -type f -size +20M` prints nothing
+- commit hash: see `git log` (`Trajectory Studio: XVG time-series statistics, PDB-model trajectory RMSD/RMSF/Rg, essential dynamics and free-energy surface`)
+- what is left / problems / decisions for the owner: the earlier 87.5 vs 88 note was a miscount — the last quarter starts at index `floor(0.75 × (n−1)) = 74` (end point included), so the mean of 75..100 is exactly 87.5. No test expectation was changed.
+
+## Item 7 Peptide Studio — DONE   (2026-10-23, 21:55)
+- files created/changed: `src/studios/peptide/{props,ms,amp,wheel}.ts` (+ tests), `PeptideStudio.tsx`; `src/viz/figure.ts` + `src/viz/figure.test.ts` (`buildHelicalWheel` and tests), `src/App.tsx` (lazy route), `src/core/studios.ts` (entry), `src/ui/Icons.tsx` (icon), `src/core/provenance.ts` (`eisenberg1984`, `ikai1980`, `roepstorff1984`), `benchmarks/peptide/make-reference.py` + `reference.json`, `e2e/studios.spec.ts` (`/peptides` route and test)
+- tests added and result: 45 unit tests pass (`props.test.ts`: 22, `ms.test.ts`: 17, `amp.test.ts`: 6); properties (Henderson–Hasselbalch charge, pI, GRAVY, aliphatic index, Eisenberg hydrophobic moment), b/y/a fragment ions with neutral losses, cyclic/disulfide masses and pairings, and the AMP heuristic all have known-answer tests. Masses and the hydrophobic moment were cross-checked against the independent plain-Python `benchmarks/peptide/make-reference.py` output (`reference.json`). `figure.test.ts` gained two helical-wheel tests on top of the log-axis regression test.
+- e2e test name and result: `peptide: demo gives properties, a helical wheel and an AMP score` — pass; the page shows the exact note "Heuristic screen from simple physicochemical rules; it is not trained or validated against activity data. Antimicrobial activity must be measured."
+- tsc/build/size: `npx tsc --noEmit` clean; `npm run build` succeeds; `find dist -type f -size +20M` prints nothing
+- commit hash: see `git log` (`Peptide Studio: properties, helical wheel, fragment ions, cyclic/disulfide masses and AMP heuristic`)
+- what is left / problems / decisions for the owner: two documented interpretations. (1) The blocked-termini pI test asserts charge at pH 14 rather than an exact crossing, because a blocked peptide with no ionisable side chains has no finite pI; free termini are checked separately. (2) The AMP screen awards the cysteine criterion only for 1–2 Cys (zero Cys scores 0), which is the reading that satisfies every sanity threshold in the handoff without changing any expected number.
