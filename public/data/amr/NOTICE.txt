@@ -1,0 +1,6 @@
+NCBI AMRFinderPlus reference gene database (public domain, NCBI). Version: 2026-08-07.1.
+Source URL: https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/latest/
+  AMR_CDS.fa.gz              AMR_CDS.fa (9,786 nucleotide reference records, 9,877,701 bp), gzipped unchanged.
+  ReferenceGeneCatalog.txt.gz  ReferenceGeneCatalog.txt, gzipped unchanged; supplies the class and subclass columns.
+  version.txt                the version string NCBI published for this snapshot.
+Feldgarden M, et al. (2021) Sci Rep 11:12728. No modifications were made to the sequence or catalogue data.

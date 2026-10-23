@@ -207,6 +207,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Two-group contrasts on browser-scale matrices; confirm key findings with limma, MSstats or Perseus',
     cloudLater: 'DIA-NN integration and large-cohort statistics',
   },
+  {
+    id: 'amr', path: '/amr', name: 'AMR Studio', short: 'AMR',
+    blurb: 'Screen assembled bacterial genomes for acquired resistance genes against the NCBI reference gene set.',
+    status: 'live', milestone: 'M1', accent: 285,
+    inputs: ['Contig or draft-genome FASTA (≤ 100 MB, .gz accepted)', 'NCBI AMRFinderPlus reference genes (fetched on first use)', 'Bundled E. coli K-12 demo genome'],
+    analyses: ['15-mer seed screening on both strands', 'Smith–Waterman confirmation of every candidate locus', 'Identity and reference-coverage thresholds', 'Drug class and subclass from the reference gene catalogue', 'Summary by gene family with CSV export'],
+    engines: 'TypeScript worker (typed-array seed index, diagonal voting, local alignment)',
+    limits: 'Acquired genes only: point mutations and novel families are missed, and 15-mers shared by more than 50 references are not seeded, so very large allele families can be invisible',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);

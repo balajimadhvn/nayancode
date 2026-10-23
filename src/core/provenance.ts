@@ -139,6 +139,7 @@ export const CITATIONS: Record<string, string> = {
   molstar: 'Sehnal D, et al. (2021) Mol* Viewer: modern web app for 3D visualization and analysis of large biomolecular structures. Nucleic Acids Res 49:W431–W437.',
   rcsb: 'Berman HM, et al. (2000) The Protein Data Bank. Nucleic Acids Res 28:235–242.',
   alphafold: 'Jumper J, et al. (2021) Highly accurate protein structure prediction with AlphaFold. Nature 596:583–589.',
+  feldgarden2021: 'Feldgarden M, et al. (2021) AMRFinderPlus and the Reference Gene Catalog facilitate examination of the genomic links among antimicrobial resistance, stress response, and virulence. Sci Rep 11:12728.',
 };
 
 export interface ProvRecord {
