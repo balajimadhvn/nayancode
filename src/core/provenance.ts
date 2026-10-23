@@ -30,6 +30,8 @@ export const CITATIONS: Record<string, string> = {
   holm1979: 'Holm S (1979) A simple sequentially rejective multiple test procedure. Scand J Stat 6:65–70.',
   gibaldi1982: 'Gibaldi M, Perrier D (1982) Pharmacokinetics, 2nd ed. Marcel Dekker, New York.',
   yeh1978: 'Yeh KC, Kwan KC (1978) A comparison of numerical integrating algorithms by trapezoidal, Lagrange, and spline approximation. J Pharmacokinet Biopharm 6:79–98.',
+  amadei1993: 'Amadei A, Linssen ABM, Berendsen HJC (1993) Essential dynamics of proteins. Proteins 17:412–425.',
+  flyvbjerg1989: 'Flyvbjerg H, Petersen HG (1989) Error estimates on averages of correlated data. J Chem Phys 91:461–466.',
   ritz2015: 'Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-response analysis using R. PLoS ONE 10:e0146021.',
   gottschalk2005: 'Gottschalk PG, Dunn JR (2005) The five-parameter logistic: a characterization and comparison with the four-parameter logistic. Anal Biochem 343:54–65.',
   cohen1988: 'Cohen J (1988) Statistical Power Analysis for the Behavioral Sciences, 2nd ed. Lawrence Erlbaum.',

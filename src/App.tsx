@@ -25,6 +25,7 @@ const live: Record<string, ReturnType<typeof lazyRetry<() => React.JSX.Element>>
   plasmid: lazyRetry(() => import('@/studios/plasmid/PlasmidStudio')),
   biologics: lazyRetry(() => import('@/studios/biologics/BiologicsStudio')),
   pk: lazyRetry(() => import('@/studios/pk/PKStudio')),
+  trajectory: lazyRetry(() => import('@/studios/trajectory/TrajectoryStudio')),
 };
 
 const Loading = () => <div style={{ display: 'grid', placeItems: 'center', minHeight: '60vh', color: 'var(--text-faint)' }}>Loading…</div>;

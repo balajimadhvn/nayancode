@@ -158,6 +158,16 @@ export const STUDIOS: StudioDef[] = [
     cloudLater: '',
   },
   {
+    id: 'trajectory', path: '/trajectory', name: 'Trajectory Studio', short: 'Trajectory',
+    blurb: 'GROMACS XVG convergence statistics and multi-model PDB trajectory analysis: RMSD, RMSF, Rg, PCA and free-energy landscapes.',
+    status: 'live', milestone: 'M1', accent: 205,
+    inputs: ['GROMACS .xvg time series', 'Multi-model PDB (MODEL / ENDMDL)'],
+    analyses: ['Converged value, block-averaged SE, drift and integrated autocorrelation time', 'RMSD after Kabsch superposition', 'RMSF per residue around the mean structure', 'Mass-unweighted radius of gyration', 'Essential dynamics (PC1/PC2, variance explained)', 'Free-energy landscape F = −kT ln(P/Pmax)'],
+    engines: 'TypeScript',
+    limits: 'No binary XTC/TRR/DCD input (convert to .xvg or a multi-model PDB). PCA is limited to 300 selected atoms and the viewer to 5,000 frames.',
+    cloudLater: '',
+  },
+  {
     id: 'stats', path: '/statistics', name: 'Statistics Studio', short: 'Statistics',
     blurb: 'Classical tests, effect sizes, multiple-testing correction and meta-analysis with forest and funnel plots.',
     status: 'live', milestone: 'M1', accent: 190,

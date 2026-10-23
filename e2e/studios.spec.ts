@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -399,5 +399,15 @@ test('pk: IV demo gives an AUCinf and the simulator and dosing tabs run', async 
   await expect(page.getByText(/Cmax/).first()).toBeVisible();
   await page.getByRole('tab', { name: 'Dosing regimens' }).click();
   await expect(page.getByText('Accumulation ratio R')).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
+test('trajectory: demo gives RMSD and PC1 and the landscape tab draws', async ({ page }) => {
+  const errs = watch(page); await page.goto('/trajectory');
+  await page.getByRole('button', { name: 'Load demo trajectory' }).click();
+  await expect(page.getByText(/RMSD/).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/PC1/).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Energy landscape' }).click();
+  await expect(page.getByText(/Free-energy landscape/).first()).toBeVisible();
   expect(errs).toEqual([]);
 });
