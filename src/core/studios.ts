@@ -187,6 +187,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Peptides up to 100 residues; longer sequences error out',
     cloudLater: '',
   },
+  {
+    id: 'popgen', path: '/population-genetics', name: 'Population Genetics Studio', short: 'Population genetics',
+    blurb: 'Allele frequencies and HWE, Weir–Cockerham Fst, genotype PCA, admixture by EM and Tajima’s D.',
+    status: 'live', milestone: 'M1', accent: 240,
+    inputs: ['Genotype table: sample, population, SNP dosages', 'VCF plus sample/population sheet', 'Aligned FASTA'],
+    analyses: ['Per-population allele frequencies, Ho, He and exact HWE', 'Weir–Cockerham θ (Fst) with a bootstrap interval and pairwise matrix', 'LD (r²) and PCA after LD pruning', 'ADMIXTURE-style ancestry proportions by EM with BIC for K = 1–6', 'Segregating sites, π, Watterson θW and Tajima’s D with sliding windows'],
+    engines: 'TypeScript',
+    limits: 'Exploratory summaries; Fst and admixture depend on sampling and sample size. Use PLINK/ADMIXTURE/STRUCTURE for publication analyses of large panels.',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);

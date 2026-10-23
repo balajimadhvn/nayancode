@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -422,5 +422,14 @@ test('peptide: demo gives properties, a helical wheel and an AMP score', async (
   await expect(page.getByText(/Mass list/).first()).toBeVisible();
   await page.getByRole('tab', { name: 'AMP screen' }).click();
   await expect(page.getByText(/not trained or validated/).first()).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
+test('popgen: demo genotype table gives Fst and a Hardy–Weinberg table', async ({ page }) => {
+  const errs = watch(page); await page.goto('/population-genetics');
+  await page.getByRole('button', { name: 'Load demo table' }).click();
+  await page.getByRole('button', { name: 'Summarise' }).click();
+  await expect(page.getByText(/Fst \(WC\)/).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/Frequencies and Hardy–Weinberg/).first()).toBeVisible();
   expect(errs).toEqual([]);
 });

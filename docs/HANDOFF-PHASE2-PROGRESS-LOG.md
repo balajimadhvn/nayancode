@@ -15,7 +15,7 @@ with the Phase 1 sync. Phase 2 branch to create in nayancode: `feature/phase2-st
 | 5 | PK / PD Studio | DONE |
 | 6 | MD & Trajectory Analysis Studio | DONE |
 | 7 | Peptide Studio | DONE |
-| 8 | Population Genetics Studio | NOT STARTED |
+| 8 | Population Genetics Studio | DONE |
 | 9 | Proteomics & Metabolomics Quant Studio | NOT STARTED |
 | 10 | AMR / Bacterial Genomics Studio | NOT STARTED |
 | 11 | Five free tool pages (website) | NOT STARTED |
@@ -72,3 +72,11 @@ with the Phase 1 sync. Phase 2 branch to create in nayancode: `feature/phase2-st
 - tsc/build/size: `npx tsc --noEmit` clean; `npm run build` succeeds; `find dist -type f -size +20M` prints nothing
 - commit hash: see `git log` (`Peptide Studio: properties, helical wheel, fragment ions, cyclic/disulfide masses and AMP heuristic`)
 - what is left / problems / decisions for the owner: two documented interpretations. (1) The blocked-termini pI test asserts charge at pH 14 rather than an exact crossing, because a blocked peptide with no ionisable side chains has no finite pI; free termini are checked separately. (2) The AMP screen awards the cysteine criterion only for 1–2 Cys (zero Cys scores 0), which is the reading that satisfies every sanity threshold in the handoff without changing any expected number.
+
+## Item 8 Population Genetics Studio — DONE   (2026-10-23, 22:11)
+- files created/changed: `src/studios/popgen/{stats,admix,diversity,demo}.ts` (+ `stats.test.ts`, `admix.test.ts`, `diversity.test.ts`), `PopulationGeneticsStudio.tsx`, `FrequenciesTab.tsx`, `FstTab.tsx`, `StructureTab.tsx`, `DiversityTab.tsx`; `benchmarks/popgen/check.py` + `reference.json`; `src/App.tsx` (lazy route), `src/core/studios.ts` (entry), `src/ui/Icons.tsx` (icon), `src/core/provenance.ts` (`alexander2009`, `tajima1989`, `balding1995`; `weir1984` already existed), `e2e/studios.spec.ts` (route and test)
+- tests added and result: 24 unit tests pass (`stats.test.ts`: 11, `admix.test.ts`: 7, `diversity.test.ts`: 6); Weir–Cockerham θ recovers F_ST = 0.05 from a 3000-locus Balding–Nichols simulation and is near zero at F_ST = 0; fixed differences give θ > 0.95; the HWE p for (50,40,10) equals the shared reference 0.6367558662349944; the admixture EM recovers the true ancestry proportions with r > 0.95 at K = 2, never decreases the log-likelihood and is deterministic per seed; PCA separates the two source populations on PC1; Tajima's D for AAAA/AAAT/AATT/ATTT matches `benchmarks/popgen/check.py` (D = 0.1676557950339481)
+- e2e test name and result: `popgen: demo genotype table gives Fst and a Hardy–Weinberg table` — pass (2 passed together with the all-routes sweep)
+- tsc/build/size: `npx tsc --noEmit` clean; `npm run build` succeeds; `find dist -type f -size +20M` prints nothing
+- commit hash: see `git log` (`Population Genetics Studio: Weir–Cockerham Fst, HWE, LD, PCA, admixture EM and Tajima's D`)
+- what is left / problems / decisions for the owner: (1) PCA coordinates come from the shared `genotypePcs`, whose result is components × samples; the UI and tests use that orientation. (2) BIC uses parameters = K(n + m) and n = observed genotypes. (3) The demo genotype table contains a third labelled group ("Admixed") so the structure tab has something to resolve; the Fst tab therefore reports θ over all three labels, not just the two sources. (4) The visible note is exactly the sentence required by the handoff.
