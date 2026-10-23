@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -386,5 +386,18 @@ test('biologics: trastuzumab demo finds the CDRs and screens liabilities', async
   await page.getByRole('tab', { name: 'Compare' }).click();
   await page.getByRole('button', { name: 'Demo (two VH)' }).click();
   await expect(page.getByText('trastuzumab').first()).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
+test('pk: IV demo gives an AUCinf and the simulator and dosing tabs run', async ({ page }) => {
+  const errs = watch(page); await page.goto('/pharmacokinetics');
+  await page.getByRole('button', { name: 'Load IV demo' }).click();
+  await page.getByRole('button', { name: 'Analyse' }).click();
+  await expect(page.getByText('AUCinf', { exact: false }).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('CL', { exact: true }).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Simulate' }).click();
+  await expect(page.getByText(/Cmax/).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Dosing regimens' }).click();
+  await expect(page.getByText('Accumulation ratio R')).toBeVisible();
   expect(errs).toEqual([]);
 });

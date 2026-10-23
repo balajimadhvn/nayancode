@@ -28,6 +28,8 @@ export const CITATIONS: Record<string, string> = {
   yanisch1985: 'Yanisch-Perron C, Vieira J, Messing J (1985) Improved M13 phage cloning vectors and host strains: nucleotide sequences of the M13mp18 and pUC19 vectors. Gene 33:103–119.',
   raybould2019: 'Raybould MIJ, Marks C, Krawczyk K, et al. (2019) Five computational developability guidelines for therapeutic antibody profiling. Proc Natl Acad Sci USA 116:4025–4030.',
   holm1979: 'Holm S (1979) A simple sequentially rejective multiple test procedure. Scand J Stat 6:65–70.',
+  gibaldi1982: 'Gibaldi M, Perrier D (1982) Pharmacokinetics, 2nd ed. Marcel Dekker, New York.',
+  yeh1978: 'Yeh KC, Kwan KC (1978) A comparison of numerical integrating algorithms by trapezoidal, Lagrange, and spline approximation. J Pharmacokinet Biopharm 6:79–98.',
   ritz2015: 'Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-response analysis using R. PLoS ONE 10:e0146021.',
   gottschalk2005: 'Gottschalk PG, Dunn JR (2005) The five-parameter logistic: a characterization and comparison with the four-parameter logistic. Anal Biochem 343:54–65.',
   cohen1988: 'Cohen J (1988) Statistical Power Analysis for the Behavioral Sciences, 2nd ed. Lawrence Erlbaum.',

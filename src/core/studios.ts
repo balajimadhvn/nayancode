@@ -148,6 +148,16 @@ export const STUDIOS: StudioDef[] = [
     cloudLater: '',
   },
   {
+    id: 'pk', path: '/pharmacokinetics', name: 'PK Studio', short: 'PK',
+    blurb: 'Non-compartmental analysis, compartment model simulation, and multiple-dose regimen design.',
+    status: 'live', milestone: 'M1', accent: 25,
+    inputs: ['Concentration–time CSV/TSV', 'Dose and route', 'Model parameters'],
+    analyses: ['Non-compartmental analysis (AUClast, AUCinf, λz, t½, CL, Vz, MRT)', 'One- and two-compartment model simulation', 'Multiple-dose superposition and steady-state predictions', 'Dosing regimen design with loading dose'],
+    engines: 'TypeScript',
+    limits: 'Educational/research tool; not a validated clinical pharmacology package. NCA depends on sampling. Superposition assumes linear PK.',
+    cloudLater: '',
+  },
+  {
     id: 'stats', path: '/statistics', name: 'Statistics Studio', short: 'Statistics',
     blurb: 'Classical tests, effect sizes, multiple-testing correction and meta-analysis with forest and funnel plots.',
     status: 'live', milestone: 'M1', accent: 190,

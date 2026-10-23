@@ -265,10 +265,12 @@ export function buildCurves(s: CurveSpec, o: FigureOptions): Scene {
     for (const pt of q.band ?? []) { ysAll.push(pt.lo, pt.hi); }
   }
   const fx = xsAll.filter((x) => Number.isFinite(x) && (!s.logX || x > 0)), fy = ysAll.filter((y) => Number.isFinite(y) && (!s.logY || y > 0));
-  let x0 = T(s.xMin ?? Math.min(...fx), s.logX), x1 = T(s.xMax ?? Math.max(...fx), s.logX), y0 = T(s.yMin ?? Math.min(...fy), s.logY), y1 = T(s.yMax ?? Math.max(...fy), s.logY);
+  const xMin = s.logX && !(s.xMin !== undefined && s.xMin > 0) ? undefined : s.xMin;
+  const yMin = s.logY && !(s.yMin !== undefined && s.yMin > 0) ? undefined : s.yMin;
+  let x0 = T(xMin ?? Math.min(...fx), s.logX), x1 = T(s.xMax ?? Math.max(...fx), s.logX), y0 = T(yMin ?? Math.min(...fy), s.logY), y1 = T(s.yMax ?? Math.max(...fy), s.logY);
   if (!fx.length) { x0 = 0; x1 = 1; } if (!fy.length) { y0 = 0; y1 = 1; }
   if (s.yMin === undefined) y0 -= (y1 - y0) * 0.04; if (s.yMax === undefined) y1 += (y1 - y0) * 0.04;
-  const logTicks = (a: number, b: number) => { const out: { x: number; label: string }[] = []; for (let e = Math.ceil(a - 1e-9); e <= b + 1e-9; e++) out.push({ x: e, label: `10${sup(e)}` }); return out; };
+  const logTicks = (a: number, b: number) => { const out: { x: number; label: string }[] = []; if (!Number.isFinite(a) || !Number.isFinite(b)) return out; for (let e = Math.ceil(a - 1e-9); e <= b + 1e-9; e++) out.push({ x: e, label: `10${sup(e)}` }); return out; };
   const xt = s.logX ? logTicks(x0, x1) : undefined;
   const yTicks = s.logY ? logTicks(y0, y1).map((t) => t.x) : undefined;
   const legend = s.legend === false || s.series.length < 2 ? undefined : s.series.map((q, i) => ({ name: q.name, color: pickColor(o, q.color, i, true) }));

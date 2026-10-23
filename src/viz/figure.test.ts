@@ -260,3 +260,11 @@ describe('plasmid map', () => {
     expect(sceneToPdf(buildPlasmidMap(spec, opt())).startsWith('%PDF-1.4')).toBe(true);
   });
 });
+
+describe('buildCurves log axes', () => {
+  it('ignores a non-positive yMin on a log axis instead of looping forever', () => {
+    const sc = buildCurves({ series: [{ name: 'a', color: '#0072B2', points: [{ x: 1, y: 1 }, { x: 2, y: 10 }] }], xLabel: 'x', yLabel: 'y', logY: true, yMin: 0 }, opt());
+    expect(sc.items.length).toBeGreaterThan(0);
+    expect(sceneToSvg(sc)).toContain('<svg');
+  });
+});
