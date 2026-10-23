@@ -197,6 +197,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Exploratory summaries; Fst and admixture depend on sampling and sample size. Use PLINK/ADMIXTURE/STRUCTURE for publication analyses of large panels.',
     cloudLater: '',
   },
+  {
+    id: 'omicsquant', path: '/omics-quant', name: 'Omics Quant Studio', short: 'Omics quant',
+    blurb: 'Normalise, impute and test proteomics and metabolomics intensity matrices.',
+    status: 'live', milestone: 'M1', accent: 170,
+    inputs: ['Intensity matrix CSV/TSV', 'MaxQuant proteinGroups.txt', 'Sample sheet: sample, group'],
+    analyses: ['Missingness QC by sample and feature', 'Median and quantile normalisation', 'MinProb, k-NN and half-minimum imputation', 'Moderated-t differential abundance with BH FDR', 'PCA and clustered heat map'],
+    engines: 'TypeScript; limma-style empirical-Bayes moderated t',
+    limits: 'Two-group contrasts on browser-scale matrices; confirm key findings with limma, MSstats or Perseus',
+    cloudLater: 'DIA-NN integration and large-cohort statistics',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);

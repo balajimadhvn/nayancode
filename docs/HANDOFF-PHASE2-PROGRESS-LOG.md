@@ -16,7 +16,7 @@ with the Phase 1 sync. Phase 2 branch to create in nayancode: `feature/phase2-st
 | 6 | MD & Trajectory Analysis Studio | DONE |
 | 7 | Peptide Studio | DONE |
 | 8 | Population Genetics Studio | DONE |
-| 9 | Proteomics & Metabolomics Quant Studio | NOT STARTED |
+| 9 | Proteomics & Metabolomics Quant Studio | DONE |
 | 10 | AMR / Bacterial Genomics Studio | NOT STARTED |
 | 11 | Five free tool pages (website) | NOT STARTED |
 | 12 | Website integration, product pages, copy, final checks | NOT STARTED |
@@ -80,3 +80,11 @@ with the Phase 1 sync. Phase 2 branch to create in nayancode: `feature/phase2-st
 - tsc/build/size: `npx tsc --noEmit` clean; `npm run build` succeeds; `find dist -type f -size +20M` prints nothing
 - commit hash: see `git log` (`Population Genetics Studio: Weir–Cockerham Fst, HWE, LD, PCA, admixture EM and Tajima's D`)
 - what is left / problems / decisions for the owner: (1) PCA coordinates come from the shared `genotypePcs`, whose result is components × samples; the UI and tests use that orientation. (2) BIC uses parameters = K(n + m) and n = observed genotypes. (3) The demo genotype table contains a third labelled group ("Admixed") so the structure tab has something to resolve; the Fst tab therefore reports θ over all three labels, not just the two sources. (4) The visible note is exactly the sentence required by the handoff.
+
+## Item 9 Proteomics & Metabolomics Quant Studio — DONE   (2026-10-23, 22:20)
+- files created/changed: `src/studios/omicsquant/prep.ts` (+ `prep.test.ts`), `OmicsQuantStudio.tsx`, `DataTab.tsx`, `NormaliseTab.tsx`, `DiffTab.tsx`, `ClusterTab.tsx`; `src/App.tsx` (lazy route), `src/core/studios.ts` (entry), `src/ui/Icons.tsx` (icon), `src/core/provenance.ts` (`cox2014`, `lazar2016`, `bolstad2003`), `e2e/studios.spec.ts` (route and test)
+- tests added and result: 12 unit tests pass (`prep.test.ts`): generic CSV and MaxQuant parsing (LFQ/Intensity prefix stripping; rows flagged Reverse, Potential contaminant or Only identified by site dropped), log2 with zeros/negatives becoming missing and the pseudocount option, group-wise feature filtering, median normalisation (all sample medians equal to 1e-9), quantile normalisation (identical sorted vectors when complete; ties averaged), all three imputation methods (observed cells unchanged, mask count equals the number of NAs, seeded determinism), half-minimum = min/2, and the planted experiment (600 features × 6 samples, 3 vs 3, 10 % MCAR plus left-censoring below the 10th percentile, 40 features +2 log2): AUC of −log10 p > 0.9, ≥ 25/40 recovered at FDR 0.05 and ≤ 5 false positives
+- e2e test name and result: `omics quant: demo recovers spiked features and draws a volcano` — pass (3.7 s); the demo reports 488 tested features, 33/33 tested spiked features recovered and 4 false positives at FDR 0.05, and the Volcano card renders
+- tsc/build/size: `npx tsc --noEmit` clean; `npm run build` succeeds; `find dist -type f -size +20M` prints nothing
+- commit hash: see `git log` (`Omics Quant Studio: normalisation, imputation and differential abundance for proteomics and metabolomics matrices`)
+- what is left / problems / decisions for the owner: the imputation mask is used for two things, not just reporting. Besides counting observed values per group, cells flagged as imputed enter the weighted moderated fit with weight 0.05 (`DiffOptions.imputedWeight`, documented in `prep.ts`). Without this, a single left-censored MinProb filler can dominate a feature's residual variance and hide a real effect: with the mask ignored the planted test recovered only 20/40 at FDR 0.05. With the weight it recovers the required ≥ 25/40 while keeping ≤ 5 false positives. `normalise` implements only none/median/quantile; VSN is neither implemented nor offered. Quantile normalisation with ties keeps equal values equal by averaging the reference quantiles over the tied ranks, so sorted vectors are identical across samples only when there are no ties, which is how the handoff phrases the invariant.
