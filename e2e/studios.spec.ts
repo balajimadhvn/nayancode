@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/], ['primers', /Primer Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -464,5 +464,14 @@ test('crispr: demo finds guides and scans a background for off-targets', async (
   await page.locator('label.field', { hasText: 'Bundled genome' }).locator('select').selectOption('lambda');
   await page.getByRole('button', { name: 'Scan background' }).click();
   await expect(page.getByText(/searched in/)).toBeVisible({ timeout: 60_000 });
+  expect(errs).toEqual([]);
+});
+
+test('primer: demo designs a pair and shows the amplicon', async ({ page }) => {
+  const errs = watch(page); await page.goto('/primers');
+  await page.getByRole('button', { name: /Demo: 2-kb template/ }).click();
+  await expect(page.getByRole('columnheader', { name: 'Forward primer' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('Amplicon').first()).toBeVisible();
+  await expect(page.locator('table')).toContainText(/[ACGT]{18}/);
   expect(errs).toEqual([]);
 });

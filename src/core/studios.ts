@@ -227,6 +227,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Off-target search covers substitutions only (no bulges) and NGG PAM sites; scores rank guides but are not trained efficiency or safety predictors',
     cloudLater: '',
   },
+  {
+    id: 'primer', path: '/primers', name: 'Primer Studio', short: 'Primer',
+    blurb: 'Design PCR primer pairs, predict amplicons with an in-silico PCR and check primers for hairpins and dimers.',
+    status: 'live', milestone: 'M1', accent: 75,
+    inputs: ['FASTA or plain DNA template', 'Primer sequences (name + sequence or FASTA)'],
+    analyses: ['Primer-pair design around a target with Tm, GC, length and amplicon limits', 'SantaLucia nearest-neighbour Tm', 'In-silico PCR on both strands with an exact 3′ end', 'Hairpin, self-dimer and pair-dimer checks', 'GC clamp and homopolymer flags', 'CSV export'],
+    engines: 'TypeScript kernels',
+    limits: 'Rules-based design with no genome-wide specificity search; dimer checks are sequence heuristics without free energies. Always BLAST and test primers',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);
