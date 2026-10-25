@@ -267,6 +267,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Base calls and qualities are the instrument software’s; the viewer does not call bases. Local alignment is not a validated variant caller, so confirm every difference on the trace or the opposite strand',
     cloudLater: '',
   },
+  {
+    id: 'imagecount', path: '/image-counter', name: 'Image Counter Studio', short: 'Image counter',
+    blurb: 'Count colonies, cells or particles with Otsu thresholding, size filters and watershed splitting.',
+    status: 'live', milestone: 'M1', accent: 50,
+    inputs: ['Plate photo or microscope image (PNG/JPEG)', 'Optional pixels-per-mm scale', 'Optional circular region of interest'],
+    analyses: ['Grey conversion and Gaussian blur', 'Automatic Otsu or manual threshold', 'Automatic or manual dark/light polarity', '8-connected labelling with hole filling and area filters', 'Watershed splitting of touching objects', 'Overlay with outlines and numbered centroids', 'Object table, size histogram and annotated PNG', 'CFU/mL calculator and CSV export'],
+    engines: 'TypeScript kernels; HTML canvas in the browser',
+    limits: 'Counts are approximate and depend on focus, lighting and threshold. Crowded or faint objects are the main source of error; not for diagnostic use',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);
