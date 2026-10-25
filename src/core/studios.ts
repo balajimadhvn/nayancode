@@ -277,6 +277,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Counts are approximate and depend on focus, lighting and threshold. Crowded or faint objects are the main source of error; not for diagnostic use',
     cloudLater: '',
   },
+  {
+    id: 'flow', path: '/flow', name: 'Flow Studio', short: 'Flow',
+    blurb: 'Open FCS files, apply spillover compensation, draw gates and compare population statistics.',
+    status: 'live', milestone: 'M1', accent: 45,
+    inputs: ['FCS 3.0/3.1 list-mode files', 'Optional edited spillover matrix'],
+    analyses: ['FCS 3.0/3.1 import with log-channel linearisation', 'Arcsinh or log10 transforms per parameter', 'Spillover compensation by matrix inversion', 'Rect, polygon and ellipse gates on transformed values', 'Nested gate tree with parent-aware counts', 'Median, mean and CV% on raw compensated values', 'Density plot with PNG export', 'CSV statistics export'],
+    engines: 'TypeScript kernels; HTML canvas in the browser',
+    limits: 'Compensation only removes spillover as well as the supplied matrix describes it; arcsinh replaces biexponential/logicle scaling. Files are capped at 2,000,000 events and 64 parameters, and gates are not a substitute for clinical review',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);

@@ -113,6 +113,7 @@ export const CITATIONS: Record<string, string> = {
   campen2008: 'Campen A, et al. (2008) TOP-IDP-scale: a new amino acid scale measuring propensity for intrinsic disorder. Protein Pept Lett 15:956–963.',
   jaspar2024: 'Rauluseviciute I, et al. (2024) JASPAR 2024: 20th anniversary of the open-access database of transcription factor binding profiles. Nucleic Acids Res 52:D174–D182. (CC BY 4.0)',
   ewing1998: 'Ewing B, Green P (1998) Base-calling of automated sequencer traces using phred. II. Error probabilities. Genome Res 8:186–194.',
+  spidlen2010: 'Spidlen J, Moore W, Parks D, Goldberg M, Bray K, Bierre P, Gorombey P, Hyun B, Hubbard M, Lange S, Lefebvre R, Leif R, Novo D, Ostruszka L, Treister A, Wood J, Murphy RF, Roederer M, Sudar D, Zigon R, Brinkman RR (2010) Data File Standard for Flow Cytometry, version FCS 3.1. Cytometry A 77:97–100.',
   otsu1979: 'Otsu N (1979) A threshold selection method from gray-level histograms. IEEE Trans Syst Man Cybern 9:62–66.',
   gibson2009: 'Gibson DG, et al. (2009) Enzymatic assembly of DNA molecules up to several hundred kilobases. Nat Methods 6:343–345.',
   engler2008: 'Engler C, Kandzia R, Marillonnet S (2008) A one pot, one step, precision cloning method with high throughput capability. PLoS ONE 3:e3647.',

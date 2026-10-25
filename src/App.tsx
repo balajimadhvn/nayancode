@@ -36,6 +36,7 @@ const live: Record<string, ReturnType<typeof lazyRetry<() => React.JSX.Element>>
   protocol: lazyRetry(() => import('@/studios/protocol/ProtocolStudio')),
   sanger: lazyRetry(() => import('@/studios/sanger/SangerStudio')),
   imagecount: lazyRetry(() => import('@/studios/imagecount/ImageCountStudio')),
+  flow: lazyRetry(() => import('@/studios/flow/FlowStudio')),
 };
 
 const Loading = () => <div style={{ display: 'grid', placeItems: 'center', minHeight: '60vh', color: 'var(--text-faint)' }}>Loading…</div>;
