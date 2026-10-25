@@ -237,6 +237,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Rules-based design with no genome-wide specificity search; dimer checks are sequence heuristics without free energies. Always BLAST and test primers',
     cloudLater: '',
   },
+  {
+    id: 'enrich', path: '/enrichment', name: 'Enrichment Studio', short: 'Enrichment',
+    blurb: 'Test your own GMT gene sets with over-representation analysis or pre-ranked GSEA.',
+    status: 'live', milestone: 'M1', accent: 100,
+    inputs: ['GMT gene sets (MSigDB, Reactome, WikiPathways, GO exports)', 'Gene list', 'Optional background gene list', 'Ranked gene list (gene + score)'],
+    analyses: ['GMT import with gene de-duplication', 'Hypergeometric over-representation with fold enrichment', 'Benjamini-Hochberg FDR', 'Pre-ranked GSEA with seeded gene-set permutations', 'NES, permutation p and FDR', 'Running-sum curve with hit positions', 'CSV export'],
+    engines: 'TypeScript kernels; GSEA permutations in a Web Worker',
+    limits: 'Results depend entirely on the uploaded sets and background; identifiers must match, and the analysis does not establish pathway activity. No gene-set database is bundled',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);
