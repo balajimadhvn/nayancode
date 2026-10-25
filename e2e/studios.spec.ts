@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/], ['primers', /Primer Studio/], ['enrichment', /Enrichment Studio/], ['protocols', /Protocol Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/], ['primers', /Primer Studio/], ['enrichment', /Enrichment Studio/], ['protocols', /Protocol Studio/], ['sanger', /Sanger Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -526,5 +526,22 @@ test('protocol: run mode, saving and notebook entries work', async ({ page }) =>
   await page.getByRole('button', { name: 'Add entry' }).click();
   await expect(page.getByRole('heading', { name: 'Run one' })).toBeVisible();
   await expect(page.getByText('The gel looked clean.')).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
+test('sanger: demo trace renders, trims and compares with a reference', async ({ page }) => {
+  const errs = watch(page); await page.goto('/sanger');
+  await page.getByRole('button', { name: /Load demo \(400-base synthetic trace\)/ }).click();
+  await expect(page.getByText('SYNTHETIC_DEMO')).toBeVisible();
+  await expect(page.getByText('Mean Q')).toBeVisible();
+  await expect(page.getByText(/Mixed peaks/)).toBeVisible();
+  await page.getByRole('tab', { name: 'Trim & export' }).click();
+  await expect(page.getByText('Kept bases')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Trimmed FASTA' })).toBeEnabled();
+  await page.getByRole('tab', { name: 'Compare' }).click();
+  await page.getByPlaceholder(/>reference/).fill('GATC'.repeat(100));
+  await page.getByRole('button', { name: 'Compare', exact: true }).click();
+  await expect(page.getByText('Identity')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('100 %')).toBeVisible();
   expect(errs).toEqual([]);
 });

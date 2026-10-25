@@ -257,6 +257,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Templates are generic starting points, not validated SOPs; nothing is synced and browser storage can be blocked. Check every volume against your lab protocol and reagent datasheets',
     cloudLater: '',
   },
+  {
+    id: 'sanger', path: '/sanger', name: 'Sanger Studio', short: 'Sanger',
+    blurb: 'Open ABIF traces, inspect mixed peaks, trim by quality and compare reads with a reference.',
+    status: 'live', milestone: 'M1', accent: 15,
+    inputs: ['Applied Biosystems .ab1 / .abi trace', 'Reference FASTA for comparison'],
+    analyses: ['Electropherogram with base letters and quality bars', 'Mixed-peak detection with IUPAC codes', 'Mott and window quality trimming', 'Trimmed and full FASTA plus FASTQ export', 'Both-orientation local alignment against a reference', 'Difference table with read quality and CSV export'],
+    engines: 'TypeScript kernels; SVG trace viewer',
+    limits: 'Base calls and qualities are the instrument software’s; the viewer does not call bases. Local alignment is not a validated variant caller, so confirm every difference on the trace or the opposite strand',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);

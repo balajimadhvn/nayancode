@@ -34,6 +34,7 @@ const live: Record<string, ReturnType<typeof lazyRetry<() => React.JSX.Element>>
   primer: lazyRetry(() => import('@/studios/primer/PrimerStudio')),
   enrich: lazyRetry(() => import('@/studios/enrich/EnrichStudio')),
   protocol: lazyRetry(() => import('@/studios/protocol/ProtocolStudio')),
+  sanger: lazyRetry(() => import('@/studios/sanger/SangerStudio')),
 };
 
 const Loading = () => <div style={{ display: 'grid', placeItems: 'center', minHeight: '60vh', color: 'var(--text-faint)' }}>Loading…</div>;
