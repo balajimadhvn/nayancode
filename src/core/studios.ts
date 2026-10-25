@@ -247,6 +247,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Results depend entirely on the uploaded sets and background; identifiers must match, and the analysis does not establish pathway activity. No gene-set database is bundled',
     cloudLater: '',
   },
+  {
+    id: 'protocol', path: '/protocols', name: 'Protocol Studio', short: 'Protocol',
+    blurb: 'Scale master mixes, run protocols with per-step timers, and keep a dated local notebook.',
+    status: 'live', milestone: 'M1', accent: 65,
+    inputs: ['Reagent volumes per reaction', 'Generic protocol templates', 'Protocol JSON', 'Notebook notes'],
+    analyses: ['Master-mix scaling with overage and water to volume', 'Dispense volume after the template', 'Five generic protocol templates', 'Run mode with checkboxes and countdown timers', 'Markdown and JSON export/import', 'Dated notebook with search and Markdown export'],
+    engines: 'TypeScript; browser storage with an in-memory fallback',
+    limits: 'Templates are generic starting points, not validated SOPs; nothing is synced and browser storage can be blocked. Check every volume against your lab protocol and reagent datasheets',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);

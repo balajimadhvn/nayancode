@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/], ['primers', /Primer Studio/], ['enrichment', /Enrichment Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/], ['primers', /Primer Studio/], ['enrichment', /Enrichment Studio/], ['protocols', /Protocol Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -496,5 +496,35 @@ test('enrichment: demo sets run pre-ranked GSEA and draw the running sum', async
   await expect(page.getByRole('columnheader', { name: 'NES' })).toBeVisible({ timeout: 60_000 });
   await page.getByRole('cell', { name: 'PLANTED_DNA_REPAIR' }).click();
   await expect(page.getByText('Running sum').first()).toBeVisible();
+  expect(errs).toEqual([]);
+});
+
+test('protocol: PCR template scales to 88 uL of buffer', async ({ page }) => {
+  const errs = watch(page); await page.goto('/protocols');
+  await page.getByRole('button', { name: 'PCR (Taq) template' }).click();
+  await page.getByLabel('Reactions').fill('8');
+  await page.getByLabel('Overage (%)').fill('10');
+  await expect(page.locator('table').last()).toContainText('88');
+  await expect(page.locator('table').last()).toContainText('70.4');
+  expect(errs).toEqual([]);
+});
+
+test('protocol: run mode, saving and notebook entries work', async ({ page }) => {
+  const errs = watch(page); await page.goto('/protocols');
+  await page.getByRole('tab', { name: 'Protocol' }).click();
+  await page.getByLabel('Start from a template').selectOption({ label: 'PCR with Taq polymerase' });
+  await expect(page.getByRole('heading', { name: 'PCR with Taq polymerase' })).toBeVisible();
+  await page.getByRole('button', { name: 'Run mode' }).click();
+  await expect(page.getByLabel('Step 1 done')).toBeVisible();
+  await page.getByRole('button', { name: 'Start' }).first().click();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved in this browser')).toBeVisible();
+  await page.getByRole('tab', { name: 'Notebook' }).click();
+  await page.getByLabel('Title').fill('Run one');
+  await page.getByLabel('Notes').fill('The gel looked clean.');
+  await page.getByRole('button', { name: 'Add entry' }).click();
+  await expect(page.getByRole('heading', { name: 'Run one' })).toBeVisible();
+  await expect(page.getByText('The gel looked clean.')).toBeVisible();
   expect(errs).toEqual([]);
 });
