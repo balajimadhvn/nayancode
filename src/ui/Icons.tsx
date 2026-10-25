@@ -39,7 +39,7 @@ export const Icon = {
 };
 export const StudioIcon: Record<string, (p: SVGProps<SVGSVGElement>) => React.JSX.Element> = {
   sequence: Icon.Sequence, expression: Icon.Expression, chemistry: Icon.Chemistry, structure: Icon.Structure, docking: Icon.Docking,
-  phylo: Icon.Phylo, genome: Icon.Genome, variant: Icon.Variant, singlecell: Icon.SingleCell, microbiome: Icon.Microbiome, lab: Icon.Flask, stats: Icon.Doc, plasmid: Icon.Genome, biologics: Icon.Spark, pk: Icon.Cpu, peptide: Icon.Cpu, trajectory: Icon.Cpu, popgen: Icon.Genome, omicsquant: Icon.Cpu, amr: Icon.Genome,
+  phylo: Icon.Phylo, genome: Icon.Genome, variant: Icon.Variant, singlecell: Icon.SingleCell, microbiome: Icon.Microbiome, lab: Icon.Flask, stats: Icon.Doc, plasmid: Icon.Genome, biologics: Icon.Spark, pk: Icon.Cpu, peptide: Icon.Cpu, trajectory: Icon.Cpu, popgen: Icon.Genome, omicsquant: Icon.Cpu, amr: Icon.Genome, crispr: Icon.Spark,
 };
 
 export const Logo = ({ size = 26 }: { size?: number }) => (

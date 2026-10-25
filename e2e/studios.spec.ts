@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -451,5 +451,18 @@ test('amr: synthetic demo recovers the five planted resistance genes', async ({ 
   await expect(page.locator('.callout', { hasText: 'Planted-truth check' })).toContainText(/all 5 genes recovered/);
   await page.getByRole('tab', { name: 'Gene library' }).click();
   await expect(page.getByText(/reference records shown/).first()).toBeVisible({ timeout: 30_000 });
+  expect(errs).toEqual([]);
+});
+
+test('crispr: demo finds guides and scans a background for off-targets', async ({ page }) => {
+  const errs = watch(page); await page.goto('/crispr');
+  await page.getByRole('button', { name: /Demo: 600-bp/ }).click();
+  await expect(page.getByRole('columnheader', { name: 'Protospacer' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('table')).toContainText(/[ACGT]{20}/);
+  await expect(page.getByText('Specificity').first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Off-targets' }).click();
+  await page.locator('label.field', { hasText: 'Bundled genome' }).locator('select').selectOption('lambda');
+  await page.getByRole('button', { name: 'Scan background' }).click();
+  await expect(page.getByText(/searched in/)).toBeVisible({ timeout: 60_000 });
   expect(errs).toEqual([]);
 });

@@ -217,6 +217,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Acquired genes only: point mutations and novel families are missed, and 15-mers shared by more than 50 references are not seeded, so very large allele families can be invisible',
     cloudLater: '',
   },
+  {
+    id: 'crispr', path: '/crispr', name: 'CRISPR Studio', short: 'CRISPR',
+    blurb: 'Design SpCas9 and Cas12a guides, scan backgrounds for off-targets and order cloning oligos.',
+    status: 'live', milestone: 'M1', accent: 345,
+    inputs: ['FASTA or plain DNA (≤ 50 kb)', 'Bundled RefSeq genomes or pasted FASTA for off-targets (≤ 5 Mb)'],
+    analyses: ['SpCas9 (NGG) and Cas12a (TTTV) guide enumeration on both strands', 'Rule-based on-target score with explicit penalties', 'Ungapped NGG off-target scan with mismatch positions', 'MIT position-weighted specificity score', 'BsmBI-style cloning oligos for a U6 vector'],
+    engines: 'TypeScript kernels in a Web Worker',
+    limits: 'Off-target search covers substitutions only (no bulges) and NGG PAM sites; scores rank guides but are not trained efficiency or safety predictors',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);
