@@ -76,6 +76,7 @@ export const CITATIONS: Record<string, string> = {
   atilgan2001: 'Atilgan AR, et al. (2001) Anisotropy of fluctuation dynamics of proteins with an elastic network model. Biophys J 80:505–515.',
   myers2005: 'Myers EW (2005) The fragment assembly string graph. Bioinformatics 21(Suppl 2):ii79–ii85.',
   mclaren2016: 'McLaren W, et al. (2016) The Ensembl Variant Effect Predictor. Genome Biol 17:122.',
+  cingolani2012: 'Cingolani P, et al. (2012) A program for annotating and predicting the effects of single nucleotide polymorphisms, SnpEff. Fly 6:80–92.',
   butler2015: 'Butler A, et al. (2015) Spatial reconstruction of single-cell gene expression data. Nat Biotechnol 33:495–502 (HVG dispersion binning).',
   blondel2008: 'Blondel VD, et al. (2008) Fast unfolding of communities in large networks. J Stat Mech P10008.',
   johnson2007: 'Johnson WE, Li C, Rabinovic A (2007) Adjusting batch effects in microarray expression data using empirical Bayes methods. Biostatistics 8(1):118–127.',

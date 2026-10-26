@@ -92,7 +92,7 @@ export const STUDIOS: StudioDef[] = [
     blurb: 'VCF exploration with germline, cancer and GWAS modes.',
     status: 'live', milestone: 'M1', accent: 330,
     inputs: ['VCF', 'GWAS summary statistics'],
-    analyses: ['VCF QC & filtering', 'Somatic TMB / VAF', 'Mutational signatures (NMF, no COSMIC)', 'Evidence: ClinVar, CIViC, Open Targets, gnomAD', 'Ensembl VEP annotation', 'GWAS Manhattan & QQ plots', 'GWAS-lite association testing'],
+    analyses: ['VCF QC & filtering', 'Somatic TMB / VAF', 'Mutational signatures (NMF, no COSMIC)', 'Evidence: ClinVar, CIViC, Open Targets, gnomAD', 'Variant effect annotation (consequences, HGVS)', 'Ensembl VEP annotation', 'GWAS Manhattan & QQ plots', 'GWAS-lite association testing'],
     engines: 'TypeScript kernels; public APIs only when you ask for a lookup',
     limits: 'Evidence lookups call public databases only when you ask; research use only',
     cloudLater: 'Joint calling, LD, PRS, somatic calling',

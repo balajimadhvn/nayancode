@@ -22,6 +22,7 @@ const TOOLS = {
 };
 type Tab = 'table' | 'qc' | 'somatic' | 'signatures' | 'annotate' | 'evidence' | 'gwas' | 'assoc';
 const AssocPanel = lazy(() => import('./AssocPanel'));
+const AnnotatePanel = lazy(() => import('./AnnotatePanel'));
 const FIELDS: RF[] = ['QUAL', 'DP', 'VAF', 'AF', 'FILTER', 'TYPE', 'CHROM', 'GT'];
 
 export default function VariantStudio() {
@@ -58,7 +59,7 @@ export default function VariantStudio() {
         {tab === 'qc' && vcf && <QcView vcf={vcf} kept={kept} />}
         {tab === 'somatic' && vcf && <Somatic vcf={vcf} kept={kept} />}
         {tab === 'signatures' && <Signatures vcfSrc={vcfSrc} samples={data?.samples ?? []} />}
-        {tab === 'annotate' && vcf && <Annotate kept={kept} />}
+        {tab === 'annotate' && vcf && <><Suspense fallback={null}><AnnotatePanel kept={kept} src={vcfSrc} /></Suspense><Annotate kept={kept} /></>}
         {tab === 'evidence' && <Evidence kept={kept} />}
         {tab === 'gwas' && <Gwas />}
         {tab === 'assoc' && <Suspense fallback={null}><AssocPanel /></Suspense>}

@@ -13,6 +13,13 @@ export interface GffFeature {
   attrs: Record<string, string>;
 }
 
+export interface GffCds {
+  start: number; // 1-based inclusive
+  end: number;
+  /** GFF3 phase / GTF frame: 0, 1 or 2 bases before the first complete codon. */
+  phase: number;
+}
+
 export interface GffGene {
   id: string;
   name: string;
@@ -22,6 +29,8 @@ export interface GffGene {
   exons: [number, number][];
   /** Sum of exon lengths after merging (bases). */
   length: number;
+  /** Sorted CDS segments, when the annotation has CDS rows. Optional so older callers keep working. */
+  cds?: GffCds[];
 }
 
 export interface GffModel { format: 'gff3' | 'gtf'; features: GffFeature[]; genes: GffGene[] }
@@ -94,10 +103,17 @@ const makeGene = (id: string, attrs: Record<string, string>, f: GffFeature | und
   id, name: nameOf(attrs, id), seqid: f?.seqid ?? '', strand: f?.strand === '-' ? '-' : '+', exons: [], length: 0,
 });
 
-function finish(genes: GffGene[]): GffGene[] {
+const phaseNum = (s: string): number => {
+  const n = Number(s);
+  return n === 1 || n === 2 ? n : 0;
+};
+
+function finish(genes: GffGene[], cdsMap?: Map<string, GffCds[]>): GffGene[] {
   for (const g of genes) {
     g.exons = mergeExons(g.exons);
     g.length = exonLength(g.exons);
+    const c = cdsMap?.get(g.id);
+    if (c?.length) g.cds = [...c].sort((a, b) => a.start - b.start || a.end - b.end);
   }
   return genes.filter((g) => g.length > 0 && g.seqid).sort((a, b) => (a.seqid < b.seqid ? -1 : a.seqid > b.seqid ? 1 : a.exons[0][0] - b.exons[0][0]));
 }
@@ -116,38 +132,41 @@ function buildGff3(features: GffFeature[]): GffGene[] {
   }
   // Transcripts whose gene row is absent still define a gene.
   for (const [, p] of txGene) if (!byId.has(p)) byId.set(p, makeGene(p, {}, undefined));
-  const exons = new Map<string, [number, number][]>(), cds = new Map<string, [number, number][]>();
+  const exons = new Map<string, [number, number][]>(), cds = new Map<string, GffCds[]>();
   for (const f of rows) {
     for (const p of parents(f)) {
       let gene = byId.get(p);
       if (!gene) { const tx = txGene.get(p); if (tx) gene = byId.get(tx); }
       if (!gene) { gene = makeGene(txGene.get(p) ?? p, {}, f); byId.set(gene.id, gene); }
-      const target = f.type === 'exon' ? exons : cds;
-      const list = target.get(gene.id) ?? []; list.push([f.start, f.end]); target.set(gene.id, list);
+      if (f.type === 'exon') {
+        const list = exons.get(gene.id) ?? []; list.push([f.start, f.end]); exons.set(gene.id, list);
+      } else {
+        const list = cds.get(gene.id) ?? []; list.push({ start: f.start, end: f.end, phase: phaseNum(f.phase) }); cds.set(gene.id, list);
+      }
       if (!gene.seqid) { gene.seqid = f.seqid; gene.strand = f.strand === '-' ? '-' : '+'; }
     }
   }
   for (const g of byId.values()) {
-    const ex = exons.get(g.id);
-    g.exons = ex?.length ? ex : cds.get(g.id) ?? [];
+    const ex = exons.get(g.id), cd = cds.get(g.id);
+    g.exons = ex?.length ? ex : cd?.map((c) => [c.start, c.end] as [number, number]) ?? [];
   }
-  return finish([...byId.values()]);
+  return finish([...byId.values()], cds);
 }
 
 function buildGtf(features: GffFeature[]): GffGene[] {
-  const byId = new Map<string, GffGene>(), exons = new Map<string, [number, number][]>(), cds = new Map<string, [number, number][]>(), rows = new Map<string, [number, number]>();
+  const byId = new Map<string, GffGene>(), exons = new Map<string, [number, number][]>(), cds = new Map<string, GffCds[]>(), rows = new Map<string, [number, number]>();
   for (const f of features) {
     const id = f.attrs.gene_id;
     if (!id) continue;
     let g = byId.get(id);
     if (!g) { g = makeGene(id, f.attrs, f); byId.set(id, g); }
     if (f.type === 'exon') { const l = exons.get(id) ?? []; l.push([f.start, f.end]); exons.set(id, l); }
-    else if (f.type === 'cds') { const l = cds.get(id) ?? []; l.push([f.start, f.end]); cds.set(id, l); }
+    else if (f.type === 'cds') { const l = cds.get(id) ?? []; l.push({ start: f.start, end: f.end, phase: phaseNum(f.phase) }); cds.set(id, l); }
     else if (f.type === 'gene' || f.type === 'transcript' || !rows.has(id)) rows.set(id, [f.start, f.end]);
   }
   for (const g of byId.values()) {
     const ex = exons.get(g.id), cd = cds.get(g.id), row = rows.get(g.id);
-    g.exons = ex?.length ? ex : cd?.length ? cd : row ? [row] : [];
+    g.exons = ex?.length ? ex : cd?.length ? cd.map((c) => [c.start, c.end] as [number, number]) : row ? [row] : [];
   }
-  return finish([...byId.values()]);
+  return finish([...byId.values()], cds);
 }
