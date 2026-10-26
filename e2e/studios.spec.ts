@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/], ['primers', /Primer Studio/], ['enrichment', /Enrichment Studio/], ['protocols', /Protocol Studio/], ['sanger', /Sanger Studio/], ['image-counter', /Image Counter Studio/], ['flow', /Flow Studio/], ['dynamics', /Dynamics Studio/], ['similarity-search', /Search Studio/], ['reads', /Reads Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/], ['primers', /Primer Studio/], ['enrichment', /Enrichment Studio/], ['protocols', /Protocol Studio/], ['sanger', /Sanger Studio/], ['image-counter', /Image Counter Studio/], ['flow', /Flow Studio/], ['dynamics', /Dynamics Studio/], ['similarity-search', /Search Studio/], ['reads', /Reads Studio/], ['amplicon', /Amplicon Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -177,6 +177,14 @@ test('reads: synthetic demo is trimmed and reports kept reads with a percentage'
   await page.getByRole('button', { name: 'Run', exact: true }).click();
   await expect(page.getByText('Reads kept')).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('.stat', { hasText: 'Reads kept' })).toContainText('%');
+  expect(errs).toEqual([]);
+});
+
+test('amplicon: synthetic demo calls five ASVs', async ({ page }) => {
+  const errs = watch(page); await page.goto('/amplicon');
+  await page.getByRole('button', { name: /Load demo \(3 synthetic samples/ }).click();
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  await expect(page.getByText('5 ASVs')).toBeVisible({ timeout: 120_000 });
   expect(errs).toEqual([]);
 });
 

@@ -1,4 +1,5 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { clearHandoffSoon, useHandoff } from '@/core/handoff';
 import { createRemote } from '@/compute/rpc';
 import type { ToolInfo } from '@/core/provenance';
 import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadText, fmt, sci, toCsv } from '@/ui/kit';
@@ -22,6 +23,8 @@ export default function MicrobiomeStudio() {
   const [tree, setTree] = useState(''), [groupCol, setGroupCol] = useState(''), [metric, setMetric] = useState<Metric>('bray'), [rank, setRank] = useState(5), [perms, setPerms] = useState(999), [minPrev, setMinPrev] = useState(0.2), [a, setA] = useState(''), [b, setB] = useState('');
   const [res, setRes] = useState<Awaited<ReturnType<MbKernels['analyse']>> | null>(null), [tab, setTab] = useState<Tab>('comp'), [view, setView] = useState<View>('community');
   const { run, busy, progress, note, error } = useRunner();
+  const amp = useHandoff((s) => s.amplicon);
+  useEffect(() => { if (amp) { setTable(amp.table); setTruth(null); setRes(null); clearHandoffSoon('amplicon'); } }, [amp]);
   const parsed = useMemo(() => { try { if (!table || !meta) return null; const t = parseFeatureTable(table); const m = parseMetadata(meta, t.samples); return { t, m }; } catch (e) { return { err: (e as Error).message } as { err: string }; } }, [table, meta]);
   const ok = parsed && !('err' in parsed) ? parsed : null;
   const col = groupCol && ok?.m.columns.includes(groupCol) ? groupCol : ok?.m.columns[0] ?? '';

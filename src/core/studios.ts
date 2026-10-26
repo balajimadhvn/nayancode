@@ -317,6 +317,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Multi-GB FASTQ needs Chrome or Edge for Save-to-disk; other browsers keep the output in memory. Read-level QC and preprocessing, not a mapper or variant caller. Research use only',
     cloudLater: '',
   },
+  {
+    id: 'amplicon', path: '/amplicon', name: 'Amplicon Studio', short: 'Amplicon',
+    blurb: '16S/ITS reads to denoised ASVs, chimeras checked and classified against your own reference.',
+    status: 'live', milestone: 'M1', accent: 135,
+    inputs: ['FASTQ / FASTQ.gz, single or paired-end, one or more samples', 'Forward and reverse primers (IUPAC)', 'Optional taxonomy reference FASTA with semicolon lineages', 'Synthetic 3-sample demo with a synthetic reference'],
+    analyses: ['IUPAC-aware primer trimming with mismatches and read-through removal', 'Expected-error, N and median-length filtering', 'Paired-end overlap merging', 'Dereplication and UNOISE-style denoising by abundance skew', 'Two-parent UCHIME-style chimera detection', 'RDP-style 8-mer naive Bayes taxonomy with bootstrap confidence', 'ASV feature-table and FASTA export; hand-off to the Microbiome Studio'],
+    engines: 'TypeScript kernels in a Web Worker; streaming FASTQ parsing; no server and no bundled database',
+    limits: 'No taxonomy database is bundled: supply SILVA, Greengenes or UNITE with lineage headers and check its licence. The denoiser is UNOISE-style and the classifier RDP-style, so calls can differ from DADA2/QIIME 2. Up to 200,000 reads or pairs per sample in browser memory. Research-grade, not clinical',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);
