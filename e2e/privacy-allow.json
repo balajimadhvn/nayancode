@@ -1,0 +1,42 @@
+{
+  "get": [
+    "files.rcsb.org",
+    "data.rcsb.org",
+    "rest.uniprot.org",
+    "www.ebi.ac.uk",
+    "eutils.ncbi.nlm.nih.gov",
+    "www.ncbi.nlm.nih.gov",
+    "huggingface.co",
+    "cdn-lfs.huggingface.co",
+    "cas-bridge.xethub.hf.co",
+    "alphafold.ebi.ac.uk",
+    "string-db.org",
+    "pubchem.ncbi.nlm.nih.gov",
+    "myvariant.info"
+  ],
+  "post": [
+    "civicdb.org",
+    "api.platform.opentargets.org",
+    "rest.ensembl.org",
+    "grch37.rest.ensembl.org"
+  ],
+  "reasons": {
+    "files.rcsb.org": "RCSB PDB coordinate files requested in Structure, Docking and the Dynamics Go-model tab",
+    "data.rcsb.org": "RCSB PDB entry metadata requested by Structure Studio",
+    "rest.uniprot.org": "UniProt protein facts requested by the Atlas page",
+    "www.ebi.ac.uk": "ChEMBL target and activity lookups in Chemistry Studio",
+    "eutils.ncbi.nlm.nih.gov": "ClinVar evidence requested by Variant Studio",
+    "www.ncbi.nlm.nih.gov": "NCBI policy/attribution links; no runtime request in this build",
+    "huggingface.co": "ESM-2 model files, only after the visitor presses Load model",
+    "cdn-lfs.huggingface.co": "Large model files behind the ESM-2 download, only after Load model",
+    "cas-bridge.xethub.hf.co": "Content-addressed model transfer used by the Hugging Face client, only after Load model",
+    "alphafold.ebi.ac.uk": "AlphaFold predicted models by accession, requested in Structure and Docking",
+    "string-db.org": "STRING interaction network, only after Fetch STRING interactions in Expression Studio",
+    "pubchem.ncbi.nlm.nih.gov": "PubChem compound lookup by name, only after a visitor lookup in Chemistry Studio",
+    "myvariant.info": "gnomAD allele frequencies requested for one variant in Variant Studio",
+    "civicdb.org": "CIViC clinical evidence GraphQL request in Variant Studio",
+    "api.platform.opentargets.org": "Open Targets gene-disease GraphQL request in Variant Studio",
+    "rest.ensembl.org": "Ensembl VEP annotation for GRCh38 variants, sent only when the visitor runs VEP",
+    "grch37.rest.ensembl.org": "Ensembl VEP annotation for GRCh37 variants, sent only when the visitor runs VEP"
+  }
+}
