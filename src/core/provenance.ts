@@ -146,6 +146,9 @@ export const CITATIONS: Record<string, string> = {
   clementi2000: 'Clementi C, Nymeyer H, Onuchic JN (2000) Topological and energetic factors: what determines the structural details of the transition state ensemble and en-route intermediates for protein folding? J Mol Biol 298:937–953.',
   verlet1967: 'Verlet L (1967) Computer experiments on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules. Phys Rev 159:98–103.',
   leimkuhler2013: 'Leimkuhler B, Matthews C (2013) Rational construction of stochastic numerical methods for molecular sampling. Appl Math Res Express 2013:34–56.',
+  martin2011: 'Martin M (2011) Cutadapt removes adapter sequences from high-throughput sequencing reads. EMBnet.journal 17:10–12.',
+  chen2018: 'Chen S, Zhou Y, Chen Y, Gu J (2018) fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics 34:i884–i890.',
+  edgar2015: 'Edgar RC, Flyvbjerg H (2015) Error filtering, pair assembly and error correction for next-generation sequencing reads. Bioinformatics 31:3476–3482.',
 };
 
 export interface ProvRecord {

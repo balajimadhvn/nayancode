@@ -307,6 +307,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Exhaustive search is slower than BLAST on huge databases. E-values use published gapped BLOSUM62 parameters without edge-effect correction. Protein queries only; research-grade, not clinical',
     cloudLater: '',
   },
+  {
+    id: 'reads', path: '/reads', name: 'Reads Studio', short: 'Reads',
+    blurb: 'Stream FASTQ from your disk: inspect, trim, merge, deduplicate, subsample, demultiplex and count k-mers.',
+    status: 'live', milestone: 'M1', accent: 5,
+    inputs: ['FASTQ / FASTQ.gz (single or paired-end)', 'Barcode table for demultiplexing', 'Synthetic 20,000-read demo'],
+    analyses: ['Streaming read QC, per-position quality and length histogram', 'Adapter, poly-G and quality trimming with length/N/quality/EE filters', 'Paired-end overlap merging with quality-aware mismatch calls', 'Exact deduplication and seeded reservoir subsampling', 'Barcode demultiplexing with mismatch tolerance', 'Canonical k-mer spectrum and genome-size estimate'],
+    engines: 'TypeScript streaming kernels in a Web Worker; File System Access API for Save-to-disk',
+    limits: 'Multi-GB FASTQ needs Chrome or Edge for Save-to-disk; other browsers keep the output in memory. Read-level QC and preprocessing, not a mapper or variant caller. Research use only',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);
