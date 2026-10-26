@@ -42,7 +42,7 @@ export const STUDIOS: StudioDef[] = [
     blurb: 'Curate, filter, search and profile compound libraries with RDKit.',
     status: 'live', milestone: 'M1', accent: 150,
     inputs: ['SMILES', 'CSV with SMILES column', 'PubChem / ChEMBL import'],
-    analyses: ['Descriptors, curation & alerts', 'Similarity search (Morgan/Tanimoto)', 'Substructure (SMARTS)', 'Chemical space + Butina clusters', 'QSAR Lab (RF, kNN, ridge, applicability domain)', 'ADMET, scaffolds, MCS, R-groups, reaction enumeration, pharmacophore and shape similarity'],
+    analyses: ['Descriptors, curation & alerts', 'Similarity search (Morgan/Tanimoto)', 'GPU Tanimoto similarity search and Butina clustering', 'Substructure (SMARTS)', 'Chemical space + Butina clusters', 'QSAR Lab (RF, kNN, ridge, applicability domain)', 'ADMET, scaffolds, MCS, R-groups, reaction enumeration, pharmacophore and shape similarity'],
     engines: 'RDKit (WebAssembly) in a worker',
     limits: 'Interactive library sizes; models are validated by cluster CV and Y-randomisation',
     cloudLater: 'GNN QSAR, large-scale docking, generative design',

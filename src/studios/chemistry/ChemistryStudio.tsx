@@ -68,9 +68,10 @@ const pop = (x: number) => { x -= (x >>> 1) & 0x55555555; x = (x & 0x33333333) +
 const tanimoto = (a: Uint32Array, b: Uint32Array) => { let i = 0, u = 0; for (let k = 0; k < a.length; k++) { i += pop(a[k] & b[k]); u += pop(a[k] | b[k]); } return u ? i / u : 0; };
 
 const FP_BITS = 2048, FP_RADIUS = 2;
-type ChemTab = 'library' | 'properties' | 'admet' | 'similarity' | 'substructure' | 'space' | 'qsar' | 'moltools';
+type ChemTab = 'library' | 'properties' | 'admet' | 'similarity' | 'simsearch' | 'substructure' | 'space' | 'qsar' | 'moltools';
 const MolToolsView = lazy(() => import('./MolToolsView'));
 const AdmetView = lazy(() => import('./AdmetView'));
+const SimSearchView = lazy(() => import('./SimSearchView'));
 
 export default function ChemistryStudio() {
   const [ready, setReady] = useState(false);
@@ -120,8 +121,8 @@ export default function ChemistryStudio() {
           {mols.length > 0 && <div className="cols-2" style={{ gap: 10 }}><Stat label="Molecules" value={mols.length} /><Stat label="Ro5 pass" value={`${mols.filter((m) => m.lipinskiViolations <= 1).length}`} hint="≤ 1 Lipinski violation" /></div>}
         </div>
         <div className="stack">
-          <Tabs<ChemTab> value={tab} onChange={setTab} items={[{ id: 'library', label: 'Library' }, { id: 'properties', label: 'Properties' }, { id: 'admet', label: 'ADMET' }, { id: 'similarity', label: 'Similarity' }, { id: 'substructure', label: 'Substructure' }, { id: 'space', label: 'Chemical space' }, { id: 'moltools', label: 'Molecule tools' }, { id: 'qsar', label: 'QSAR Lab' }]} />
-          {tab === 'qsar' ? <QsarLab mols={mols} columns={columns} descNames={descNames} ready={ready} /> : mols.length === 0 ? <Card><div className="faint" style={{ textAlign: 'center', padding: '36px 6px' }}>Load the example set of approved drugs, or paste your own SMILES. The QSAR Lab can also fetch a target's bioactivity from ChEMBL.</div></Card> : <>
+          <Tabs<ChemTab> value={tab} onChange={setTab} items={[{ id: 'library', label: 'Library' }, { id: 'properties', label: 'Properties' }, { id: 'admet', label: 'ADMET' }, { id: 'similarity', label: 'Similarity' }, { id: 'simsearch', label: 'Similarity search' }, { id: 'substructure', label: 'Substructure' }, { id: 'space', label: 'Chemical space' }, { id: 'moltools', label: 'Molecule tools' }, { id: 'qsar', label: 'QSAR Lab' }]} />
+          {tab === 'qsar' ? <QsarLab mols={mols} columns={columns} descNames={descNames} ready={ready} /> : tab === 'simsearch' ? <Suspense fallback={null}><SimSearchView /></Suspense> : mols.length === 0 ? <Card><div className="faint" style={{ textAlign: 'center', padding: '36px 6px' }}>Load the example set of approved drugs, or paste your own SMILES. The QSAR Lab can also fetch a target's bioactivity from ChEMBL.</div></Card> : <>
             {tab === 'library' && <LibraryView mols={mols} />}
             {tab === 'properties' && <PropertiesView mols={mols} />}
             {tab === 'moltools' && <Suspense fallback={null}><MolToolsView mols={mols} /></Suspense>}
