@@ -7,7 +7,7 @@ function watch(page: Page) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|ResizeObserver|Failed to load resource.*(rcsb|ebi\.ac|ncbi|uniprot|opentargets|civicdb|myvariant|pubchem)/i.test(m.text())) errs.push('console: ' + m.text().slice(0, 200)); });
   return errs;
 }
-const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/], ['primers', /Primer Studio/], ['enrichment', /Enrichment Studio/], ['protocols', /Protocol Studio/], ['sanger', /Sanger Studio/], ['image-counter', /Image Counter Studio/], ['flow', /Flow Studio/]];
+const ROUTES: [string, RegExp][] = [['workbench', /Welcome/], ['lab', /Lab Studio/], ['sequence', /Sequence Studio/], ['phylogenetics', /Phylogenetics/], ['genome', /Genome Studio/], ['variants', /Variant Studio/], ['expression', /Expression Studio/], ['single-cell', /Single-Cell/], ['microbiome', /Microbiome Studio/], ['chemistry', /Chemistry Studio/], ['structure', /Structure Studio/], ['atlas', /Atlas/], ['report', /Report/], ['licenses', /Licences/], ['docking', /Docking Studio/], ['statistics', /Statistics Studio/], ['plasmid', /Plasmid Studio/], ['biologics', /Biologics Studio/], ['pharmacokinetics', /PK Studio/], ['trajectory', /Trajectory Studio/], ['peptides', /Peptide Studio/], ['population-genetics', /Population Genetics Studio/], ['omics-quant', /Omics Quant Studio/], ['amr', /AMR Studio/], ['crispr', /CRISPR Studio/], ['primers', /Primer Studio/], ['enrichment', /Enrichment Studio/], ['protocols', /Protocol Studio/], ['sanger', /Sanger Studio/], ['image-counter', /Image Counter Studio/], ['flow', /Flow Studio/], ['dynamics', /Dynamics Studio/]];
 
 test('every route loads in one session without errors or the error boundary', async ({ page }) => {
   const errs = watch(page); await page.goto('/'); await expect(page.locator('h1').first()).toContainText(/Welcome/);
@@ -451,6 +451,25 @@ test('amr: synthetic demo recovers the five planted resistance genes', async ({ 
   await expect(page.locator('.callout', { hasText: 'Planted-truth check' })).toContainText(/all 5 genes recovered/);
   await page.getByRole('tab', { name: 'Gene library' }).click();
   await expect(page.getByText(/reference records shown/).first()).toBeVisible({ timeout: 30_000 });
+  expect(errs).toEqual([]);
+});
+
+test('dynamics: Lennard-Jones fluid runs and the Go demo folds', async ({ page }) => {
+  const errs = watch(page); await page.goto('/dynamics');
+  await expect(page.locator('h1').first()).toHaveText(/Dynamics Studio/);
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  const tempValue = page.locator('.card.stat', { hasText: 'Temperature' }).first().locator('.v');
+  await expect(tempValue).not.toHaveText('–', { timeout: 30_000 });
+  await expect(page.getByText('Energy', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await page.getByRole('tab', { name: /Protein folding/ }).click();
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  const q = page.locator('.card.stat', { hasText: 'Q' }).first().locator('.v');
+  await expect(q).not.toHaveText('–', { timeout: 90_000 });
+  const value = Number((await q.textContent())?.trim());
+  expect(Number.isFinite(value)).toBe(true);
+  expect(value).toBeGreaterThanOrEqual(0);
+  expect(value).toBeLessThanOrEqual(1);
   expect(errs).toEqual([]);
 });
 

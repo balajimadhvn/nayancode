@@ -142,6 +142,9 @@ export const CITATIONS: Record<string, string> = {
   rcsb: 'Berman HM, et al. (2000) The Protein Data Bank. Nucleic Acids Res 28:235–242.',
   alphafold: 'Jumper J, et al. (2021) Highly accurate protein structure prediction with AlphaFold. Nature 596:583–589.',
   feldgarden2021: 'Feldgarden M, et al. (2021) AMRFinderPlus and the Reference Gene Catalog facilitate examination of the genomic links among antimicrobial resistance, stress response, and virulence. Sci Rep 11:12728.',
+  clementi2000: 'Clementi C, Nymeyer H, Onuchic JN (2000) Topological and energetic factors: what determines the structural details of the transition state ensemble and en-route intermediates for protein folding? J Mol Biol 298:937–953.',
+  verlet1967: 'Verlet L (1967) Computer experiments on classical fluids. I. Thermodynamical properties of Lennard-Jones molecules. Phys Rev 159:98–103.',
+  leimkuhler2013: 'Leimkuhler B, Matthews C (2013) Rational construction of stochastic numerical methods for molecular sampling. Appl Math Res Express 2013:34–56.',
 };
 
 export interface ProvRecord {

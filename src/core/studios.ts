@@ -287,6 +287,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Compensation only removes spillover as well as the supplied matrix describes it; arcsinh replaces biexponential/logicle scaling. Files are capped at 2,000,000 events and 64 parameters, and gates are not a substitute for clinical review',
     cloudLater: '',
   },
+  {
+    id: 'dynamics', path: '/dynamics', name: 'Dynamics Studio', short: 'Dynamics',
+    blurb: 'Simulate a Lennard-Jones fluid on your GPU or CPU, and fold a coarse-grained protein model.',
+    status: 'live', milestone: 'M1', accent: 225,
+    inputs: ['Built-in fcc fluid (108 to 2048 atoms)', 'PDB structure for the C-alpha Go model', 'Bundled 1UBQ and 1PGA demos, or a PDB ID from RCSB on click'],
+    analyses: ['Velocity-Verlet Lennard-Jones fluid with cell lists', 'WebGPU all-pairs force kernel with a CPU twin', 'Kinetic, potential and total energy, temperature and pressure traces', 'C-alpha bond, angle, dihedral, native-contact and repulsion Go model', 'BAOAB Langevin folding with Q, RMSD and Rg observables', 'Multi-MODEL PDB trajectory and CSV export', 'Temperature scan of the folding transition'],
+    engines: 'TypeScript (Float64) and WebGPU (f32) kernels; folding runs in a Web Worker',
+    limits: 'Educational and research-grade engines. The fluid uses reduced units and the Go model is a structure-based toy model of one known fold, not a force field for structure or binding prediction, and not all-atom production MD',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);
