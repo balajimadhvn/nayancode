@@ -10,6 +10,7 @@ export const CITATIONS: Record<string, string> = {
   needleman1970: 'Needleman SB, Wunsch CD (1970) A general method applicable to the search for similarities in the amino acid sequence of two proteins. J Mol Biol 48:443–453.',
   smith1981: 'Smith TF, Waterman MS (1981) Identification of common molecular subsequences. J Mol Biol 147:195–197.',
   gotoh1982: 'Gotoh O (1982) An improved algorithm for matching biological sequences. J Mol Biol 162:705–708.',
+  altschul1990: 'Altschul SF, Gish W, Miller W, Myers EW, Lipman DJ (1990) Basic local alignment search tool. J Mol Biol 215:403–410.',
   henikoff1992: 'Henikoff S, Henikoff JG (1992) Amino acid substitution matrices from protein blocks. Proc Natl Acad Sci USA 89:10915–10919.',
   robinson2010: 'Robinson MD, Oshlack A (2010) A scaling normalization method for differential expression analysis of RNA-seq data. Genome Biol 11:R25.',
   anders2010: 'Anders S, Huber W (2010) Differential expression analysis for sequence count data. Genome Biol 11:R106.',

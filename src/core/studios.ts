@@ -297,6 +297,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'Educational and research-grade engines. The fluid uses reduced units and the Go model is a structure-based toy model of one known fold, not a force field for structure or binding prediction, and not all-atom production MD',
     cloudLater: '',
   },
+  {
+    id: 'search', path: '/similarity-search', name: 'Search Studio', short: 'Search',
+    blurb: 'Search a protein database exhaustively with Smith-Waterman on your GPU or CPU.',
+    status: 'live', milestone: 'M1', accent: 315,
+    inputs: ['One protein query (one letter code or FASTA)', 'Protein FASTA database, or the bundled 2,000-sequence SYNTHETIC demo'],
+    analyses: ['Affine-gap Smith-Waterman (Gotoh) with BLOSUM62 and gap costs 11/1', 'Exhaustive WebGPU search with one thread per database sequence', 'CPU fallback in a Web Worker with progress', 'Bit scores and Karlin-Altschul E-values', 'Traceback and identity for the top 50 hits', 'CSV export of the ranked hits'],
+    engines: 'TypeScript and WebGPU (f32/integer) kernels; CPU search runs in a Web Worker',
+    limits: 'Exhaustive search is slower than BLAST on huge databases. E-values use published gapped BLOSUM62 parameters without edge-effect correction. Protein queries only; research-grade, not clinical',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);
