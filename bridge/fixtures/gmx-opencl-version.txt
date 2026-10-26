@@ -1,0 +1,6 @@
+GROMACS version:    2023.3
+Precision:          single
+MPI library:        OpenMPI 4.1.5
+OpenMP support:     enabled
+GPU support:        OpenCL
+SIMD instructions:  AVX2_256

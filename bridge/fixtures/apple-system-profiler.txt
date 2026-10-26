@@ -1,0 +1,8 @@
+Graphics/Displays:
+  Apple M2 Pro:
+    Chipset Model: Apple M2 Pro
+    Type: GPU
+    Bus: Built-In
+    Total Number of Cores: 19
+    Vendor: Apple (0x106b)
+    Metal Support: Metal 3

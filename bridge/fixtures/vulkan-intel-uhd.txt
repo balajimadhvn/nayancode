@@ -1,0 +1,5 @@
+GPU0:
+	deviceName        = Intel(R) UHD Graphics 630
+	vendorID          = 0x8086
+	deviceType        = PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+	driverVersion     = 27.20.100.9316

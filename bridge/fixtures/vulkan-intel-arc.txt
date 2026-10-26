@@ -1,0 +1,7 @@
+Devices:
+========
+GPU0:
+	deviceName        = Intel(R) Arc(TM) A770 Graphics
+	vendorID          = 0x8086
+	deviceType        = PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+	driverVersion     = 31.0.101.4502

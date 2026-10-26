@@ -23,5 +23,5 @@ export default defineConfig({
   worker: { format: 'es' },
   server: { port: Number(process.env.PORT) || 5180, watch: { awaitWriteFinish: { stabilityThreshold: 120, pollInterval: 20 } } },
   build: { target: 'es2022', chunkSizeWarningLimit: 4000 },
-  test: { environment: 'node', include: ['src/**/*.test.ts'], testTimeout: 20_000 },
+  test: { environment: 'node', include: ['src/**/*.test.ts', 'bridge/**/*.test.ts'], testTimeout: 20_000 },
 });

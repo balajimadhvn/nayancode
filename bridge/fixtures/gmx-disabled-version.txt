@@ -1,0 +1,6 @@
+GROMACS version:    2022.5
+Precision:          single
+MPI library:        thread_mpi
+OpenMP support:     enabled
+GPU support:        disabled
+SIMD instructions:  SSE2

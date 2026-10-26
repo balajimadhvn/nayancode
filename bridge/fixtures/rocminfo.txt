@@ -1,0 +1,5 @@
+Agent 2
+  Name:                    gfx1100
+  Marketing Name:          AMD Radeon RX 7900 XTX
+  Vendor Name:             AMD
+  Compute Unit:            96

@@ -1,0 +1,12 @@
+[
+  {
+    "Name": "NVIDIA GeForce GTX 1650",
+    "AdapterRAM": 4294967296,
+    "DriverVersion": "31.0.15.3623"
+  },
+  {
+    "Name": "AMD Radeon(TM) Graphics",
+    "AdapterRAM": 536870912,
+    "DriverVersion": "30.0.13044.5001"
+  }
+]

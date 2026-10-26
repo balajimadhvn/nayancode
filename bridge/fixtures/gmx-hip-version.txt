@@ -1,0 +1,6 @@
+GROMACS version:    2024.2
+Precision:          mixed
+MPI library:        thread_mpi
+OpenMP support:     enabled
+GPU support:        HIP
+SIMD instructions:  AVX2_256

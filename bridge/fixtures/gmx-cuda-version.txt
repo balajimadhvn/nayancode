@@ -1,0 +1,7 @@
+GROMACS version:    2024.1
+Precision:          mixed
+Memory model:       64 bit
+MPI library:        thread_mpi
+OpenMP support:     enabled
+GPU support:        CUDA
+SIMD instructions:  AVX2_256

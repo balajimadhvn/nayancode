@@ -1,0 +1,10 @@
+Platform Name                                   Intel(R) OpenCL Graphics
+Device Name                                     Intel(R) Arc(TM) A770 Graphics
+Device Vendor                                   Intel(R) Corporation
+Global memory size                              17163091968 (15.98GiB)
+Driver Version                                  31.0.101.4502
+
+Platform Name                                   AMD Accelerated Parallel Processing
+Device Name                                     gfx1100
+Device Vendor                                   Advanced Micro Devices, Inc.
+Global memory size                              25753026560 (23.98GiB)
