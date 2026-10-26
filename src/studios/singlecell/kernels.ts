@@ -3,6 +3,7 @@ import { bh, jacobiEigen, tTwoSided } from '../expression/kernels';
 import { umap } from './umap';
 
 import { batchMixing, doubletScores, harmony, knnApprox } from './scale';
+import { knnGpu } from './knnGpu';
 export interface Sparse { genes: string[]; cells: string[]; indptr: Uint32Array; indices: Uint32Array; data: Float32Array } // CSC: columns = cells
 
 const rngf = (seed: number) => { let s = seed >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); };
@@ -41,8 +42,8 @@ export function parseMtx(mtx: string, features: string, barcodes: string): Spars
   return fromTriplets(genes, cells, ti, tj, tv);
 }
 
-export interface ScParams { minGenes: number; maxPctMito: number; minCellsPerGene: number; nHvg: number; nPcs: number; k: number; resolution: number; embedCap: number; seed: number; embedMethod: 'umap' | 'tsne'; /** Harmony-style batch correction of the PCs (needs batch labels) */ integrate: boolean; /** Scrublet-style doublet scores */ doublets: boolean; /** use approximate NN-descent neighbours above this many cells */ approxAbove: number }
-export const SC_DEFAULTS: ScParams = { minGenes: 200, maxPctMito: 20, minCellsPerGene: 3, nHvg: 2000, nPcs: 20, k: 15, resolution: 0.8, embedCap: 6000, seed: 1, embedMethod: 'umap', integrate: false, doublets: false, approxAbove: 4000 };
+export interface ScParams { minGenes: number; maxPctMito: number; minCellsPerGene: number; nHvg: number; nPcs: number; k: number; resolution: number; embedCap: number; seed: number; embedMethod: 'umap' | 'tsne'; /** Harmony-style batch correction of the PCs (needs batch labels) */ integrate: boolean; /** Scrublet-style doublet scores */ doublets: boolean; /** use approximate NN-descent neighbours above this many cells */ approxAbove: number; /** try the WebGPU exact neighbour search when the browser has an adapter */ useGpu?: boolean }
+export const SC_DEFAULTS: ScParams = { minGenes: 200, maxPctMito: 20, minCellsPerGene: 3, nHvg: 2000, nPcs: 20, k: 15, resolution: 0.8, embedCap: 6000, seed: 1, embedMethod: 'umap', integrate: false, doublets: false, approxAbove: 4000, useGpu: false };
 
 export interface ScResult {
   nCellsIn: number; nCellsKept: number; nGenesIn: number; nGenesKept: number; hasMito: boolean;
@@ -55,6 +56,8 @@ export interface ScResult {
   doublet?: { score: number[]; threshold: number; predicted: number; expectedRate: number; simulated: number };
   integration?: { batches: string[]; cellBatch: number[]; before: number; after: number; iterations: number; converged: boolean };
   approxKnn: boolean;
+  /** true when the exact neighbours came from WebGPU */
+  gpuKnn?: boolean;
 }
 
 export const MARKER_PANEL: Record<string, string[]> = {
@@ -64,6 +67,29 @@ export const MARKER_PANEL: Record<string, string[]> = {
 };
 
 export function runSingleCell(m: Sparse, p: ScParams, progress: (f: number, note: string) => void, batchAll?: string[]): ScResult {
+  return runPipeline(m, p, progress, batchAll, (pcs, kPc, K) => exactKnnCpu(pcs, kPc, K, progress)) as ScResult;
+}
+
+/**
+ * Same pipeline with exact neighbours from WebGPU. Falls back to the CPU inside
+ * the neighbour step (not by rerunning the whole pipeline) when the adapter is
+ * missing, the matrix does not fit, or the device is lost.
+ */
+export async function runSingleCellGpu(m: Sparse, p: ScParams, progress: (f: number, note: string) => void, batchAll?: string[]): Promise<ScResult> {
+  let used = false;
+  const out = await (runPipeline(m, p, progress, batchAll, async (pcs, kPc, K) => {
+    const g = await exactKnnGpu(pcs, kPc, K, progress);
+    if (g) { used = true; return g; }
+    progress(0.4, 'GPU unavailable; CPU neighbours');
+    return exactKnnCpu(pcs, kPc, K, progress);
+  }) as Promise<ScResult>);
+  return { ...out, gpuKnn: used };
+}
+
+function runPipeline(
+  m: Sparse, p: ScParams, progress: (f: number, note: string) => void, batchAll: string[] | undefined,
+  neighborFn: (pcs: number[][], kPc: number, K: number) => Int32Array[] | Promise<Int32Array[]>,
+): ScResult | Promise<ScResult> {
   const nG = m.genes.length, nC = m.cells.length;
   // --- QC ---
   progress(0.02, 'QC');
@@ -137,9 +163,18 @@ export function runSingleCell(m: Sparse, p: ScParams, progress: (f: number, note
   }
   // --- kNN + SNN ---
   progress(0.4, 'Neighbour graph');
-  const K = Math.min(p.k, n - 1), nn: Int32Array[] = [], approxKnn = n > p.approxAbove;
-  if (approxKnn) { const A = knnApprox(pcs.map((r) => r.slice(0, kPc)), K, p.seed); for (let i = 0; i < n; i++) nn.push(A.idx.slice(i * K, (i + 1) * K)); progress(0.5, 'Neighbour graph'); }
-  else for (let i = 0; i < n; i++) { const d = new Float64Array(n); const pi = pcs[i]; for (let j = 0; j < n; j++) { let s = 0; const pj = pcs[j]; for (let c = 0; c < kPc; c++) { const t = pi[c] - pj[c]; s += t * t; } d[j] = s; } d[i] = Infinity; const idx = Int32Array.from({ length: n }, (_, j) => j); const part = Array.from(idx).sort((a, b) => d[a] - d[b]).slice(0, K); nn.push(Int32Array.from(part)); if (i % 200 === 0) progress(0.4 + 0.1 * (i / n), 'Neighbour graph'); }
+  const K = Math.min(p.k, n - 1), approxKnn = n > p.approxAbove;
+  let pending: Int32Array[] | Promise<Int32Array[]>;
+  if (approxKnn) {
+    const A = knnApprox(pcs.map((r) => r.slice(0, kPc)), K, p.seed);
+    const nnA: Int32Array[] = [];
+    for (let i = 0; i < n; i++) nnA.push(A.idx.slice(i * K, (i + 1) * K));
+    progress(0.5, 'Neighbour graph');
+    pending = nnA;
+  } else pending = neighborFn(pcs, kPc, K);
+
+  // Everything after the neighbour graph is shared by the CPU and GPU paths.
+  const finish = (nn: Int32Array[]): ScResult => {
   const sets = nn.map((a, i) => new Set([i, ...a])); const edges2 = new Map<number, number>(); const adj: Map<number, number>[] = Array.from({ length: n }, () => new Map());
   for (let i = 0; i < n; i++) for (const j of nn[i]) { const key = i < j ? i * n + j : j * n + i; if (edges2.has(key)) continue; let inter = 0; for (const x of sets[i]) if (sets[j].has(x)) inter++; const w = inter / (sets[i].size + sets[j].size - inter); if (w >= 1 / 15) { edges2.set(key, w); adj[i].set(j, w); adj[j].set(i, w); } }
   // --- Louvain ---
@@ -175,6 +210,27 @@ export function runSingleCell(m: Sparse, p: ScParams, progress: (f: number, note
   const gw = new Map([...want].map((g) => [g, m.genes[g]])); kept.forEach((c, r) => { for (let k = m.indptr[c]; k < m.indptr[c + 1]; k++) { const nm = gw.get(m.indices[k]); if (nm) expr.get(nm)![r] = norm[k]; } });
   progress(1, 'Done');
   return { embedMethod: p.embedMethod, nCellsIn: nC, nCellsKept: n, nGenesIn: nG, nGenesKept: cand.length, hasMito, cells: kept.map((c) => m.cells[c]), qc: { nCounts: Array.from(nCounts), nGenes: Array.from(nGenesDet), pctMito: Array.from(pctMito) }, hvg: hvg.map((g) => m.genes[g]), varExplained, pcs, clusters, nClusters, embedIdx, embed, kept, markers, annotation, expr, doublet, integration, approxKnn };
+  };
+  return pending instanceof Promise ? pending.then(finish) : finish(pending);
+}
+
+/** The original CPU exact kNN, unchanged, used by the synchronous pipeline. */
+function exactKnnCpu(pcs: number[][], kPc: number, K: number, progress: (f: number, note: string) => void): Int32Array[] {
+  const n = pcs.length, nn: Int32Array[] = [];
+  for (let i = 0; i < n; i++) { const d = new Float64Array(n); const pi = pcs[i]; for (let j = 0; j < n; j++) { let s = 0; const pj = pcs[j]; for (let c = 0; c < kPc; c++) { const t = pi[c] - pj[c]; s += t * t; } d[j] = s; } d[i] = Infinity; const idx = Int32Array.from({ length: n }, (_, j) => j); const part = Array.from(idx).sort((a, b) => d[a] - d[b]).slice(0, K); nn.push(Int32Array.from(part)); if (i % 200 === 0) progress(0.4 + 0.1 * (i / n), 'Neighbour graph'); }
+  return nn;
+}
+
+/** Flatten PCs and ask WebGPU for exact neighbours; null falls back to the CPU. */
+async function exactKnnGpu(pcs: number[][], kPc: number, K: number, progress: (f: number, note: string) => void): Promise<Int32Array[] | null> {
+  const n = pcs.length, X = new Float32Array(n * kPc);
+  for (let i = 0; i < n; i++) for (let c = 0; c < kPc; c++) X[i * kPc + c] = pcs[i][c];
+  progress(0.4, 'Neighbour graph (GPU)');
+  const r = await knnGpu(X, n, kPc, K, (f) => progress(0.4 + 0.1 * f, 'Neighbour graph (GPU)'));
+  if (!r) return null;
+  const nn: Int32Array[] = [];
+  for (let i = 0; i < n; i++) nn.push(Int32Array.from(r.idx.subarray(i * K, (i + 1) * K)));
+  return nn;
 }
 
 // ---------------- Louvain (Blondel et al. 2008) ----------------

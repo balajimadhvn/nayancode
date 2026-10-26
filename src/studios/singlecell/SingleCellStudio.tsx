@@ -6,7 +6,10 @@ import { Busy, Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadTe
 import { useRunner } from '@/ui/useRunner';
 import { Histogram, Scatter, type Pt } from '@/viz/charts';
 import { catColors } from '@/viz/more';
+import { detectDevice, detectGpuDetailed, rememberGpu } from '@/compute/device';
+import { classifyDevice, recommendedLimits, type Tier } from '@/compute/hardware';
 import { SC_DEFAULTS, syntheticBatchDemo, syntheticPbmcLike, type ScParams, type ScResult } from './kernels';
+import { knnCpu, knnGpu } from './knnGpu';
 import type { ScKernels } from './singlecell.worker';
 
 const remote = createRemote<ScKernels>(() => new Worker(new URL('./singlecell.worker.ts', import.meta.url), { type: 'module' }));
@@ -18,13 +21,80 @@ const TOOLS = {
 type Tab = 'qc' | 'embed' | 'clusters' | 'spatial';
 const RAMP = ['#3a4256', '#2a4c8f', '#2f6fb0', '#2aa198', '#7fbf4f', '#e5d44a', '#f29a3a', '#e5484d'];
 
+function mulberry32(seed: number) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function gaussian(rnd: () => number) { return Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd()); }
+
+/** Diagnostic hook for e2e/gpu/singlecell.spec.ts; installed only with ?knnParity=1. */
+type KnnParity = { gpu: boolean; cells: number; k: number; mismatch: number; maxRel: number; speedup: number; cpuMs: number; gpuMs: number };
+function useKnnParityHook() {
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has('knnParity')) return;
+    const w = window as unknown as { __ncKnnParity?: () => Promise<KnnParity> };
+    w.__ncKnnParity = async () => {
+      const cells = 5000, dims = 50, k = 15, clusters = 10, per = cells / clusters;
+      const rnd = mulberry32(20261026);
+      const centers = Array.from({ length: clusters }, () => Array.from({ length: dims }, () => rnd() * 10 - 5));
+      const X = new Float32Array(cells * dims);
+      for (let i = 0; i < cells; i++) { const c = Math.floor(i / per); for (let d = 0; d < dims; d++) X[i * dims + d] = centers[c][d] + gaussian(rnd); }
+      const t0 = performance.now();
+      const cpu = knnCpu(X, cells, dims, k + 1); // one extra distance for the tie check
+      const cpuMs = performance.now() - t0;
+      const g = await knnGpu(X, cells, dims, k);
+      if (!g) return { gpu: false, cells, k, mismatch: -1, maxRel: -1, speedup: 0, cpuMs, gpuMs: 0 };
+      let mismatch = 0, maxRel = 0;
+      for (let i = 0; i < cells; i++) {
+        const cs = new Set<number>(), gs = new Set<number>();
+        for (let t = 0; t < k; t++) { cs.add(cpu.idx[i * (k + 1) + t]); gs.add(g.idx[i * k + t]); }
+        const same = cs.size === gs.size && [...cs].every((x) => gs.has(x));
+        const tie = cpu.dist[i * (k + 1) + k] - cpu.dist[i * (k + 1) + k - 1] < 1e-4;
+        if (!same && !tie) mismatch++;
+        for (let t = 0; t < k; t++) maxRel = Math.max(maxRel, Math.abs(g.dist[i * k + t] - cpu.dist[i * (k + 1) + t]) / Math.max(1e-6, cpu.dist[i * (k + 1) + t]));
+      }
+      return { gpu: true, cells, k, mismatch, maxRel, speedup: cpuMs / Math.max(1e-6, g.ms), cpuMs, gpuMs: g.ms };
+    };
+    return () => { delete w.__ncKnnParity; };
+  }, []);
+}
+
 export default function SingleCellStudio() {
+  useKnnParityHook();
   const [src, setSrc] = useState<{ dense?: string; mtx?: string; features?: string; barcodes?: string; label: string } | null>(null);
   const [coordsText, setCoordsText] = useState('');
   const [p, setP] = useState<ScParams>(SC_DEFAULTS); const [res, setRes] = useState<ScResult | null>(null); const [tab, setTab] = useState<Tab>('embed');
   const [truth, setTruth] = useState<string[] | null>(null), [batches, setBatches] = useState('');
+  const [tier, setTier] = useState<Tier>('cpu-threads'), [gpuUsable, setGpuUsable] = useState(false), [deviceText, setDeviceText] = useState('detecting your hardware…');
+  const recommend = recommendedLimits(tier).knnCells;
   const { run, busy, progress, note, error, cancel } = useRunner();
   const hand = useHandoff((s) => s.sc);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const det = await detectGpuDetailed(); rememberGpu(det);
+      const d = detectDevice(undefined, undefined, det);
+      if (!alive) return;
+      const usable = !!det.info && !det.info.fallback;
+      setTier(classifyDevice(d).tier); setGpuUsable(usable);
+      setDeviceText(usable && det.info ? `GPU: ${det.info.vendor} ${det.info.architecture || det.info.description}`.trim() : `CPU: ${d.threads} threads`);
+      if (usable) setP((cur) => ({ ...cur, useGpu: true }));
+    })();
+    return () => { alive = false; };
+  }, []);
+  const cellEstimate = useMemo(() => {
+    if (!src) return 0;
+    if (src.dense) { const head = src.dense.slice(0, 4000).split(/\r?\n/, 1)[0]; return Math.max(0, head.split(head.includes('\t') ? '\t' : ',').length - 1); }
+    if (src.mtx) { const line = src.mtx.split(/\r?\n/).find((l) => l.trim() && !l.startsWith('%')); const f = line?.trim().split(/\s+/); return f?.[1] ? +f[1] : 0; }
+    return 0;
+  }, [src]);
+  const overRecommend = Math.max(cellEstimate, res?.nCellsKept ?? 0) > recommend;
   useEffect(() => { if (hand) { setSrc({ mtx: hand.mtx, features: hand.features, barcodes: hand.barcodes, label: hand.label }); setTruth(null); setRes(null); clearHandoffSoon('sc'); } }, [hand]);
   const go = (s = src) => s && void run({ label: `scRNA-seq · ${s.label}`, tool: TOOLS.run, params: { ...p }, inputs: [{ name: s.label, data: (s.dense ?? s.mtx ?? '').slice(0, 2_000_000) }], run: (h) => remote.run({ dense: s.dense, mtx: s.mtx, features: s.features, barcodes: s.barcodes, batches: batches || undefined, params: p }, h) }).then((r) => { if (r) { setRes(r); setTab('embed'); } });
   const demo = () => { const d = syntheticPbmcLike(12, 900, 1500); const s = { dense: d.counts, label: 'synthetic_pbmc_like', features: undefined, barcodes: undefined, mtx: undefined }; setSrc(s); setCoordsText(d.coords); setTruth(d.truth); const pp = { ...p, minGenes: 50, nHvg: 500 }; setP(pp); void run({ label: 'scRNA-seq · synthetic demo', tool: TOOLS.run, params: { ...pp }, inputs: [{ name: 'demo', data: d.counts.slice(0, 200000) }], run: (h) => remote.run({ dense: d.counts, params: pp }, h) }).then((r) => { if (r) { setRes(r); setTab('embed'); } }); };
@@ -53,12 +123,15 @@ export default function SingleCellStudio() {
             {([['minGenes', 'Min genes / cell'], ['maxPctMito', 'Max % mito'], ['nHvg', 'HVGs'], ['nPcs', 'PCs'], ['k', 'Neighbours k'], ['resolution', 'Louvain resolution']] as const).map(([key, label]) => <Field key={key} label={label}><input className="input" type="number" step={key === 'resolution' ? 0.1 : 1} value={p[key]} onChange={(e) => setP({ ...p, [key]: +e.target.value })} /></Field>)}
           <label className="row" style={{ gap: 6 }}><input type="checkbox" checked={p.integrate} onChange={(e) => setP({ ...p, integrate: e.target.checked })} />Integrate batches (Harmony-style)</label>
           <label className="row" style={{ gap: 6 }}><input type="checkbox" checked={p.doublets} onChange={(e) => setP({ ...p, doublets: e.target.checked })} />Score doublets (Scrublet-style)</label>
+          <label className="row" style={{ gap: 6 }}><input type="checkbox" checked={!!p.useGpu} disabled={!gpuUsable || busy} onChange={(e) => setP({ ...p, useGpu: e.target.checked })} />Use GPU for neighbour search (WebGPU)</label>
+          <div className="faint" style={{ fontSize: 11.5 }}>Exact neighbour search on your graphics card; falls back to the CPU. {deviceText} · exact GPU neighbours recommended up to {recommend.toLocaleString()} cells on this tier{gpuUsable ? '' : ' (no usable WebGPU adapter here)'}.</div>
           <Field label="Embedding"><select className="select" value={p.embedMethod} onChange={(e) => setP({ ...p, embedMethod: e.target.value as ScParams['embedMethod'] })}><option value="umap">UMAP</option><option value="tsne">t-SNE</option></select></Field>
           </div>
           <div className="row" style={{ marginTop: 12 }}><button className="btn primary" disabled={!src || busy} onClick={() => go()}>Run pipeline</button>{busy && <button className="btn" onClick={cancel}>Cancel</button>}</div>
           {busy && <div style={{ marginTop: 10 }}><Busy progress={progress} note={note} /></div>}{error && <div style={{ marginTop: 10 }}><Callout kind="err">{error}</Callout></div>}
         </Card>
         <Callout>Browser budget: about 20k cells (memory-bound, sparse storage). Above {p.approxAbove.toLocaleString()} cells neighbours are found approximately (NN-descent). The embedding covers up to {p.embedCap.toLocaleString()} cells (random subset above that; clustering uses all). Atlas-scale data belongs on a GPU backend.</Callout>
+        {overRecommend && <Callout kind="warn">This run is estimated at {Math.max(cellEstimate, res?.nCellsKept ?? 0).toLocaleString()} cells, above the {recommend.toLocaleString()}-cell guide for exact GPU neighbours on this tier, so it may take more than a minute. The exact CPU path is slower still; raise “approximate above” to use NN-descent instead.</Callout>}
       </div>
       <div className="stack">{!res ? <Card><div className="faint" style={{ padding: '36px 6px', textAlign: 'center' }}>Load a matrix or run the demo.</div></Card> : <>
         <div className="cols-4"><Stat label="Cells kept" value={`${res.nCellsKept.toLocaleString()} / ${res.nCellsIn.toLocaleString()}`} /><Stat label="Genes used" value={res.nGenesKept.toLocaleString()} /><Stat label="Clusters" value={res.nClusters} /><Stat label="PC1–PC2 var." value={`${fmt((res.varExplained[0] + (res.varExplained[1] ?? 0)) * 100, 1)}%`} /></div>
