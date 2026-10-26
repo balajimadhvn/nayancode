@@ -129,6 +129,8 @@ export const CITATIONS: Record<string, string> = {
   zhang2004: 'Zhang Y, Skolnick J (2004) Scoring function for automated assessment of protein structure template quality. Proteins 57:702–710.',
   li2018: 'Li H (2018) Minimap2: pairwise alignment for nucleotide sequences. Bioinformatics 34:3094–3100. (MIT)',
   danecek2021: 'Danecek P, et al. (2021) Twelve years of SAMtools and BCFtools. GigaScience 10:giab008. (MIT)',
+  liao2014: 'Liao Y, Smyth GK, Shi W (2014) featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics 30:923–930.',
+  zhang2008: 'Zhang Y, et al. (2008) Model-based analysis of ChIP-Seq (MACS). Genome Biol 9:R137.',
   robinson2011: 'Robinson JT, et al. (2011) Integrative genomics viewer. Nat Biotechnol 29:24–26. (igv.js: MIT)',
   doench2016: 'Doench JG, et al. (2016) Optimized sgRNA design to maximize activity and minimize off-target effects of CRISPR-Cas9. Nat Biotechnol 34:184–191. (CFD score tables)',
   bae2014: 'Bae S, Park J, Kim JS (2014) Cas-OFFinder: a fast and versatile algorithm that searches for potential off-target sites of Cas9 RNA-guided endonucleases. Bioinformatics 30:1473–1475.',

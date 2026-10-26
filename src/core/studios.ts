@@ -327,6 +327,16 @@ export const STUDIOS: StudioDef[] = [
     limits: 'No taxonomy database is bundled: supply SILVA, Greengenes or UNITE with lineage headers and check its licence. The denoiser is UNOISE-style and the classifier RDP-style, so calls can differ from DADA2/QIIME 2. Up to 200,000 reads or pairs per sample in browser memory. Research-grade, not clinical',
     cloudLater: '',
   },
+  {
+    id: 'counts', path: '/counts-peaks', name: 'Counts & Peaks Studio', short: 'Counts & Peaks',
+    blurb: 'Align reads, count them per gene for RNA-seq, and call MACS-style peaks for ChIP-seq, ATAC-seq and CUT&Tag.',
+    status: 'live', milestone: 'M1', accent: 160,
+    inputs: ['FASTQ reads + reference FASTA, or an existing SAM/BAM alignment', 'GFF3 or GTF annotation (or a bundled RefSeq GFF3)', 'Treatment and optional control SAM/BAM for peak calling', 'SYNTHETIC demos: 20 genes on 100 kb, and 3 planted peaks on 10 Mb'],
+    analyses: ['minimap2 alignment + samtools sort, index and flagstat in WebAssembly', 'featureCounts-style unique gene assignment with strandedness, MAPQ and overlap filters', 'Merged exon-union gene length and TPM', 'Count matrix CSV and hand-off to the Expression Studio', 'MACS-style fragment-size estimation and local-lambda peak calling with BH FDR', 'narrowPeak-style BED, bedGraph coverage and a peak coverage plot'],
+    engines: 'minimap2 and samtools (WebAssembly, MIT) + TypeScript counting and peak-calling kernels in a Web Worker',
+    limits: 'Reference ≤ ~100 Mb and FASTQ ≤ 300 MB in the browser; BAM input ≤ 500 MB; peaks on contigs ≤ 50 Mb. Paired-end data is counted once (read 1). MACS-style results can differ from MACS; inspect peaks in a genome browser. Research-grade, not clinical',
+    cloudLater: '',
+  },
 ];
 
 export const studioById = (id: string) => STUDIOS.find((s) => s.id === id);

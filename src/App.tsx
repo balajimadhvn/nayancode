@@ -41,6 +41,7 @@ const live: Record<string, ReturnType<typeof lazyRetry<() => React.JSX.Element>>
   search: lazyRetry(() => import('@/studios/search/SearchStudio')),
   reads: lazyRetry(() => import('@/studios/reads/ReadsStudio')),
   amplicon: lazyRetry(() => import('@/studios/amplicon/AmpliconStudio')),
+  counts: lazyRetry(() => import('@/studios/counts/CountsStudio')),
 };
 
 const Loading = () => <div style={{ display: 'grid', placeItems: 'center', minHeight: '60vh', color: 'var(--text-faint)' }}>Loading…</div>;
