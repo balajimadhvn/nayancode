@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { clearHandoffSoon, useHandoff } from '@/core/handoff';
 import { Callout, Card, DataTable, Field, FileDrop, Stat, Tabs, downloadText, fmt, toCsv } from '@/ui/kit';
 import { CurvePlot, Heatmap, Scatter, cssVar } from '@/viz/charts';
 import type { CurveSeries } from '@/viz/figure';
@@ -83,6 +84,7 @@ export default function TrajectoryStudio() {
   const [busy, setBusy] = useState(false);
   const [trajError, setTrajError] = useState('');
   const fileInput = useRef<HTMLInputElement>(null);
+  const mdHand = useHandoff((s) => s.mdTrajectory);
 
   const addXvg = (items: { name: string; text: string }[]) => {
     setFiles((prev) => {
@@ -103,6 +105,14 @@ export default function TrajectoryStudio() {
       setFrames(fr); setTrajName(name); setTrajError(''); setResult(null); setTab('traj');
     } catch (e) { setFrames(null); setResult(null); setTrajError((e as Error).message); }
   };
+
+  useEffect(() => {
+    if (!mdHand) return;
+    if (mdHand.xvg.length) addXvg(mdHand.xvg);
+    loadTrajectory(mdHand.pdb, mdHand.label);
+    clearHandoffSoon('mdTrajectory');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mdHand]);
 
   const runAnalysis = (fr: Frame[] = frames ?? [], selection: Selection = sel) => {
     if (!fr.length) return;

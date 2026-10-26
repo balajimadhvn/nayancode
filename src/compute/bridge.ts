@@ -57,6 +57,7 @@ export type RunResult = { code: number | null; state: RunStatus['state'] };
 export interface RunOptions {
   stdin?: string;
   onLog?: (text: string) => void;
+  onRunId?: (runId: string) => void;
   signal?: AbortSignal;
   pollMs?: number;
 }
@@ -171,6 +172,7 @@ export class Bridge {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tool, args, stdin: opts.stdin }),
     });
+    opts.onRunId?.(runId);
     let from = 0;
     for (;;) {
       if (opts.signal?.aborted) { await this.cancel(job, runId).catch(() => {}); throw new DOMException('Aborted', 'AbortError'); }
