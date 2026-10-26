@@ -5,6 +5,7 @@ import { useProvenance } from '@/core/provenance';
 import { useUi } from '@/core/ui-store';
 import { StudioIcon } from '@/ui/Icons';
 import { Card } from '@/ui/kit';
+import DeviceCard from '@/ui/DeviceCard';
 
 export default function Overview() {
   const records = useProvenance((s) => s.records);
@@ -13,6 +14,7 @@ export default function Overview() {
   return (
     <div className="stack" style={{ gap: 22 }}>
       <div className="page-head"><div><h1>Welcome back</h1><p>Pick a studio, drop in your data and start. Everything runs on this device.</p></div></div>
+      <DeviceCard />
       <div className="cols-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
         {live.map((s, i) => { const I = StudioIcon[s.id]; return (
           <motion.div key={s.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
