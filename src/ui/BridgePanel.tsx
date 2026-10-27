@@ -87,7 +87,7 @@ export default function BridgePanel() {
               <span>Download <a href="/bridge/nayancode-bridge.mjs" download style={{ color: 'var(--accent)', textDecoration: 'underline' }}>nayancode-bridge.mjs</a> (plain Node, no dependencies), or run it from the Nayancode source tree.</span>
               <span>The Bridge listens on 127.0.0.1 only by default, checks the page origin and Host header, requires the random token, runs only allow-listed programs through PATH with no shell, confines file arguments to the job folder, and limits uploads, run time and concurrency. It never runs bash, sh, python, node or rm.</span>
               <span>Safari may block access to local addresses from a secure page. Chrome, Edge and Firefox are recommended.</span>
-              <span>Results are research-grade and not clinical. Only connect a Bridge you started; never paste a token into a page you do not trust.</span>
+              <span>Results are research-grade and not for clinical use. Only connect a Bridge you started; never paste a token into a page you do not trust.</span>
             </div>
           </div>
         </details>
